@@ -39,7 +39,6 @@ function Model() {
 }
 Model.prototype = new Event();
 Model.prototype.set = function(data) {
-  console.log('data arrived');
   this.data = data;
   this.emit('change', data);
 }

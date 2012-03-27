@@ -14,17 +14,9 @@ TileManagerMapBox.prototype.url = function(coordinates) {
 //========================================
 // Canvas provider
 //========================================
-function CanvasProvider(tileSize) {
+function CanvasProvider(dataSource, tileSize) {
   this.tileSize = tileSize || new MM.Point(256, 256)
-  this.tiles = new CartoDBSQLAPI({
-     //user: 'vizzuality',
-     user: 'mapnik-tests',
-     //table: 'countries_final',
-     table: 'roads',
-     columns: ['admin'],
-     ENABLE_CLIPPING: true,
-     debug: true
-  });
+  this.tiles = new TileManager(dataSource)
   this.views = new CanvasMapView();
   //TileManagerMapBox();
 }

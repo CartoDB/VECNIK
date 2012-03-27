@@ -1,4 +1,17 @@
 
+function Profiler(name){
+  this.t0 = 0;
+  this.unit = '';
+}
+Profiler.prototype.start = function(unit) {
+  this.t0 = new Date().getTime();
+  this.unit =  unit || '';
+}
+Profiler.prototype.end= function() {
+   var t = new Date().getTime() - this.t0;
+   console.log("PROFILE - " + this.unit + ":" + t);
+   return t;
+}
 //========================================
 // tile model 
 //========================================
@@ -7,6 +20,12 @@ function Tile(x, y, zoom) {
   this.y = y;
   this.zoom = zoom;
   this.on('change', this.precache.bind(this))
+  this.stats = {
+    conversion_time: 0,
+    vertices: 0,
+    primitive_count: 0
+  }
+  this.profiler = new Profiler('tile');
 }
 
 Tile.prototype = new Model();
@@ -19,24 +38,33 @@ Tile.prototype.geometry = function() {
 }
 
 Tile.prototype.precache = function() {
+  this.profiler.start('conversion_time');
   var primitives = this.data.features;
+  this.stats.vertices = 0;
   for(var i = 0; i < primitives.length; ++i) {
       var p = primitives[i];
       var converted = this.convert_geometry(p.geometry, this.zoom, this.x, this.y);
       if(converted != null) {
          p.geometry.projected = converted;
       } else {
-         console.log("problem converting geometries");
+         //console.log("problem converting geometries");
       }
   }
+  this.stats.primitive_count = primitives.length;
+  this.stats.conversion_time = this.profiler.end();
   this.emit('geometry_ready');
 }
 
 Tile.prototype.convert_geometry = function(geometry, zoom, x, y) {
     var self = this;
-    function map_latlon(latlng, x, y, zoom) {
-        latlng = new LatLng(latlng[1], latlng[0]);
-        return self.projector.latLngToTilePoint(latlng, x, y, zoom);
+    var latlng = new LatLng(0, 0);
+    var prj = self.projector;
+    function map_latlon(ll, x, y, zoom) {
+        //latlng = new LatLng(latlng[1], latlng[0]);
+        latlng.latitude  = ll[1];
+        latlng.longitude = ll[0];
+        self.stats.vertices++;
+        return prj.latLngToTilePoint(latlng, x, y, zoom);
     }
     var primitive_conversion = this.primitive_conversion = {
         'LineString': function(x, y, zoom, coordinates) {
@@ -93,9 +121,10 @@ Tile.prototype.convert_geometry = function(geometry, zoom, x, y) {
 // tile manager
 //========================================
 
-function TileManager() {
+function TileManager(dataProvider) {
   this.tiles = {};
   this.projector = new MercatorProjection();
+  this.dataProvider = dataProvider;
 }
 
 TileManager.prototype.tileIndex= function(coordinates) {
@@ -121,7 +150,7 @@ TileManager.prototype.add = function(coordinates) {
       coordinates.zoom
   );
   tile.projector = this.projector;
-  get(this.url(coordinates), function(data) {
+  get(this.dataProvider.url(coordinates), function(data) {
       tile.set(data);
   });
   return tile;
@@ -207,6 +236,13 @@ function CanvasTileView(tile) {
     canvas.width = this.tileSize.x;
     canvas.height = this.tileSize.y;
     this.ctx = canvas.getContext('2d');
+
+    var backCanvas = document.createElement('canvas');
+    backCanvas.width = this.tileSize.x;
+    backCanvas.height = this.tileSize.y;
+    this.backCtx = backCanvas.getContext('2d');
+    this.backCanvas = backCanvas;
+
     this.el = canvas;
     this.id = tile.key();
     this.el.setAttribute('id', tile.key());
@@ -214,6 +250,11 @@ function CanvasTileView(tile) {
     this.tile = tile;
     tile.on('geometry_ready', function(){self.render();});
     this.renderer = new Renderer();
+
+    this.profiler = new Profiler('tile_render');
+    this.stats = {
+      rendering_time: 0
+    }
 }
 
 CanvasTileView.prototype.remove = function() {
@@ -221,10 +262,13 @@ CanvasTileView.prototype.remove = function() {
 
 CanvasTileView.prototype.render = function() {
   var ctx = this.ctx;
-  //console.log("rendering");
-  //ctx.fillRect(0, 0, 100, 100);
-  //ctx.drawImage(0, 0, this.tile.data);
-  this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, null);
+
+  this.profiler.start('render');
+  this.renderer.render(this.backCtx, this.tile.geometry(), this.tile.zoom, null);
+  this.ctx.drawImage(this.backCanvas, 0, 0);
+
+  //this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, null);
+  this.stats.rendering_time = this.profiler.end();
 }
 
 
