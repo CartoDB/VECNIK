@@ -5,9 +5,6 @@ function CartoDBSQLAPI(opts) {
     this.base_url = 'http://' + opts.user + ".cartodb.com/api/v2/sql";
 }
 
-
-//CartoDBSQLAPI.prototype = new TileManager();
-
 CartoDBSQLAPI.prototype.debug = function(w) {
   if(this.opts.debug) {
     console.log(w);

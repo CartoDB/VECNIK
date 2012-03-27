@@ -87,6 +87,11 @@ CartoDB.sql = function(projection, table, x, y, zoom, opts) {
     }
 
     var columns = id_column + ',' + geom_column + ' as the_geom';
+    if(opts.columns) {
+        columns += ',';
+        columns += opts.columns.join(',')
+        columns += ' ';
+    }
 
     // profiling only
     var COUNT_ONLY = opts.COUNT_ONLY || false;

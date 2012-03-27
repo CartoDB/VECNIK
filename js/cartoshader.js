@@ -4,6 +4,8 @@ function CartoShader(shader) {
     this.compile(shader)
 }
 
+CartoShader.prototype = new Event();
+
 CartoShader.prototype.compile = function(shader) {
     if(typeof shader === 'string') {
         shader = eval("(function() { return " + shader +"; })()");
@@ -20,6 +22,8 @@ CartoShader.prototype.compile = function(shader) {
             this.compiled[c] = eval("(function() { return shader[attr]; })();");
         }
     }
+
+    this.emit('changed');
 }
 
 CartoShader.prototype.apply = function(canvas_ctx, data, render_context) {

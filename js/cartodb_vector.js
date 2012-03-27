@@ -69,6 +69,7 @@ Tile.prototype.convert_geometry = function(geometry, zoom, x, y) {
         //point.y = point.y >> 0;
         return point;
     }
+
     var primitive_conversion = this.primitive_conversion = {
         'LineString': function(x, y, zoom, coordinates) {
               var converted = [];
@@ -223,7 +224,8 @@ Renderer.prototype.render = function(ctx, primitives, zoom, shader) {
                   zoom: zoom,
                   id: i
               };
-              //shader.apply(ctx, primitives[i].properties, render_context);
+              if(shader)
+                shader.apply(ctx, primitives[i].properties, render_context);
               renderer(ctx, primitives[i].geometry.projected);
           }
       }
@@ -233,7 +235,7 @@ Renderer.prototype.render = function(ctx, primitives, zoom, shader) {
 //========================================
 // Canvas tile view 
 //========================================
-function CanvasTileView(tile) {
+function CanvasTileView(tile, shader) {
     this.tileSize = new MM.Point(256, 256)
     var canvas = document.createElement('canvas');
     canvas.width = this.tileSize.x;
@@ -251,7 +253,14 @@ function CanvasTileView(tile) {
     this.el.setAttribute('id', tile.key());
     var self = this;
     this.tile = tile;
-    tile.on('geometry_ready', function(){self.render();});
+    var render =  function(){self.render();};
+    tile.on('geometry_ready', render);
+
+    // shader
+    this.shader = shader;
+    if(shader) {
+        shader.on('change', render);
+    }
     this.renderer = new Renderer();
 
     this.profiler = new Profiler('tile_render');
@@ -269,7 +278,7 @@ CanvasTileView.prototype.render = function() {
   this.profiler.start('render');
   var BACKBUFFER = true;
   if(BACKBUFFER) {
-      this.renderer.render(this.backCtx, this.tile.geometry(), this.tile.zoom, null);
+      this.renderer.render(this.backCtx, this.tile.geometry(), this.tile.zoom, this.shader);
       this.ctx.drawImage(this.backCanvas, 0, 0);
   } else {
     this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, null);

@@ -14,16 +14,16 @@ TileManagerMapBox.prototype.url = function(coordinates) {
 //========================================
 // Canvas provider
 //========================================
-function CanvasProvider(dataSource, tileSize) {
+function CanvasProvider(dataSource, shader, tileSize) {
   this.tileSize = tileSize || new MM.Point(256, 256)
   this.tiles = new TileManager(dataSource)
-  this.views = new CanvasMapView();
-  //TileManagerMapBox();
+  this.views = new CanvasMapView(shader);
+  this.shader = shader;
 }
 
 CanvasProvider.prototype.getTile = function(coord) {
     var tile = this.tiles.add(coord);
-    var canvas = new CanvasTileView(tile);
+    var canvas = new CanvasTileView(tile, this.shader);
     this.views.add(canvas);
     return canvas.el;
     var div = document.createElement('div');

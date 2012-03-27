@@ -8,6 +8,7 @@
 <script type="text/javascript" src="../js/mercator.js"></script>
 <script type="text/javascript" src="../js/cartodb_vector.js"></script>
 <script type="text/javascript" src="../js/provider.js"></script>
+<script type="text/javascript" src="../js/cartoshader.js"></script>
 <script type="text/javascript" src="../js/cartodb_vector.modestmaps.js"></script>
 <script type="text/javascript" src="stats.js"></script>
 <script type="text/javascript">
@@ -24,11 +25,29 @@
            //user: 'mapnik-tests',
            //table: 'countries_final',
            table: 'roads',
-           columns: ['admin'],
+           columns: ['type'], //do not include the_geom or cartodb_id, are implicit
            ENABLE_CLIPPING: true,
+           ENABLE_SIMPLIFY: true,
+           ENABLE_FIXING: true,
+           ENABLE_SNAPPING: true,
            debug: true
         });
-        var vector_layer = new CanvasProvider(dataSource);
+
+        var shader = new CartoShader({
+            'point-color': '#fff',
+            'line-color': '#fff',
+            'line-width': function(data) {
+                if(data.type === 'primary') {
+                  return '3';
+                }
+                return '1';
+            },
+            'polygon-fill': function(data) { 
+                return "rgba(200, 200, 200, 0.8)";
+            }
+        });
+
+        var vector_layer = new CanvasProvider(dataSource, shader);
         fg = new MM.Layer(vector_layer);
 
         map = new MM.Map(document.getElementById('map'), [provider, fg])
