@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Modest Maps JS</title>
+<script type="text/javascript" src="../modestmaps.js"></script>
+<script type="text/javascript" src="../js/core.js"></script>
+<script type="text/javascript" src="../js/mercator.js"></script>
+<script type="text/javascript" src="../js/cartodb_vector.js"></script>
+<script type="text/javascript" src="../js/provider.js"></script>
+<script type="text/javascript" src="../js/cartodb_vector.modestmaps.js"></script>
+<script type="text/javascript">
+    var map;
+    function initMap() {
+        
+        var template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png';
+        var subdomains = [ '', 'a.', 'b.', 'c.' ];
+        var provider = new MM.TemplatedLayer(template, subdomains);
+        fg = new MM.Layer(new CanvasProvider());
+
+        map = new MM.Map(document.body, [provider, fg])
+        
+        if(!location.hash) {
+          map.setCenterZoom(new MM.Location(0, 0), 2);
+        }
+        var hash = new MM.Hash(map);
+
+    }
+</script>
+<style>
+html, body {
+  width: 100%; height: 100%;
+}
+</style>
+</head>
+<body onload="initMap()">
+</body>
+</html>
