@@ -6,7 +6,7 @@ function Stats() {
     _container.style.zIndex = '10001';
     _container.style.position = 'absolute';
     _container.style.left = '0px';
-    _container.style.top = '0px';
+    _container.style.bottom = '0px';
     _container.style.background = '#FFF';
     this.el = _container;
     this.el.innerHTML = 'test';

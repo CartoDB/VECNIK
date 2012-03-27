@@ -83,7 +83,7 @@ Tile.prototype.convert_geometry = function(geometry, zoom, x, y) {
         'Point': function(x, y, zoom, coordinates) {
             return map_latlon(coordinates, x, y, zoom);
         },
-        'MultiPoint': function(x, y,zoom, coordinates) {
+        'MultiPoint': function(x, y, zoom, coordinates) {
               var converted = [];
               var pc = primitive_conversion['Point'];
               for(var i=0; i < coordinates.length; ++i) {
@@ -179,7 +179,7 @@ function Renderer() {
         'MultiPoint': function(ctx, coordinates) {
               var prender = primitive_render['Point'];
               for(var i=0; i < coordinates.length; ++i) {
-                  prender(ctx, zoom, coordinates[i]);
+                  prender(ctx, coordinates[i]);
               }
         },
         'Polygon': function(ctx, coordinates) {
@@ -241,6 +241,7 @@ function CanvasTileView(tile, shader) {
     canvas.width = this.tileSize.x;
     canvas.height = this.tileSize.y;
     this.ctx = canvas.getContext('2d');
+    this.canvas = canvas;
 
     var backCanvas = document.createElement('canvas');
     backCanvas.width = this.tileSize.x;
@@ -278,10 +279,12 @@ CanvasTileView.prototype.render = function() {
   this.profiler.start('render');
   var BACKBUFFER = true;
   if(BACKBUFFER) {
+      this.backCanvas.width = this.backCanvas.width;
       this.renderer.render(this.backCtx, this.tile.geometry(), this.tile.zoom, this.shader);
+      this.canvas.width = this.canvas.width;
       this.ctx.drawImage(this.backCanvas, 0, 0);
   } else {
-    this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, null);
+    this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, this.shader);
   }
 
   this.stats.rendering_time = this.profiler.end();

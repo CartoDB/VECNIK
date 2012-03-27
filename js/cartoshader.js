@@ -23,7 +23,7 @@ CartoShader.prototype.compile = function(shader) {
         }
     }
 
-    this.emit('changed');
+    this.emit('change');
 }
 
 CartoShader.prototype.apply = function(canvas_ctx, data, render_context) {
