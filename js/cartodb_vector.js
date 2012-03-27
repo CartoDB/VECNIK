@@ -9,7 +9,7 @@ Profiler.prototype.start = function(unit) {
 }
 Profiler.prototype.end= function() {
    var t = new Date().getTime() - this.t0;
-   console.log("PROFILE - " + this.unit + ":" + t);
+   //console.log("PROFILE - " + this.unit + ":" + t);
    return t;
 }
 //========================================
@@ -64,7 +64,10 @@ Tile.prototype.convert_geometry = function(geometry, zoom, x, y) {
         latlng.latitude  = ll[1];
         latlng.longitude = ll[0];
         self.stats.vertices++;
-        return prj.latLngToTilePoint(latlng, x, y, zoom);
+        var point =  prj.latLngToTilePoint(latlng, x, y, zoom);
+        //point.x = point.x >> 0;
+        //point.y = point.y >> 0;
+        return point;
     }
     var primitive_conversion = this.primitive_conversion = {
         'LineString': function(x, y, zoom, coordinates) {
@@ -264,10 +267,14 @@ CanvasTileView.prototype.render = function() {
   var ctx = this.ctx;
 
   this.profiler.start('render');
-  this.renderer.render(this.backCtx, this.tile.geometry(), this.tile.zoom, null);
-  this.ctx.drawImage(this.backCanvas, 0, 0);
+  var BACKBUFFER = true;
+  if(BACKBUFFER) {
+      this.renderer.render(this.backCtx, this.tile.geometry(), this.tile.zoom, null);
+      this.ctx.drawImage(this.backCanvas, 0, 0);
+  } else {
+    this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, null);
+  }
 
-  //this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, null);
   this.stats.rendering_time = this.profiler.end();
 }
 
