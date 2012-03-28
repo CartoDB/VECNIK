@@ -1,7 +1,7 @@
 
 describe('CartoShader', function() {
     it("should compile to canvas properties", function() {
-        var c = new CartoShader({
+        var c = new VECNIK.CartoShader({
             'point-color': '#FFF',
             'line-color': function(data) {
                 return data.color;

@@ -2,27 +2,34 @@
 <html>
 <head>
 <title>Modest Maps JS</title>
-<script type="text/javascript" src="../libs/modestmaps.js"></script>
+
 <script type="text/javascript" src="../js/core.js"></script>
-<script type="text/javascript" src="../js/cartodb.sql.js"></script>
 <script type="text/javascript" src="../js/mercator.js"></script>
-<script type="text/javascript" src="../js/cartodb_vector.js"></script>
-<script type="text/javascript" src="../js/provider.js"></script>
-<script type="text/javascript" src="../js/cartoshader.js"></script>
-<script type="text/javascript" src="../js/cartodb_vector.modestmaps.js"></script>
+<script type="text/javascript" src="../js/geometry.js"></script>
+<script type="text/javascript" src="../js/model.js"></script>
+<script type="text/javascript" src="../js/renderer.js"></script>
+<script type="text/javascript" src="../js/shader.js"></script>
+
+
+<script type="text/javascript" src="../js/cartodb.sql.js"></script>
+<script type="text/javascript" src="../js/cartodb.provider.js"></script>
 
 <script type="text/javascript" src="stats.js"></script>
 
 <!-- carto -->
 <script src='../libs/underscore.js' type='text/javascript'></script>
 <script src='../libs/carto.js' type='text/javascript'></script>
-<script src='../js/cartodb.carto.js' type='text/javascript'></script>
+
+<script type="text/javascript" src="../libs/modestmaps.js"></script>
+<script type="text/javascript" src="../js/vecnik.modestmaps.js"></script>
+
+<script type="text/javascript" src="../js/carto.js"></script>
 
 <script type="text/javascript">
     var map;
     function initMap() {
-        CartoDB.Carto.init(function(carto) {
-            CartoDB.Carto.compile(
+        VECNIK.Carto.init(function(carto) {
+            VECNIK.Carto.compile(
               "#world { line-width: 2; line-color: #f00; [TYPEY='test']{ line-width: 2; } [ZOOM = 0]{ line-width: 2; } }"
               , function() {});
         });
@@ -32,7 +39,7 @@
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
         var provider = new MM.TemplatedLayer(template, subdomains);
 
-        var dataSource = new CartoDBSQLAPI({
+        var dataSource = new VECNIK.CartoDB.API({
            user: 'viz2',
            //user: 'mapnik-tests',
            //table: 'countries_final',
@@ -45,7 +52,7 @@
            debug: true
         });
 
-        var shader = new CartoShader({
+        var shader = new VECNIK.CartoShader({
             'point-color': '#fff',
             'line-color': '#fff',
             'line-width': function(data) {
@@ -59,7 +66,7 @@
             }
         });
 
-        var vector_layer = new CanvasProvider(dataSource, shader);
+        var vector_layer = new VECNIK.MM.CanvasProvider(dataSource, shader);
         fg = new MM.Layer(vector_layer);
 
         map = new MM.Map(document.getElementById('map'), [provider, fg])
@@ -73,7 +80,7 @@
         var code = document.getElementById('code')
         var codeOld= '';
         var compileShader = _.debounce(function() {
-            CartoDB.Carto.compile(code.value , function(shaderData) {
+            VECNIK.Carto.compile(code.value , function(shaderData) {
                 if(shaderData) {
                   console.log(code.value);
                   shader.compile(shaderData);
