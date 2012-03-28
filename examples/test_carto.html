@@ -36,15 +36,20 @@
         var stat = new Stats();
         
         var template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png';
+        template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-light/{Z}/{X}/{Y}.png64';
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
         var provider = new MM.TemplatedLayer(template, subdomains);
 
         var dataSource = new VECNIK.CartoDB.API({
            user: 'viz2',
+           //user: 'staging',
            //user: 'mapnik-tests',
            //table: 'countries_final',
-           table: 'roads',
-           columns: ['type'], //do not include the_geom or cartodb_id, are implicit
+           //table: 'roads',
+           table: 'nyc_buildings',
+           //table: 'barcelona_osm_line',
+           //columns: ['type'], //do not include the_geom or cartodb_id, are implicit
+           //columns: ['highway'], //do not include the_geom or cartodb_id, are implicit
            ENABLE_CLIPPING: true,
            ENABLE_SIMPLIFY: true,
            ENABLE_FIXING: true,

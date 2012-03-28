@@ -107,6 +107,7 @@ var VECNIK = VECNIK || {};
 
       var sql = "select " + columns +" from " + table;
       sql += " WHERE the_geom && " + sql_env;
+      //sql += " LIMIT 100";
 
       console.log('-- SQL: ' + sql);
 

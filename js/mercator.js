@@ -2,6 +2,8 @@
 //========================================
 // Mercator projection
 //========================================
+//
+var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
@@ -126,4 +128,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports.Mercator = VECNIK.Mercator;
   module.exports.LatLng = VECNIK.LatLng;
   module.exports.Point = VECNIK.Point;
+}
+
+if (typeof self !== 'undefined') {
+  self.VECNIK = VECNIK;
 }

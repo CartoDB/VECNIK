@@ -59,18 +59,28 @@
   Renderer.prototype.render = function(ctx, primitives, zoom, shader) {
     var primitive_render = this.primitive_render;
     ctx.canvas.width = ctx.canvas.width;
+    var primitive_type;
     if(primitives.length) {
         for(var i = 0; i < primitives.length; ++i) {
-            var renderer = primitive_render[primitives[i].geometry.type];
-            if(renderer) {
+            var renderer = primitive_render[primitive_type=primitives[i].geometry.type];
+            var prim = primitives[i];
+            if(renderer && prim.geometry.projected) {
                 // render visible tile
                 var render_context = {
                     zoom: zoom,
                     id: i
                 };
-                if(shader)
-                  shader.apply(ctx, primitives[i].properties, render_context);
-                renderer(ctx, primitives[i].geometry.projected);
+                var is_active = true;
+                if(shader) {
+                  is_active = shader.needs_render(primitives[i].properties, render_context, primitive_type);
+                  if(is_active) {
+                    shader.reset(ctx, primitive_type);
+                    shader.apply(ctx, primitives[i].properties, render_context);
+                  }
+                }
+                if (is_active) {
+                  renderer(ctx, primitives[i].geometry.projected);
+                }
             }
         }
     }

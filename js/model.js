@@ -46,22 +46,41 @@
   }
 
   Tile.prototype.precache = function() {
+      var self = this;
       this.profiler.start('conversion_time');
       var primitives = this.data.features;
       var vertex_count = VECNIK.geometry_stats.vertices;
-      for(var i = 0; i < primitives.length; ++i) {
-          var p = primitives[i];
-          var converted = VECNIK.project_geometry(p.geometry, this.zoom, this.x, this.y);
-          if(converted !== null) {
-             p.geometry.projected = converted;
-          } else {
-             //console.log("problem converting geometries");
-          }
+      if(false && typeof Worker !== undefined) {
+        var worker = new Worker('../js/projector.worker.js');
+        var ready = 0;
+        worker.onmessage = function(ev) {
+              this.data.features = ev.data.primitives;
+              self.emit('geometry_ready');
+        };
+
+         worker.postMessage({
+              primitives: primitives,
+              zoom: this.zoom, 
+              x: this.x, 
+              y: this.y
+         });
+
+      } else {
+        for(var i = 0; i < primitives.length; ++i) {
+            var p = primitives[i];
+            var converted = VECNIK.project_geometry(p.geometry, this.zoom, this.x, this.y);
+            if(converted && converted.length !== 0) {
+               p.geometry.projected = converted;
+            } else {
+               delete p.geometry.coordinates;
+               //console.log("problem converting geometries");
+            }
+        }
+        this.emit('geometry_ready');
       }
       this.stats.vertices = VECNIK.geometry_stats.vertices - vertex_count;
       this.stats.primitive_count = primitives.length;
       this.stats.conversion_time = this.profiler.end();
-      this.emit('geometry_ready');
   }
 
 

@@ -3,6 +3,8 @@
 // geometry conversion
 //========================================
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
    var LatLng = VECNIK.LatLng;
@@ -87,3 +89,7 @@
 if (typeof module !== 'undefined' && module.exports) {
   module.exports.project_geometry = VECNIK.project_geometry;
 }
+if (typeof self !== 'undefined') {
+  self.VECNIK = VECNIK;
+}
+

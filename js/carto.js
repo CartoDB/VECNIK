@@ -30,7 +30,13 @@
       if(filter._val !== undefined) {
         val = filter._val.toString(true);
       }
-      return "data." + filter.key  + " " + op + " " + val;
+
+      var attrs = "data";
+      // zoom key is passed in different variable
+      if(filter.key === "zoom") {
+        attrs = "ctx";
+      }
+      return attrs + "." + filter.key  + " " + op + " " + val;
     }).join(" && ");
   }
 
@@ -64,7 +70,7 @@
 
   function createFn(ops) {
     var body = ops.join('\n');
-    return Function("data","var _value; " +  body + "; return _value; ");
+    return Function("data","ctx", "var _value = null; " +  body + "; return _value; ");
   }
 
   function toCartoShader(ruleset) {
