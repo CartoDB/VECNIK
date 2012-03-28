@@ -48,7 +48,7 @@
   Tile.prototype.precache = function() {
       this.profiler.start('conversion_time');
       var primitives = this.data.features;
-      this.stats.vertices = 0;
+      var vertex_count = VECNIK.geometry_stats.vertices;
       for(var i = 0; i < primitives.length; ++i) {
           var p = primitives[i];
           var converted = VECNIK.project_geometry(p.geometry, this.zoom, this.x, this.y);
@@ -58,6 +58,7 @@
              //console.log("problem converting geometries");
           }
       }
+      this.stats.vertices = VECNIK.geometry_stats.vertices - vertex_count;
       this.stats.primitive_count = primitives.length;
       this.stats.conversion_time = this.profiler.end();
       this.emit('geometry_ready');

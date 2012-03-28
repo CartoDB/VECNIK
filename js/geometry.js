@@ -80,7 +80,7 @@
    };
 
    VECNIK.project_geometry = project_geometry;
-   VECNIK.geoemtry_stats = stats;
+   VECNIK.geometry_stats = stats;
 
 })(VECNIK);
 
