@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Modest Maps JS</title>
+<title>NY</title>
 
 <script type="text/javascript" src="../js/core.js"></script>
 <script type="text/javascript" src="../js/settings.js"></script>
@@ -35,7 +35,6 @@
               "#world { line-width: 2; line-color: #f00; [TYPEY='test']{ line-width: 2; } [ZOOM = 0]{ line-width: 2; } }"
               , function() {});
         });
-        var stat = new Stats();
         
         var template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png';
         template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-light/{Z}/{X}/{Y}.png64';
@@ -107,7 +106,6 @@
         }
 
         compileShader(code.value);
-        document.body.appendChild(stat.el);
         var styles = [
          "polygon-fill: #415E9E;" ,
          "[num_stops_normalized > 1] {polygon-fill: #6581B5;}",
@@ -119,13 +117,16 @@
          "[num_stops_normalized > 30] {polygon-fill: #BC3939;}",
         ];
 
-        setTimeout(function() {
+        var button = document.getElementById('start_animation');
+        button.onclick = function() {
+            button.style.display = 'none';
             var i = 0;
             var inter = setInterval(function() {
               var c = styles.slice(0, i);
               c = c.join('\n');
               if(i == 8) {
                 clearInterval(inter);
+                button.style.display = 'block';
               }
               var cod = '#r {\n' + c + '\n}' ;
               code.value = cod
@@ -139,8 +140,9 @@
               });
 
             }, 1000);
+            return false;
 
-        }, 4000);
+        };
 
 }
         
@@ -150,6 +152,17 @@ html, body, #map {
   width: 100%; height: 100%;
   padding: 0;
   margin: 0;
+}
+.button {
+  position: absolute;
+  left: 30px;
+  top: 400px;
+  background-color: #AAA;
+  border-radius: 4px;
+  color: white;
+  text-decoration: none;
+  padding: 10px;
+  font: bold 16px Helvetica;
 }
 #livecode {
   position: absolute;
@@ -193,7 +206,15 @@ textarea {
    <textarea id="code">
 #r {
   polygon-fill: #415E9E;
+  [num_stops_normalized > 1] {polygon-fill: #6581B5;}
+  [num_stops_normalized > 2] {polygon-fill: #88A3CC;}
+  [num_stops_normalized > 5] {polygon-fill: #ACC6E3;}
+  [num_stops_normalized > 8] {polygon-fill: #F6BEB5;}
+  [num_stops_normalized > 15] {polygon-fill: #E3928C;}
+  [num_stops_normalized > 25] {polygon-fill: #CF6562;}
+  [num_stops_normalized > 30] {polygon-fill: #BC3939;}
 }
    </textarea>
+   <a href='#' class="button" id="start_animation">start animation</a>
 </body>
 </html>
