@@ -108,18 +108,26 @@
 
         compileShader(code.value);
         document.body.appendChild(stat.el);
+        var styles = [
+         "polygon-fill: #415E9E;" ,
+         "[num_stops_normalized > 1] {polygon-fill: #6581B5;}",
+         "[num_stops_normalized > 2] {polygon-fill: #88A3CC;}",
+         "[num_stops_normalized > 5] {polygon-fill: #ACC6E3;}",
+         "[num_stops_normalized > 8] {polygon-fill: #F6BEB5;}",
+         "[num_stops_normalized > 15] {polygon-fill: #E3928C;}",
+         "[num_stops_normalized > 25] {polygon-fill: #CF6562;}",
+         "[num_stops_normalized > 30] {polygon-fill: #BC3939;}",
+        ];
 
         setTimeout(function() {
-            var base = "polygon-fill: #000; [num_stops_normalized < 60] {\n   polygon-fill: #A22;\n}\n";
-
             var i = 0;
             var inter = setInterval(function() {
-              var c = 9 - i;
-              base += "[num_stops_normalized <" + (c*5) + "]{\n    polygon-fill: #" + c+ "22;\n}\n"
-              if(i == 8) {
+              var c = styles.slice(0, i);
+              c = c.join('\n');
+              if(i == 7) {
                 clearInterval(inter);
               }
-              var cod = '#r {' + base+ '}' ;
+              var cod = '#r {\n' + c + '\n}' ;
               code.value = cod
               ++i;
 
@@ -183,11 +191,8 @@ textarea {
   <!--<div id="livecode" class="highlight">-->
    </div>
    <textarea id="code">
-#roads {
-  polygon-fill: #300;
-  [num_stops_normalized > 40] {
-    polygon-fill: #F00;
-  }
+#r {
+  polygon-fill: #999;
 }
    </textarea>
 </body>
