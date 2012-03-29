@@ -35,7 +35,7 @@
                }
                ctx.closePath();
                ctx.fill();
-               ctx.stroke();
+               //ctx.stroke();
           },
           'MultiPolygon': function(ctx, coordinates) {
                 var prender = primitive_render['Polygon'];

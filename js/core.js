@@ -73,7 +73,13 @@ var VECNIK = VECNIK || {};
     };
 
     Model.prototype.get = function(attr, def) {
-      return (this.data && this.data[attr]) || def;
+      if(this.data) {
+        if(attr in this.data) {
+          return this.data[attr];
+        }
+        return def;
+      }
+      return def;
     };
 
     /**

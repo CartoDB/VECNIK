@@ -9,8 +9,9 @@
       'point-color': 'fillStyle',
       'line-color': 'strokeStyle',
       'line-width': 'lineWidth',
+      'line-opacity': 'globalAlpha',
       'polygon-fill': 'fillStyle',
-      'line-opacity': 'globalAlpha'
+      'polygon-opacity': 'globalAlpha'
   };
 
   function CartoShader(shader) {

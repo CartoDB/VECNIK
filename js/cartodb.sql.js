@@ -8,7 +8,12 @@ var VECNIK = VECNIK || {};
 
   var sql = function(projection, table, x, y, zoom, opts) {
 
-      var opts = opts || {};
+      opts = opts || {
+           ENABLE_CLIPPING: false,
+           ENABLE_SIMPLIFY: false,
+           ENABLE_FIXING: false,
+           ENABLE_SNAPPING: false
+      };
       var bbox = projection.tileBBox(x, y, zoom);
       var geom_column = '"the_geom"';
       var geom_column_orig = '"the_geom"';
@@ -35,7 +40,7 @@ var VECNIK = VECNIK || {};
       //console.log('-- TOLERANCE: ' + tolerance);
 
       // simplify
-      var ENABLE_SIMPLIFY = opts.ENABLE_SIMPLIFY || true;
+      var ENABLE_SIMPLIFY = opts.ENABLE_SIMPLIFY;
       if ( ENABLE_SIMPLIFY ) {
         geom_column = 'ST_Simplify(' + geom_column + ', ' + tolerance + ')';
         // may change type
@@ -44,7 +49,7 @@ var VECNIK = VECNIK || {};
       }
 
       // snap to a pixel grid 
-      var ENABLE_SNAPPING = opts.ENABLE_SNAPPING || true;
+      var ENABLE_SNAPPING = opts.ENABLE_SNAPPING;
       if ( ENABLE_SNAPPING ) {
         geom_column = 'ST_SnapToGrid(' + geom_column + ', '
                       + pixel_geo_maxsize + ')';
@@ -59,7 +64,7 @@ var VECNIK = VECNIK || {};
         + bbox[1].lng() + "," + bbox[1].lat() + ", 4326)";
 
       // clip
-      var ENABLE_CLIPPING = opts.ENABLE_CLIPPING || true;
+      var ENABLE_CLIPPING = opts.ENABLE_CLIPPING;
       if ( ENABLE_CLIPPING ) {
 
         // This is a slightly enlarged version of the query bounding box
@@ -74,7 +79,7 @@ var VECNIK = VECNIK || {};
             + ', ' + pixel_geo_maxsize + ')';
 
         // Make valid (both ST_Snap and ST_SnapToGrid and ST_Expand
-        var ENABLE_FIXING = opts.ENABLE_FIXING || true;
+        var ENABLE_FIXING = opts.ENABLE_FIXING;
         if ( ENABLE_FIXING ) {
           // NOTE: up to PostGIS-2.0.0 beta5 ST_MakeValid did not accept
           //       points nor GeometryCollection objects
