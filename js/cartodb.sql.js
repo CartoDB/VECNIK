@@ -17,7 +17,7 @@ var VECNIK = VECNIK || {};
       var tile_pixel_width = TILE_SIZE;
       var tile_pixel_height = TILE_SIZE;
 
-      console.log('-- ZOOM: ' + zoom);
+      //console.log('-- ZOOM: ' + zoom);
 
       var tile_geo_width = bbox[1].lng() - bbox[0].lng();
       var tile_geo_height = bbox[1].lat() - bbox[0].lat();
@@ -25,14 +25,14 @@ var VECNIK = VECNIK || {};
       var pixel_geo_width = tile_geo_width / tile_pixel_width;
       var pixel_geo_height = tile_geo_height / tile_pixel_height;
 
-      console.log('-- PIXEL_GEO_SIZE: '
-        + pixel_geo_width + ' x ' + pixel_geo_height);
+      //console.log('-- PIXEL_GEO_SIZE: '
+      //  + pixel_geo_width + ' x ' + pixel_geo_height);
 
       var pixel_geo_maxsize = Math.max(pixel_geo_width, pixel_geo_height);
-      console.log('-- MAX_SIZE: ' + pixel_geo_maxsize);
+      //console.log('-- MAX_SIZE: ' + pixel_geo_maxsize);
 
       var tolerance = pixel_geo_maxsize / 2;
-      console.log('-- TOLERANCE: ' + tolerance);
+      //console.log('-- TOLERANCE: ' + tolerance);
 
       // simplify
       var ENABLE_SIMPLIFY = opts.ENABLE_SIMPLIFY || true;
@@ -109,7 +109,7 @@ var VECNIK = VECNIK || {};
       sql += " WHERE the_geom && " + sql_env;
       //sql += " LIMIT 100";
 
-      console.log('-- SQL: ' + sql);
+      //console.log('-- SQL: ' + sql);
 
       return sql;
   };

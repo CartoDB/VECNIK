@@ -18,26 +18,26 @@
   }
 
   tree.Selector.prototype.toJS = function() {
+    var self = this;
     var opMap = {
       '=': '==='
     };
-    return _.map(this.filters, function(filter) {
-      var op = filter.op;
-      if(op in opMap) {
-        op = opMap[op];
-      }
-      var val = filter.val;
-      if(filter._val !== undefined) {
-        val = filter._val.toString(true);
-      }
+    var zoom = "(" + self.zoom + " & (1 << ctx.zoom))";
+    return [zoom].concat(
+      _.map(this.filters, function(filter) {
+        var op = filter.op;
+        if(op in opMap) {
+          op = opMap[op];
+        }
+        var val = filter.val;
+        if(filter._val !== undefined) {
+          val = filter._val.toString(true);
+        }
 
-      var attrs = "data";
-      // zoom key is passed in different variable
-      if(filter.key === "zoom") {
-        attrs = "ctx";
-      }
-      return attrs + "." + filter.key  + " " + op + " " + val;
-    }).join(" && ");
+        var attrs = "data";
+        return attrs + "." + filter.key  + " " + op + " " + val;
+      })
+    ).join(" && ");
   }
 
   tree.Ruleset.prototype.toJS = function() {
@@ -76,9 +76,18 @@
   function toCartoShader(ruleset) {
     var shaderAttrs = {};
     shaderAttrs = ruleset.rules[0].toJS();
-    for(var attr in shaderAttrs) {
-      shaderAttrs[attr] = createFn(shaderAttrs[attr]);
+    try {
+      for(var attr in shaderAttrs) {
+        shaderAttrs[attr] = createFn(shaderAttrs[attr]);
+      }
     }
+    catch(e) {
+      console.log("error creating shader");
+      console.log(e);
+      return null;
+    }
+
+
     return shaderAttrs;
   }
 

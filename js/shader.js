@@ -53,7 +53,8 @@
     'LineString': {
       'strokeStyle': '#000',
       'lineWidth': 1,
-      'globalAlpha': 1.0
+      'globalAlpha': 1.0,
+      'lineCap': 'round'
     },
     'Polygon': {
       'strokeStyle': '#000',

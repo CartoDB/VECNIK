@@ -1,8 +1,6 @@
 
 //========================================
 // CartoDB data provider 
-//
-// base classes
 //========================================
 
 (function(VECNIK) {
@@ -11,11 +9,17 @@
       this.projection = new VECNIK.MercatorProjection();
       this.opts = opts;
       this.base_url = 'http://' + opts.user + ".cartodb.com/api/v2/sql";
+
+      //set defaults
+      this.opts.ENABLE_SIMPLIFY = VECNIK.settings.get('ENABLE_SIMPLIFY');
+      this.opts.ENABLE_SNAPPING = VECNIK.settings.get('ENABLE_SNAPPING');
+      this.opts.ENABLE_CLIPPING = VECNIK.settings.get('ENABLE_CLIPPING');
+      this.opts.ENABLE_FIXING = VECNIK.settings.get('ENABLE_FIXING');
   }
 
   CartoDBSQLAPI.prototype.debug = function(w) {
     if(this.opts.debug) {
-      console.log(w);
+      //console.log(w);
     }
   }
 

@@ -55,14 +55,35 @@ var VECNIK = VECNIK || {};
     //========================================
 
     function Model() {
-      this.data = null; // serializable data
+      //this.data = {}; // serializable data
     }
 
     Model.prototype = new Event();
 
-    Model.prototype.set = function(data) {
-      this.data = data;
-      this.emit('change', data);
+    Model.prototype.set = function(data, silent) {
+      this.data = this.data || {};
+      for(var v in data) {
+        if(data.hasOwnProperty(v)) {
+          this.data[v] = data[v];
+        }
+      }
+      if(!silent) {
+        this.emit('change', this.data);
+      }
+    };
+
+    Model.prototype.get = function(attr, def) {
+      return (this.data && this.data[attr]) || def;
+    };
+
+    /**
+     * delete the attribute
+     */
+    Model.prototype.unset = function(attr, silent) {
+      delete this.data[attr];
+      if(!silent) {
+        this.emit('change', this.data);
+      }
     };
 
     Model.prototype.destroy = function() {

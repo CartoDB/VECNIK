@@ -40,7 +40,7 @@ var VECNIK = VECNIK || {};
   }
 
   CanvasProvider.prototype.releaseTile = function(coordinates) { 
-    //this.tiles.destroy(coordinates);
+    this.tiles.destroy(coordinates);
   };
 
   MM.extend(CanvasProvider, MM.MapProvider);

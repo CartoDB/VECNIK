@@ -56,15 +56,16 @@
       };
   }
 
-  Renderer.prototype.render = function(ctx, primitives, zoom, shader) {
+  Renderer.prototype.render = function(ctx, geometry, zoom, shader) {
     var primitive_render = this.primitive_render;
     ctx.canvas.width = ctx.canvas.width;
     var primitive_type;
-    if(primitives.length) {
-        for(var i = 0; i < primitives.length; ++i) {
-            var renderer = primitive_render[primitive_type=primitives[i].geometry.type];
-            var prim = primitives[i];
-            if(renderer && prim.geometry.projected) {
+    if(geometry && geometry.length) {
+        for(var i = 0; i < geometry.length; ++i) {
+            var geo = geometry[i];
+            var primitive_type = geo.type;
+            var renderer = primitive_render[primitive_type];
+            if(renderer) {
                 // render visible tile
                 var render_context = {
                     zoom: zoom,
@@ -72,14 +73,14 @@
                 };
                 var is_active = true;
                 if(shader) {
-                  is_active = shader.needs_render(primitives[i].properties, render_context, primitive_type);
+                  is_active = shader.needs_render(geo.metadata, render_context, primitive_type);
                   if(is_active) {
                     shader.reset(ctx, primitive_type);
-                    shader.apply(ctx, primitives[i].properties, render_context);
+                    shader.apply(ctx, geo.metadata, render_context);
                   }
                 }
                 if (is_active) {
-                  renderer(ctx, primitives[i].geometry.projected);
+                  renderer(ctx, geo.vertexBuffer);
                 }
             }
         }
