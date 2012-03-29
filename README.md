@@ -1,10 +1,9 @@
-
 VECNIK
 ======
 
 this is a small library to render geojson on the client side using HTML5.
 
-** demo **
+### demo 
 
 Start a http server:
 
@@ -13,7 +12,8 @@ Start a http server:
 Point your browser to http://localhost:8000/examples/test_carto.html
 
 
-** credits **
+### credits 
+
 - modestmaps team
 - developmentseed for the carto parser
 
