@@ -1,6 +1,7 @@
+![Venik with OSM London](https://github.com/Vizzuality/VECNIK/raw/master/img/veknik_osm_london.png)
+
 VECNIK
 ======
-
 Veknik is a JS library that render features from [CartoDB](http://cartodb.com/) using HTML5 on top of [Modestmaps](http://modestmaps.com/). It includes an implementation of the [Carto](https://github.com/mapbox/carto) language for dynamically styling features using its CSS language.
 
 This is a prototype implementation to showcase the use of Carto for rendering maps on the client, not on the server. The library retrieves  vector data from CartoDB using the [SQL API](http://developers.cartodb.com/api/sql.html) on geojson format.
