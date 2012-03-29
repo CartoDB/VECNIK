@@ -21,7 +21,14 @@ Check out this online examples for OpenStreetMap data:
 Download the project. It is all JS for the client, but you will need to run it from an http server, file:// would fail. It can make use of Webworkers to speed up rendering and parsing, but it is now disabled because of problems on Google Chrome.
 
 
+### What is this interesting for?
+
+Having the browser render the style of the geospatial data allows for a new world of possibilities in terms of interactivity and display. Think for example you can animate render based on attributes without having to reload new tiles. At the same time the geometries are on the browser which enables things like hover over features, highlights, modifications. More examples will come to demonstrate the power of using Carto on the client.
+
+
 ### Credits 
+
+This project is only possible because of lot of other people releasing their source code as Open Source, particularly the Mapbox team who did a great work on Carto.
 
 - [Modestmaps](http://modestmaps.com/)
 - [Carto parser from developmentseed](https://github.com/mapbox/carto/tree/browser) 
