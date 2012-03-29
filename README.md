@@ -23,8 +23,8 @@ Download the project. It is all JS for the client, but you will need to run it f
 
 ### Credits 
 
-- modestmaps team
-- developmentseed for the carto parser
+- [Modestmaps](http://modestmaps.com/)
+- [Carto parser from developmentseed](https://github.com/mapbox/carto/tree/browser) 
 
 
 
