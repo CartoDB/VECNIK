@@ -15,6 +15,7 @@ Check out this online examples for OpenStreetMap data:
 [London roads from OpenStreetmap](http://vizzuality.github.com/VECNIK/examples/test_carto.html#14/51.4942/-0.1671)
 
 [Police stops in NY](http://vizzuality.github.com/VECNIK/examples/test_carto.html#14/51.4942/-0.1671)
+![NYC districts](https://github.com/Vizzuality/VECNIK/raw/master/img/nyc_districts.png)
 
 
 ### How to run it
