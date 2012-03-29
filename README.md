@@ -33,7 +33,7 @@ Having the browser render the style of the geospatial data allows for a new worl
 This project is only possible because of lot of other people releasing their source code as Open Source, particularly the Mapbox team who did a great work on Carto.
 
 - [Modestmaps](http://modestmaps.com/)
-- [Carto parser from developmentseed](https://github.com/mapbox/carto/tree/browser) 
+- [Carto parser from Mapbox](https://github.com/mapbox/carto/tree/browser) 
 
 
 
