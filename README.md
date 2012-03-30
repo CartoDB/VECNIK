@@ -12,7 +12,7 @@ This is a prototype implementation to showcase the use of Carto for rendering ma
 
 Check out this online examples for OpenStreetMap data:
 
-[London roads from OpenStreetmap](http://vizzuality.github.com/VECNIK/examples/test_carto.html#14/51.4942/-0.1671)
+[London roads from OpenStreetmap](http://vizzuality.github.com/VECNIK/examples/osm_london.html#14/51.4942/-0.1671)
 
 [Police stops in NY](http://vizzuality.github.com/VECNIK/examples/ny_districts_animated.html#12/40.6697/-73.9522)
 ![NYC districts](https://github.com/Vizzuality/VECNIK/raw/master/img/nyc_districts.png)
