@@ -90,7 +90,7 @@
   //========================================
   // Canvas tile view 
   //========================================
-  function CanvasTileView(tile, shader) {
+  function CanvasTileView(tile, shader, renderer) {
       this.tileSize = new VECNIK.Point(256, 256);
       var canvas = document.createElement('canvas');
       canvas.width = this.tileSize.x;
@@ -117,7 +117,7 @@
       if(shader) {
           shader.on('change', render);
       }
-      this.renderer = new Renderer();
+      this.renderer = renderer || new Renderer();
 
       this.profiler = new VECNIK.Profiler('tile_render');
       this.stats = {
