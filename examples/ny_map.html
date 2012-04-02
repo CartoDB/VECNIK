@@ -28,7 +28,7 @@
 
 <script type="text/javascript">
     function SketchRender() {
-      RND_FACTOR = 2;
+      RND_FACTOR = 1;
       rnd = function() { return RND_FACTOR*( 2*Math.random() -1) ;}
 
       var img = new Image();
@@ -53,14 +53,14 @@
 
       var primitive_render = this.primitive_render = {
           'Polygon': function(ctx, coordinates) {
-               var c = coordinates[0];
+               var c = coordinates;
                var xmin, xmax,ymin, ymax;
                xmin = xmax = c[0].x;
                ymin = ymax = c[0].y;
                //ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
                for(var i=1; i < c.length; ++i) {
                  ctx.shadowBlur = 10;
-                 ctx.shadowColor = "rgba(150, 0, 0, 1)";
+                 ctx.shadowColor = "rgba(150, 0, 0, 0.4)";
                   sketchLine(ctx, c[i-1], c[i]);
                   var p0 = c[i-1];
                   var p = c[i];
@@ -84,18 +84,12 @@
           'MultiPolygon': function(ctx, coordinates) {
                 var prender = primitive_render['Polygon'];
                 for(var i=0; i < coordinates.length; ++i) {
-                    prender(ctx, coordinates[i]);
+                    prender(ctx, coordinates[i][0]);
                 }
           },
           'LineString': function(ctx, coordinates) {
-                ctx.beginPath();
-                var p = coordinates[0];
-                ctx.moveTo(p.x, p.y);
-                for(var i=0; i < coordinates.length; ++i) {
-                  p = coordinates[i];
-                  ctx.lineTo(p.x, p.y);
-               }
-               ctx.stroke();
+                var p = primitive_render['Polygon'];
+                p(ctx, coordinates);
           }
       };
 
@@ -131,9 +125,9 @@
 
         var shader = new VECNIK.CartoShader({
             'point-color': '#fff',
-            'line-color': '#fff',
+            'line-color': '#F00',
             'line-width': function(data) {
-                return '1';
+                return '3';
             },
             'polygon-fill': function(data) { 
                 return "rgba(200, 200, 200, 0.8)";
