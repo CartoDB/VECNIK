@@ -41,7 +41,7 @@
            dy *= 0.15;
 
         for(var i = 0; i < 3; ++i) {
-           ctx.strokeStyle = "rgba(55,0,0, " + (0.01 + 0.3*Math.random()) + ")";
+           ctx.strokeStyle = "rgba(55,0,130, " + (0.01 + 0.3*Math.random()) + ")";
            ctx.beginPath();
            ctx.lineWidth = 0.5*(1 + (3-i)) ;//0.3 + rnd();
            ctx.moveTo(p0.x - dx + rnd(), p0.y - dy + rnd());
@@ -60,7 +60,7 @@
                //ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
                for(var i=1; i < c.length; ++i) {
                  ctx.shadowBlur = 10;
-                 ctx.shadowColor = "rgba(150, 0, 0, 0.4)";
+                 ctx.shadowColor = "rgba(0, 0, 180, 0.6)";
                   sketchLine(ctx, c[i-1], c[i]);
                   var p0 = c[i-1];
                   var p = c[i];
