@@ -125,7 +125,7 @@ var VECNIK = VECNIK || {};
 })(VECNIK);
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports.Mercator = VECNIK.Mercator;
+  module.exports.MercatorProjection = VECNIK.MercatorProjection;
   module.exports.LatLng = VECNIK.LatLng;
   module.exports.Point = VECNIK.Point;
 }

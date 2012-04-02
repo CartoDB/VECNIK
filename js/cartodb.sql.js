@@ -125,6 +125,6 @@ var VECNIK = VECNIK || {};
 })(VECNIK);
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports.CartoDBSQL = VECNIK.CartoDBSQL;
+  module.exports.CartoDBSQL = VECNIK.CartoDB.SQL;
 }
 
