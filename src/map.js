@@ -64,6 +64,12 @@ vecnik.layer = function(size) {
     return canvas;
   }
 
+  layer.renderer = function(r) {
+    if(!arguments.length) return _renderer;
+    _renderer = r;
+    return layer;
+  }
+
   layer.translate = function(x, y) {
     translate.x = x;
     translate.y = y;
