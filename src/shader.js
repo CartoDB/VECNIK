@@ -2,7 +2,7 @@
 // shader
 //========================================
 
-function shader(sh) {
+vecnik.shader = function(sh) {
 
   var mapper = {
       'point-color': 'fillStyle',
@@ -15,20 +15,20 @@ function shader(sh) {
 
 
   var compiled = {};
-  var shader_src = null;
+  var _shader_src = null;
 
   function _shader(canvas_ctx, data, render_context) {
     _shader.apply(canvas_ctx, data, render_context);
   }
 
-  extend(layer, vecnik.Event);
+  //extend(_shader, vecnik.Event);
 
 
   _shader.compile = function(shader) {
       if(typeof shader === 'string') {
           shader = eval("(function() { return " + shader +"; })()");
       }
-      this.shader_src = shader;
+      _shader_src = shader;
       for(var attr in shader) {
         var c = mapper[attr];
         if(c) {
@@ -36,7 +36,8 @@ function shader(sh) {
         }
       }
 
-      _shader.emit('change');
+      //_shader.emit('compiled');
+      return _shader;
   };
 
   var needed_settings = {
@@ -46,7 +47,8 @@ function shader(sh) {
       'line-opacity'
     ],
     'Polygon': [ 
-      'polygon-fill'
+      'polygon-fill',
+      'line-width'
     ],
     'MultiPolygon': [ 
       'polygon-fill'
@@ -72,23 +74,22 @@ function shader(sh) {
   };
 
   _shader.needs_render = function(data, render_context, primitive_type) {
-      var variables = needed_settings[primitive_type];
-      var shader = compiled;
-      for(var attr in variables) {
-        var style_attr = variables[attr];
-        var attr_present = shader_src[style_attr];
-        if(attr_present !== undefined) {
-          var fn = shader[mapper[style_attr]];
-          if(typeof fn === 'function') {
-            fn = fn(data, render_context);
-          } 
-          if(fn !== null && fn !== undefined) {
-            return true;
-          }
+    var variables = needed_settings[primitive_type];
+    var shader = compiled;
+    for(var attr in variables) {
+      var style_attr = variables[attr];
+      var attr_present = _shader_src[style_attr];
+      if(attr_present !== undefined) {
+        var fn = shader[mapper[style_attr]];
+        if(typeof fn === 'function') {
+          fn = fn(data, render_context);
         } 
-      }
-      return false;
-    
+        if(fn !== null && fn !== undefined) {
+          return true;
+        }
+      } 
+    }
+    return false;
   }
 
   _shader.reset = function(ctx, primitive_type) {
@@ -99,7 +100,7 @@ function shader(sh) {
   }
 
   _shader.apply = function(canvas_ctx, data, render_context) {
-    var shader = this.compiled;
+    var shader = compiled;
     for(var attr in shader) {
         var fn = shader[attr];
         if(typeof fn === 'function') {
@@ -111,8 +112,16 @@ function shader(sh) {
     }
   };
 
-  return _shader;
+  _shader.stroke = function() {
+      return _shader_src['line-width'] != undefined;
+  }
+  
+  _shader.fill = function() {
+      return _shader_src['polygon-fill'] != undefined;
+  }
 
   _shader.compile(sh)
+
+  return _shader;
 
 }

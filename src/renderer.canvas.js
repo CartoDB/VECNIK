@@ -38,7 +38,7 @@ vecnik.renderer = function(ctx) {
         _ctx.lineTo(x[i], y[i]);
       }
       _ctx.closePath();
-      _ctx.fill();
+      //_ctx.fill();
     },
 
     LineString: function(x, y) {
@@ -47,7 +47,7 @@ vecnik.renderer = function(ctx) {
       for(var i = 0, len = x.length; i < len; ++i) {
         _ctx.lineTo(x[i], y[i]);
       }
-      _ctx.stroke();
+      //_ctx.stroke();
     }
   };
 
@@ -68,15 +68,21 @@ vecnik.renderer = function(ctx) {
       var renderer = _primitive_render[primitive_type];
       if(renderer) {
           var is_active = true;
-          /*if(_shader) {
-            is_active = _shader.needs_render(geo.metadata(), render_context, primitive_type);
+          if(_shader) {
+            is_active = _shader.needs_render(geo.metadata(), _ctx, primitive_type);
             if(is_active) {
               _shader.reset(ctx, primitive_type);
-              _shader.apply(ctx, geo.metadata, render_context);
+              _shader.apply(ctx, geo.metadata(), _ctx);
             }
-          }*/
+          }
           if (is_active) {
             renderer(geo.x(), geo.y());
+            if(_shader.stroke()) {
+              _ctx.stroke();
+            }
+            if(_shader.fill()) {
+              _ctx.fill();
+            }
           }
       }
     } else {

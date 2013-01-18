@@ -88,9 +88,13 @@ vecnik.layer = function(size) {
   layer.render = function() {
     layer.clear();
     ctx.translate(size.x>>1, size.y>>1);
-    ctx.scale(scale.x, scale.y);
-    ctx.translate(translate.x, translate.y);
+    //ctx.scale(scale.x, scale.y);
+    //ctx.translate(translate.x, translate.y);
     this.each(function(geo) {
+      var m = geo.matrix();
+      m.scale(scale.x, scale.y)
+        .translate(translate.x, translate.y);
+      geo.matrix(m);
       _renderer(geo);
     });
     /*
@@ -142,10 +146,18 @@ vecnik.map = function(_el) {
         y = p.pageY;
     } else {
       var s = 1.0/Math.pow(2, zoom);
-      target_center.x = -s*(e.offsetX - (width/2))  + center.x;
-      target_center.y = -s*(e.offsetY - (height/2)) + center.y;
+      target_center.x = -s*(e.clientX - (width/2))  + center.x;
+      target_center.y = -s*(e.clientY - (height/2)) + center.y;
     }
     vecnik.timer(map);
+  }
+
+  el.onmousewheel = function(e) {
+    if(e.wheelDeltaY > 0) {
+      map.zoom(map.zoom() + 0.3);
+    } else {
+      map.zoom(map.zoom() - 0.3);
+    }
   }
 
   drag.on('move', function(dx, dy) {
@@ -165,8 +177,10 @@ vecnik.map = function(_el) {
   }
 
   map.zoom = function(z) {
+    if(!arguments.length) return zoom;
     target_zoom = z;
     vecnik.timer(map);
+    return map;
   }
 
   map.addLayer = function(layer) {

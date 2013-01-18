@@ -60,3 +60,48 @@ vecnik.extend(vecnik.vec2, {
   vfn: vfn,
   normal: normal
 });
+
+
+function mat2(m) {
+  m = m || [ 1, 0, 0, 0 , 1, 0, 0, 0, 1 ];
+  this._m = new Float32Array(3*3)
+  for(var i = 0; i < 3*3; ++i) {
+    this._m[i] = m[i];
+  }
+}
+
+
+mat2.prototype = {
+
+  identity: function() {
+    m = [ 1, 0, 0, 0 , 1, 0, 0, 0, 1 ];
+    for(var i = 0; i < 3*3; ++i) {
+      this._m[i] = m[i];
+    }
+  },
+
+  set: function(i, j, v) {
+    this._m[j*3 + i] = v;
+    return this;
+  },
+
+  get: function(i, j) {
+    return this._m[j*3 + i];
+  },
+
+  translate: function(sx, sy) {
+    return this
+      .set(0, 2, sx)
+      .set(1, 2,  sy);
+  },
+
+  scale: function(sx, sy) {
+    return this
+      .set(0, 0, sx)
+      .set(1, 1, sy);
+  }
+}
+
+
+
+

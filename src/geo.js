@@ -1,7 +1,8 @@
 
 vecnik.geo = function() {
 
-  var _x, _y, _type, _transform;
+  var _x, _y, _xt, _yt, _type, _transform;
+  var _matrix = new mat2();
 
   // identity
   _transform = function(v) { return v; }
@@ -12,6 +13,8 @@ vecnik.geo = function() {
   function alloc(len) {
     _x = new Float32Array(len)
     _y = new Float32Array(len)
+    _xt = new Float32Array(len)
+    _yt = new Float32Array(len)
   }
 
   function _map(coordinates) {
@@ -24,12 +27,30 @@ vecnik.geo = function() {
     }
   };
 
+  geo.matrix = function(m) {
+    if(!arguments.length) return _matrix;
+    _matrix = m;
+    this.each(function(g) {
+      //todo multiply
+      g.matrix(m);
+    });
+    return geo;
+  }
+
   geo.x = function() {
-    return _x;
+    var _m = _matrix._m;
+    for(var i = 0, len = _x.length; i < len; ++i) {
+      _xt[i] = _m[0]*_x[i] + _m[6];
+    }
+    return _xt;
   }
 
   geo.y = function() {
-    return _y;
+    var _m = _matrix._m;
+    for(var i = 0, len = _y.length; i < len; ++i) {
+      _yt[i] = _m[1*3 + 1]*_y[i] + _m[7];
+    }
+    return _yt;
   }
 
   var conversion = {
@@ -81,6 +102,10 @@ vecnik.geo = function() {
     if(!arguments.length) return _type;
     _type = t;
     return geo;
+  }
+
+  geo.metadata = function() {
+    return _metadata;
   }
 
   extend(geo, vecnik.Tree);
