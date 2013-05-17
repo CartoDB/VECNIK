@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Modest Maps JS</title>
+<script type="text/javascript" src="src/core.js"></script>
+<script src="src/math.js"></script>
+<script src="src/vec2.js"></script>
+<script src="src/mercator.js"></script>
+<script type="text/javascript" src="src/map.js"></script>
+<script type="text/javascript" src="src/geo.js"></script>
+<script type="text/javascript" src="src/renderer.canvas.js"></script>
+<script type="text/javascript" src="src/shader.js"></script>
+<script type="text/javascript">
+    var map;
+    function initMap() {
+      var shader = new vecnik.shader({
+          'point-color': '#fff',
+          'line-color': '#red',
+          'line-width': 1,
+          /*function(data) {
+            return 1;
+          },*/
+          /*'polygon-fill': function(data) { 
+              return "rgba(200, 200, 200, 0.8)";
+          }*/
+      });
+      var mercator = vecnik.mercator();
+      var map = vecnik.map(document.getElementById('map'));
+      var layer = vecnik.layer(map.size());
+      map.addLayer(layer);
+      layer.renderer().shader(shader);
+      //vecnik.getJSON('https://javi.cartodb.com/api/v2/sql?q=select%20*%20from%20ecan%20limit%20100&format=geojson', function(data) {
+      vecnik.getJSON('http://development.localhost.lan:8080/api/v1/sql?q=select%20*%20from%20ecan%20limit%20100&format=geojson', function(data) {
+          console.log(data);
+          g = vecnik.geo()
+            .transform(mercator)
+            .parseGeoJSON(data);
+          map.children()[0].add(g);
+      });
+    }
+</script>
+<style>
+html, body, #map {
+  padding: 0;
+  margin: 0;
+  width: 100%; height: 100%;
+  text-align:center;
+  margin: 0 auto;
+  overflow:hidden;
+
+}
+#map {
+  background-color: #222;
+  width: 100%;
+  height: 100%;
+}
+</style>
+</head>
+<body onload="initMap()">
+  <div id="map"></div>
+</body>
+</html>
