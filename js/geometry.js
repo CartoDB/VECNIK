@@ -8,9 +8,8 @@ var VECNIK = VECNIK || {};
 (function(VECNIK) {
 
    var LatLng = VECNIK.LatLng;
-   var Point = VECNIK.Point;
 
-   //stats 
+   //stats
    var stats = {
       vertices: 0
    };

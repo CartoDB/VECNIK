@@ -62,7 +62,6 @@
                  ctx.shadowBlur = 10;
                  ctx.shadowColor = "rgba(150, 0, 0, 0.4)";
                   sketchLine(ctx, c[i-1], c[i]);
-                  var p0 = c[i-1];
                   var p = c[i];
                   xmin = Math.min(xmin, p.x);
                   xmax = Math.max(xmax, p.x);
@@ -73,11 +72,11 @@
                /*
                var centerx = (xmax - xmin)/2;
                var centery = (ymax - ymin)/2;
-               var radgrad = ctx.createRadialGradient(centerx, centery,0, centerx, centery, 0.9*Math.max(xmax - xmin, ymax - ymin));  
+               var radgrad = ctx.createRadialGradient(centerx, centery,0, centerx, centery, 0.9*Math.max(xmax - xmin, ymax - ymin));
                radgrad.addColorStop(0, 'rgba(1,159,98,0.2)')
                radgrad.addColorStop(0.9, 'rgba(1,159,98,0.2)')
                radgrad.addColorStop(1, 'rgba(1,159,98,0)')
-               ctx.fillStyle = radgrad;  
+               ctx.fillStyle = radgrad;
                */
 
           },
@@ -103,18 +102,17 @@
               "#world { line-width: 2; line-color: #f00; [TYPEY='test']{ line-width: 2; } [ZOOM = 0]{ line-width: 2; } }"
               , function() {});
         });
-        var stat = new Stats();
-        
+        new Stats();
 
         var template = '../img/pt3.png'
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
         var provider = new MM.TemplatedLayer(template, subdomains);
 
         VECNIK.settings.set({
-           ENABLE_CLIPPING: true, 
+           ENABLE_CLIPPING: true,
            ENABLE_SIMPLIFY: true,
            ENABLE_FIXING: true,
-           ENABLE_SNAPPING: true, 
+           ENABLE_SNAPPING: true
         });
         var dataSource = new VECNIK.CartoDB.API({
            user: 'viz2',
@@ -129,7 +127,7 @@
             'line-width': function(data) {
                 return '3';
             },
-            'polygon-fill': function(data) { 
+            'polygon-fill': function(data) {
                 return "rgba(200, 200, 200, 0.8)";
             }
         });
@@ -138,13 +136,12 @@
         fg = new MM.Layer(vector_layer);
 
         map = new MM.Map(document.getElementById('map'), [provider,  fg])
-        
+
         if(!location.hash) {
-          
+
           map.setCenterZoom(new MM.Location(40.735291,-73.990731), 15);
         }
-        var hash = new MM.Hash(map);
-
+        new MM.Hash(map);
     }
 </script>
 <style>
@@ -190,7 +187,6 @@ textarea {
 </head>
    <body onload="initMap()">
    <div id="map"></div>
-  <!--<div id="livecode" class="highlight">-->
-   </div>
+  <!--<div id="livecode" class="highlight"></div>-->
 </body>
 </html>

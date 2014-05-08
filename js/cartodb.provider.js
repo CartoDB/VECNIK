@@ -1,6 +1,6 @@
 
 //========================================
-// CartoDB data provider 
+// CartoDB data provider
 //========================================
 
 (function(VECNIK) {
@@ -24,7 +24,6 @@
   }
 
   CartoDBSQLAPI.prototype._sql_url = function(sql) {
-      var self = this;
       this.debug(sql);
       return this.base_url  + "?q=" + encodeURIComponent(sql) + "&format=geojson&dp=6";
   }
@@ -42,7 +41,7 @@
       var sql_url = this._sql_url(sql);
       return sql_url;
   }
-  
+
   VECNIK.CartoDB = VECNIK.CartoDB || {};
   VECNIK.CartoDB.API = CartoDBSQLAPI;
 

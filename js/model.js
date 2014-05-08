@@ -5,24 +5,26 @@
 (function(VECNIK) {
 
   // utility
-  function Profiler(name){
+  function Profiler() {
     this.t0 = 0;
     this.unit = '';
   }
+
   Profiler.prototype.start = function(unit) {
     this.t0 = new Date().getTime();
     this.unit =  unit || '';
-  }
-  Profiler.prototype.end= function() {
+  };
+
+  Profiler.prototype.end = function() {
      var t = new Date().getTime() - this.t0;
      //console.log("PROFILE - " + this.unit + ":" + t);
      return t;
-  }
+  };
 
   //========================================
-  // tile model 
+  // tile model
   //========================================
-  function Tile(x, y, zoom) { 
+  function Tile(x, y, zoom) {
       this.x = x;
       this.y = y;
       this.zoom = zoom;
@@ -39,11 +41,11 @@
 
   Tile.prototype.key = function() {
       return [this.x, this.y, this.zoom].join('-');
-  }
+  };
 
   Tile.prototype.geometry = function() {
       return this.get('geometry');
-  }
+  };
 
   Tile.prototype.precache = function() {
       var self = this;
@@ -60,8 +62,8 @@
         };
         worker.postMessage({
               primitives: primitives,
-              zoom: this.zoom, 
-              x: this.x, 
+              zoom: this.zoom,
+              x: this.x,
               y: this.y
         });
 
@@ -88,7 +90,7 @@
       this.stats.vertices = VECNIK.geometry_stats.vertices - vertex_count;
       this.stats.primitive_count = primitives.length;
       this.stats.conversion_time = this.profiler.end();
-  }
+  };
 
 
   //========================================
@@ -100,28 +102,28 @@
     this.dataProvider = dataProvider;
   }
 
-  TileManager.prototype.tileIndex= function(coordinates) {
+  TileManager.prototype.tileIndex = function(coordinates) {
       return coordinates.toKey();
-  }
+  };
 
   TileManager.prototype.get = function(coordinates) {
     return this.tiles[this.tileIndex(coordinates)];
-  }
+  };
 
-  TileManager.prototype.destroy= function(coordinates) {
+  TileManager.prototype.destroy = function(coordinates) {
     var tile = this.tiles[this.tileIndex(coordinates)];
     if(tile) {
       tile.destroy();
       //console.log("removing " + this.tileIndex(coordinates));
       delete this.tiles[this.tileIndex(coordinates)];
     }
-  }
+  };
 
   TileManager.prototype.add = function(coordinates) {
     //console.log("adding" + this.tileIndex(coordinates));
     var tile = this.tiles[this.tileIndex(coordinates)] = new Tile(
-        coordinates.column, 
-        coordinates.row, 
+        coordinates.column,
+        coordinates.row,
         coordinates.zoom
     );
 
@@ -129,7 +131,7 @@
         tile.set(data);
     });
     return tile;
-  }
+  };
 
   VECNIK.Tile = Tile;
   VECNIK.TileManager = TileManager;
@@ -141,5 +143,3 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports.Tile = VECNIK.Tile;
   module.exports.TileManager = VECNIK.TileManager;
 }
-
-

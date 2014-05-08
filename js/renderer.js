@@ -1,11 +1,10 @@
 //========================================
-// vecnik views 
+// vecnik views
 //========================================
 
 (function(VECNIK) {
 
   function Renderer() {
-      var self = this;
       var primitive_render = this.primitive_render = {
           'Point': function(ctx, coordinates) {
                     ctx.save();
@@ -63,7 +62,7 @@
     if(geometry && geometry.length) {
         for(var i = 0; i < geometry.length; ++i) {
             var geo = geometry[i];
-            var primitive_type = geo.type;
+            primitive_type = geo.type;
             var renderer = primitive_render[primitive_type];
             if(renderer) {
                 // render visible tile
@@ -88,7 +87,7 @@
   };
 
   //========================================
-  // Canvas tile view 
+  // Canvas tile view
   //========================================
   function CanvasTileView(tile, shader, renderer) {
       this.tileSize = new VECNIK.Point(256, 256);
