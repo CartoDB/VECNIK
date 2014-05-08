@@ -1,4 +1,4 @@
-L.TileLayer.Canvas = L.TileLayer.extend({
+L['TileLayer']['Canvas'] = L.TileLayer.extend({
     options: {
         async: false
     },
@@ -15,7 +15,6 @@ L.TileLayer.Canvas = L.TileLayer.extend({
 
     redraw: function () {
     },
-
 
     _createTileProto: function () {
         var proto = this._canvasProto = L.DomUtil.create('canvas', 'leaflet-tile');

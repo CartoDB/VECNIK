@@ -5,18 +5,18 @@ module.exports = function(grunt) {
 
     uglify: {
       options: {
-        banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+//        banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
       },
       build: {
-        src: '/src/../js/<%= pkg.name %>.leaflet.js',
+        src: 'js/<%= pkg.name %>.leaflet.js',
         dest: 'build/<%= pkg.name %>(uglify).js'
       }
     },
 
     "closure-compiler": {
       frontend: {
-        closurePath: 'node_modules/grunt-closure-compiler',
-        js: '/src/../js/<%= pkg.name %>.leaflet.js',
+        closurePath: 'node_modules/closure-compiler/lib',
+        js: 'js/<%= pkg.name %>.leaflet.js',
         jsOutputFile: 'build/<%= pkg.name %>(closure).js',
         maxBuffer: 500,
         options: {
