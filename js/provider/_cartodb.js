@@ -33,7 +33,6 @@
   };
 
   CartoDBSQLAPI.prototype.url = function(coordinates) {
-      var projection = this.projection;
       var opts = this.opts;
       var table = opts.table;
       var prj = this.projection;

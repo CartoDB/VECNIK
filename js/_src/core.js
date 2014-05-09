@@ -2,11 +2,11 @@
 vecnik = window.vecnik || {};
 
 window.requestAnimFrame = (function(){
-      return  window.requestAnimationFrame       || 
-              window.webkitRequestAnimationFrame || 
-              window.mozRequestAnimationFrame    || 
-              window.oRequestAnimationFrame      || 
-              window.msRequestAnimationFrame     || 
+      return  window.requestAnimationFrame       ||
+              window.webkitRequestAnimationFrame ||
+              window.mozRequestAnimationFrame    ||
+              window.oRequestAnimationFrame      ||
+              window.msRequestAnimationFrame     ||
               function( callback ){
                 window.setTimeout(callback, 1000 / 60);
               };
@@ -19,22 +19,6 @@ var extend = function(obj, prop) {
 }
 
 vecnik.extend = extend;
-
-function Event() {}
-Event.prototype.on = function(evt, callback) {
-    var cb = this.callbacks = this.callbacks || {};
-    var l = cb[evt] || (cb[evt] = []);
-    l.push(callback);
-};
-
-Event.prototype.emit = function(evt) {
-    var c = this.callbacks && this.callbacks[evt];
-    for(var i = 0; c && i < c.length; ++i) {
-        c[i].apply(this, Array.prototype.slice.call(arguments, 1));
-    }
-};
-
-vecnik.Events = Event;
 
 // simple tree implementation
 // usage:
@@ -115,34 +99,3 @@ vecnik.timer = (function() {
   return timer;
 
 })();
-
-// http get
-vecnik.getJSON = function(url, callback) {
-  var mygetrequest= new XMLHttpRequest();
-  mygetrequest.onreadystatechange = function() {
-    if (mygetrequest.readyState == 4){
-      if (mygetrequest.status == 200){
-        callback(JSON.parse(mygetrequest.responseText));
-      } else {
-        //error
-      }
-    }
-  };
-  mygetrequest.open("GET", url, true)
-  mygetrequest.send(null)
-}
-
-/*
-var c = prop({
-  x: 0,
-  y: 0
-})
-c.animate({
-  x: 1,
-  y: 1
-})
-function anim() {
-
-}
-
-*/

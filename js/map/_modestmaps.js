@@ -1,26 +1,15 @@
-//========================================
-// Core
-//
-// base classes
-//========================================
-
-// create root scope if not exists
-var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
   var MM = com.modestmaps;
 
-
   //========================================
   // testing provider with mapbox tile layer
   //========================================
-  function TileManagerMapBox() {
-  }
+  function TileManagerMapBox() {};
   TileManagerMapBox.prototype = new VECNIK.TileManager();
   TileManagerMapBox.prototype.url = function(coordinates) {
-      return 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/' + coordinates.zoom + '/' + coordinates.row + '/' + coordinates.column + ".png";
+    return 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/' + coordinates.zoom + '/' + coordinates.row + '/' + coordinates.column + ".png";
   }
-
 
   //========================================
   // Canvas provider
@@ -34,13 +23,13 @@ var VECNIK = VECNIK || {};
   }
 
   CanvasProvider.prototype.getTile = function(coord) {
-      var tile = this.tiles.add(coord);
-      var canvas = new VECNIK.CanvasTileView(tile, this.shader, this.renderer);
-      this.views.add(canvas);
-      return canvas.el;
-  }
+    var tile = this.tiles.add(coord);
+    var canvas = new VECNIK.CanvasTileView(tile, this.shader, this.renderer);
+    this.views.add(canvas);
+    return canvas.el;
+  };
 
-  CanvasProvider.prototype.releaseTile = function(coordinates) { 
+  CanvasProvider.prototype.releaseTile = function(coordinates) {
     this.tiles.destroy(coordinates);
   };
 
@@ -52,4 +41,3 @@ var VECNIK = VECNIK || {};
   };
 
 })(VECNIK);
-
