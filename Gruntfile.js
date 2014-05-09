@@ -9,7 +9,7 @@ module.exports = function(grunt) {
       },
       build: {
         src: 'js/<%= pkg.name %>.leaflet.js',
-        dest: 'build/<%= pkg.name %>(uglify).js'
+        dest: 'dist/<%= pkg.name %>(uglify).js'
       }
     },
 
@@ -17,7 +17,7 @@ module.exports = function(grunt) {
       frontend: {
         closurePath: 'node_modules/closure-compiler/lib',
         js: 'js/<%= pkg.name %>.leaflet.js',
-        jsOutputFile: 'build/<%= pkg.name %>(closure).js',
+        jsOutputFile: 'dist/<%= pkg.name %>(closure).js',
         maxBuffer: 500,
         options: {
           compilation_level: 'ADVANCED_OPTIMIZATIONS',

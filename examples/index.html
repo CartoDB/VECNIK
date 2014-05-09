@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vecnik</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+html, body {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+#map {
+  height: 100%;
+}
+</style>
+<link rel="stylesheet" href="leaflet-0.7/leaflet.css">
+<script src="leaflet-0.7/leaflet-src.js"></script>
+<script src="loader.js"></script>
+</head>
+
+<body>
+<div id="map"></div>
+
+<script>
+var map = new L.Map('map').setView([40.877832, -73.910919], 18); // NYC
+new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
+var vecnik = new Vecnik(map, 'http://pluto.cartodb.com/api/v2/sql?format=geojson&q=SELECT%20cartodb_id%20AS%20id,%20the_geom%20FROM%20mn_mappluto_13v1%20ORDER%20BY%20ycoord%20DESC%20limit%2010');
+L.control.layers({}, { Vecnik:vecnik }).addTo(map);
+</script>
+</body>
+</html>
