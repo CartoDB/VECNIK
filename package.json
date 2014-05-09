@@ -12,7 +12,7 @@
   "maintainers": [],
   "repository": {
     "type": "git",
-    "url": "git@github.com:Vizzuality/VECNIK.git"
+    "url": "git@github.com:CartoDB/VECNIK.git"
   },
   "scripts": {},
   "dependencies": {},
