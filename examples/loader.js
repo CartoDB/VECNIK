@@ -26,13 +26,4 @@ for (var i = 0; i < srcFiles.length; i++) {
   } catch (ex) {
     console.error(srcFiles[i] +':\n\n'+ ex);
   }
-
-  //js += '//****** file: '+ srcFiles[i] +' ******\n\n';
-  //js += str +'\n\n';
 }
-
-//try {
-//  eval(js);
-//} catch (ex) {
-//  console.error(ex);
-//}

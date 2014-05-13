@@ -30,7 +30,7 @@ new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { max
 var vecnik = new L.VecnikLayer(map, 'http://pluto.cartodb.com/api/v2/sql?format=geojson&q=SELECT%20cartodb_id%20AS%20id,%20the_geom%20FROM%20mn_mappluto_13v1%20ORDER%20BY%20ycoord%20DESC%20limit%2010');
 L.control.layers({}, { Vecnik:vecnik }).addTo(map);
 
-
+/*
 var template = 'http://{S}.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png';
 var provider = new MM.TemplatedLayer(template, subdomains);
 
@@ -53,6 +53,7 @@ map = new MM.Map(document.getElementById('map'), [provider, fg]);
 if (!location.hash) {
   map.setCenterZoom(new MM.Location(0, 0), 2);
 }
+*/
 </script>
 </body>
 </html>

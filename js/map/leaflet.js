@@ -17,11 +17,11 @@ proto.onAdd = function(map) {
     off = this.getOffset(),
     po = map.getPixelOrigin();
   // TODO: emit here
-  setSize({ w:map._size.x, h:map._size.y });
-  setOrigin({ x:po.x-off.x, y:po.y-off.y });
-  setZoom(map._zoom);
+  this.canvas.setSize({ w:map._size.x, h:map._size.y });
+  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
+  this.canvas.setZoom(map._zoom);
 
-  Canvas.setPosition(-off.x, -off.y);
+  this.canvas.setPosition(-off.x, -off.y);
 
   map.on({
     move:      this.onMove,
@@ -36,17 +36,17 @@ proto.onAdd = function(map) {
   }
 
   if (map.attributionControl) {
-    map.attributionControl.addAttribution(ATTRIBUTION);
+    map.attributionControl.addAttribution(Vecnik.ATTRIBUTION);
   }
 
-  Data.update();
+//  Data.update();
 };
 
 proto.onRemove = function() {
   // TODO: emit here
   var map = this.map;
   if (map.attributionControl) {
-      map.attributionControl.removeAttribution(ATTRIBUTION);
+    map.attributionControl.removeAttribution(Vecnik.ATTRIBUTION);
   }
 
   map.off({
@@ -75,11 +75,11 @@ proto.onMoveEnd = function(e) {
     po = map.getPixelOrigin();
 
   this.offset = off;
-  Canvas.setPosition(-off.x, -off.y);
+  this.canvas.setPosition(-off.x, -off.y);
 
-  setSize({ w:map._size.x, h:map._size.y }); // in case this is triggered by resize
-  setOrigin({ x:po.x-off.x, y:po.y-off.y });
-  onMoveEnd(e);
+  this.canvas.setSize({ w:map._size.x, h:map._size.y }); // in case this is triggered by resize
+  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
+  this.canvas.onMoveEnd(e);
 };
 
 proto.onZoom = function(e) {
@@ -100,8 +100,8 @@ proto.onZoomEnd = function(e) {
     off = this.getOffset(),
     po = map.getPixelOrigin();
 
-  setOrigin({ x:po.x-off.x, y:po.y-off.y });
-  onZoomEnd({ zoom:map._zoom });
+  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
+  this.canvas.onZoomEnd({ zoom:map._zoom });
   this.skipMoveEnd = true;
 };
 
@@ -109,7 +109,7 @@ proto.onViewReset = function() {
   // TODO: emit here
   var off = this.getOffset();
   this.offset = off;
-  Canvas.setPosition(-off.x, -off.y);
+  this.canvas.setPosition(-off.x, -off.y);
 };
 
 proto.getOffset = function() {

@@ -1,5 +1,8 @@
 
 Vecnik.Canvas = function() {
+  this.width  = window.innerWidth;
+  this.height = window.innerHeight;
+
   var container = this.container = document.createElement('DIV');
   container.style.pointerEvents = 'none';
   container.style.position = 'absolute';
@@ -55,7 +58,7 @@ proto.render = function() {
 //    dataItems = Data.items;
     dataItems = [];
 
-  context.clearRect(0, 0, WIDTH, HEIGHT);
+  context.clearRect(0, 0, this.width, this.height);
 
   for (i = 0, il = dataItems.length; i < il; i++) {
     item = dataItems[i];
@@ -125,33 +128,33 @@ proto.drawCircle = function(x, y, radius) {
 };
 
 
-function setOrigin(origin) {
+proto.setOrigin = function(origin) {
   ORIGIN_X = origin.x;
   ORIGIN_Y = origin.y;
-}
+};
 
-function setSize(size) {
-  WIDTH  = size.w;
-  HEIGHT = size.h;
-  CENTER_X = WIDTH /2 <<0;
-  CENTER_Y = HEIGHT/2 <<0;
-  Canvas.setSize(WIDTH, HEIGHT);
-}
+proto.setSize = function(size) {
+  this.width  = size.w;
+  this.height = size.h;
+  CENTER_X = this.width /2 <<0;
+  CENTER_Y = this.height/2 <<0;
+//  this.setSize(this.width, this.height);
+};
 
-function setZoom(z) {
-  MAP_SIZE = TILE_SIZE <<z;
-}
+proto.setZoom = function(z) {
+//  MAP_SIZE = TILE_SIZE <<z;
+};
 
-function onResize(e) {
+proto.onResize = function(e) {
   setSize(e.width, e.height);
   Data.update();
-}
+};
 
-function onMoveEnd(e) {
+proto.onMoveEnd = function(e) {
   Data.update();
-}
+};
 
-function onZoomEnd(e) {
+proto.onZoomEnd = function(e) {
   setZoom(e.zoom);
   Data.update();
-}
+};
