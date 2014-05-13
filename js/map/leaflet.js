@@ -1,17 +1,22 @@
-var Layer = function(map) {
+
+L = L || {};
+
+L.VecnikLayer = function(map) {
   this.offset = { x:0, y:0 };
   map.addLayer(this);
 };
 
-var proto = Layer.prototype;
+var proto = L.VecnikLayer.prototype = new Vecnik.Event();
 
 proto.onAdd = function(map) {
   this.map = map;
-  Canvas.appendTo(map._panes.overlayPane);
+  this.canvas = new Vecnik.Canvas;
+  this.canvas.appendTo(map._panes.overlayPane);
 
   var
     off = this.getOffset(),
     po = map.getPixelOrigin();
+  // TODO: emit here
   setSize({ w:map._size.x, h:map._size.y });
   setOrigin({ x:po.x-off.x, y:po.y-off.y });
   setZoom(map._zoom);
@@ -38,26 +43,28 @@ proto.onAdd = function(map) {
 };
 
 proto.onRemove = function() {
-    var map = this.map;
-    if (map.attributionControl) {
-        map.attributionControl.removeAttribution(ATTRIBUTION);
-    }
+  // TODO: emit here
+  var map = this.map;
+  if (map.attributionControl) {
+      map.attributionControl.removeAttribution(ATTRIBUTION);
+  }
 
-    map.off({
-        move:      this.onMove,
-        moveend:   this.onMoveEnd,
-        zoomanim:  this.onZoom,
-        zoomend:   this.onZoomEnd,
-        viewreset: this.onViewReset
-    }, this);
+  map.off({
+    move:      this.onMove,
+    moveend:   this.onMoveEnd,
+    zoomanim:  this.onZoom,
+    zoomend:   this.onZoomEnd,
+    viewreset: this.onViewReset
+  }, this);
 
-    Canvas.remove();
-    map = null;
+  this.canvas.remove();
+  map = null;
 };
 
 proto.onMove = function(e) {};
 
 proto.onMoveEnd = function(e) {
+  // TODO: emit here
   if (this.skipMoveEnd) { // moveend is also fired after zoom
     this.skipMoveEnd = false;
     return;
@@ -76,6 +83,7 @@ proto.onMoveEnd = function(e) {
 };
 
 proto.onZoom = function(e) {
+  // TODO: emit here
 //    var map = this.map,
 //        scale = map.getZoomScale(e.zoom),
 //        offset = map._getCenterOffset(e.center).divideBy(1 - 1/scale),
@@ -86,6 +94,7 @@ proto.onZoom = function(e) {
 };
 
 proto.onZoomEnd = function(e) {
+  // TODO: emit here
   var
     map = this.map,
     off = this.getOffset(),
@@ -97,6 +106,7 @@ proto.onZoomEnd = function(e) {
 };
 
 proto.onViewReset = function() {
+  // TODO: emit here
   var off = this.getOffset();
   this.offset = off;
   Canvas.setPosition(-off.x, -off.y);

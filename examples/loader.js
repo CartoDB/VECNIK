@@ -16,21 +16,23 @@ function loadFile(url) {
   return xhr.responseText;
 }
 
-var exports = {};
-eval(loadFile('build/config.js'));
-var config = exports;
+var module = {}; // fix missing module environment in browser
+eval(loadFile('Gruntfile.js'));
 
-var file, str, js = '';
-for (var i = 0; i < config.srcFiles.length; i++) {
-  file = config.srcFiles[i].replace('{engine}', 'Leaflet');
-  str = loadFile('dummy/' + file);
-  js += '//****** file: ' + file + ' ******\n\n';
-  js += str + '\n\n';
+var str, js = '';
+for (var i = 0; i < srcFiles.length; i++) {
+  try {
+    eval(loadFile(srcFiles[i]));
+  } catch (ex) {
+    console.error(srcFiles[i] +':\n\n'+ ex);
+  }
+
+  //js += '//****** file: '+ srcFiles[i] +' ******\n\n';
+  //js += str +'\n\n';
 }
 
-console.log(js);
-try {
-  eval(js);
-} catch (ex) {
-  console.error(ex);
-}
+//try {
+//  eval(js);
+//} catch (ex) {
+//  console.error(ex);
+//}

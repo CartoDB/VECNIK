@@ -87,7 +87,6 @@ var VECNIK = VECNIK || {};
     };
 
     MercatorProjection.prototype.tilePoint = function(x, y, zoom) {
-            var numTiles = 1 << zoom;
             var px = x*TILE_SIZE;
             var py = y*TILE_SIZE;
             return [px, py];

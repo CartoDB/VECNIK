@@ -3,7 +3,7 @@ Vecnik.Event = function() {
   this.listeners = {};
 };
 
-var proto = Vecnik.event.prototype;
+var proto = Vecnik.Event.prototype;
 
 proto.on = function(type, listener, scope) {
   var listeners = this.listeners[type] || (this.listeners[type] = []);
