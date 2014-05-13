@@ -3,15 +3,10 @@ Vecnik.Canvas = function() {
   this.width  = window.innerWidth;
   this.height = window.innerHeight;
 
-  var container = this.container = document.createElement('DIV');
-  container.style.pointerEvents = 'none';
-  container.style.position = 'absolute';
-  container.style.left = 0;
-  container.style.top  = 0;
-
   var canvas = this.canvas = document.createElement('CANVAS');
   canvas.style.webkitTransform = 'translate3d(0,0,0)'; // turn on hw acceleration
   canvas.style.imageRendering  = 'optimizeSpeed';
+  canvas.style.pointerEvents = 'none';
   canvas.style.position = 'absolute';
   canvas.style.left = 0;
   canvas.style.top  = 0;
@@ -20,35 +15,37 @@ Vecnik.Canvas = function() {
   context.lineCap   = 'round';
   context.lineJoin  = 'round';
   context.lineWidth = 1;
-
   context.mozImageSmoothingEnabled    = false;
   context.webkitImageSmoothingEnabled = false;
-
-  this.container.appendChild(canvas);
 };
 
 var proto = Vecnik.Canvas.prototype;
 
-proto.appendTo = function(parent) {
-  parent.appendChild(this.container);
+proto.appendTo = function(container) {
+  container.appendChild(this.canvas);
   this.render();
 };
 
 proto.remove = function() {
   this.clearTimeout(this.timer);
-  this.container.parentNode.removeChild(this.container);
+  this.canvas.parentNode.removeChild(this.canvas);
 };
 
 proto.setSize = function(width, height) {
+  this.width = width;
+  this.width = height;
   this.canvas.width  = width;
   this.canvas.height = height;
+}
+
+proto.setPosition = function(x, y) {
+  this.canvas.style.left = x +'px';
+  this.canvas.style.top  = y +'px';
 };
 
-// usually called after move: container jumps by move delta, cam is reset
-proto.setPosition = function(x, y) {
-  this.container.style.left = x +'px';
-  this.container.style.top  = y +'px';
-};
+
+
+
 
 proto.render = function() {
   var
@@ -128,33 +125,11 @@ proto.drawCircle = function(x, y, radius) {
 };
 
 
-proto.setOrigin = function(origin) {
-  ORIGIN_X = origin.x;
-  ORIGIN_Y = origin.y;
-};
 
-proto.setSize = function(size) {
-  this.width  = size.w;
-  this.height = size.h;
-  CENTER_X = this.width /2 <<0;
-  CENTER_Y = this.height/2 <<0;
-//  this.setSize(this.width, this.height);
-};
-
-proto.setZoom = function(z) {
+//proto.setOrigin = function(origin) {
+//  ORIGIN_X = origin.x;
+//  ORIGIN_Y = origin.y;
+//};
+//proto.setZoom = function(z) {
 //  MAP_SIZE = TILE_SIZE <<z;
-};
-
-proto.onResize = function(e) {
-  setSize(e.width, e.height);
-  Data.update();
-};
-
-proto.onMoveEnd = function(e) {
-  Data.update();
-};
-
-proto.onZoomEnd = function(e) {
-  setZoom(e.zoom);
-  Data.update();
-};
+//};

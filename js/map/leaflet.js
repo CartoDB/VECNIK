@@ -2,6 +2,7 @@
 L = L || {};
 
 L.VecnikLayer = function(map) {
+  this.canvas = new Vecnik.Canvas;
   this.offset = { x:0, y:0 };
   map.addLayer(this);
 };
@@ -10,17 +11,15 @@ var proto = L.VecnikLayer.prototype = new Vecnik.Event();
 
 proto.onAdd = function(map) {
   this.map = map;
-  this.canvas = new Vecnik.Canvas;
   this.canvas.appendTo(map._panes.overlayPane);
 
   var
     off = this.getOffset(),
     po = map.getPixelOrigin();
-  // TODO: emit here
-  this.canvas.setSize({ w:map._size.x, h:map._size.y });
-  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
-  this.canvas.setZoom(map._zoom);
 
+  this.canvas.setSize({ w:map._size.x, h:map._size.y });
+//  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
+//  this.canvas.setZoom(map._zoom);
   this.canvas.setPosition(-off.x, -off.y);
 
   map.on({
@@ -39,7 +38,7 @@ proto.onAdd = function(map) {
     map.attributionControl.addAttribution(Vecnik.ATTRIBUTION);
   }
 
-//  Data.update();
+  Vecnik.Data.update();
 };
 
 proto.onRemove = function() {
@@ -61,7 +60,10 @@ proto.onRemove = function() {
   map = null;
 };
 
-proto.onMove = function(e) {};
+proto.onMove = function(e) {
+  var off = this.getOffset();
+  this.canvas.setPosition(-off.x, -off.y);
+};
 
 proto.onMoveEnd = function(e) {
   // TODO: emit here
@@ -76,10 +78,9 @@ proto.onMoveEnd = function(e) {
 
   this.offset = off;
   this.canvas.setPosition(-off.x, -off.y);
-
   this.canvas.setSize({ w:map._size.x, h:map._size.y }); // in case this is triggered by resize
-  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
-  this.canvas.onMoveEnd(e);
+//  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
+  Vecnik.Data.update();
 };
 
 proto.onZoom = function(e) {
@@ -103,13 +104,16 @@ proto.onZoomEnd = function(e) {
   this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
   this.canvas.onZoomEnd({ zoom:map._zoom });
   this.skipMoveEnd = true;
+
+//  setZoom(e.zoom);
+  Vecnik.Data.update();
 };
 
 proto.onViewReset = function() {
   // TODO: emit here
   var off = this.getOffset();
   this.offset = off;
-  this.canvas.setPosition(-off.x, -off.y);
+//  this.canvas.setPosition(-off.x, -off.y);
 };
 
 proto.getOffset = function() {

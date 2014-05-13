@@ -1,12 +1,17 @@
 
 function CartoDbApi(opt) {
   this.opt = opt || {};
-  this.baseUrl = 'http://'+ opt.user +'.cartodb.com/api/v2/sql';
+//  this.opt.ENABLE_SIMPLIFY = Vecnik.ENABLE_SIMPLIFY;
+//  this.opt.ENABLE_SNAPPING = Vecnik.ENABLE_SNAPPING;
+//  this.opt.ENABLE_CLIPPING = Vecnik.ENABLE_CLIPPING;
+//  this.opt.ENABLE_FIXING   = Vecnik.ENABLE_FIXING;
 
-  this.opt.ENABLE_SIMPLIFY = Vecnik.ENABLE_SIMPLIFY;
-  this.opt.ENABLE_SNAPPING = Vecnik.ENABLE_SNAPPING;
-  this.opt.ENABLE_CLIPPING = Vecnik.ENABLE_CLIPPING;
-  this.opt.ENABLE_FIXING   = Vecnik.ENABLE_FIXING;
+  this.opt.ENABLE_SIMPLIFY = false;
+  this.opt.ENABLE_SNAPPING = false;
+  this.opt.ENABLE_CLIPPING = false;
+  this.opt.ENABLE_FIXING   = false;
+
+  this.baseUrl = 'http://'+ opt.user +'.cartodb.com/api/v2/sql';
 }
 
 var proto = CartoDbApi.prototype;
@@ -18,12 +23,6 @@ proto.debug = function(w) {
 };
 
 proto.getSql = function(projection, table, x, y, zoom, opt) {
-  opt = opt || {
-    ENABLE_CLIPPING: false,
-    ENABLE_SIMPLIFY: false,
-    ENABLE_FIXING: false,
-    ENABLE_SNAPPING: false
-  };
   var bbox = projection.tileBBox(x, y, zoom);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
@@ -114,14 +113,10 @@ proto.getSql = function(projection, table, x, y, zoom, opt) {
   // profiling only
   var COUNT_ONLY = opt.COUNT_ONLY || false;
   if ( COUNT_ONLY ) {
-    columns = x + ' as x, ' + y + ' as y, sum(st_npoints('
-              + geom_column + ')) as the_geom';
+    columns = x +' as x, '+ y +' as y, sum(st_npoints('+ geom_column +')) as the_geom';
   }
 
-  var sql = "select " + columns +" from " + table;
-  sql += " WHERE the_geom && " + sql_env;
-
-  return sql;
+  return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env;
 };
 
 proto.getVectorTileSql = function(table, x, y, zoom) {
