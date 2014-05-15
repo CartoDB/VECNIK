@@ -1,20 +1,12 @@
 
-function CartoDbApi(opt) {
+// consider a singleton
+
+Vecnik.CartoDB = function(opt) {
   this.opt = opt || {};
-//  this.opt.ENABLE_SIMPLIFY = Vecnik.ENABLE_SIMPLIFY;
-//  this.opt.ENABLE_SNAPPING = Vecnik.ENABLE_SNAPPING;
-//  this.opt.ENABLE_CLIPPING = Vecnik.ENABLE_CLIPPING;
-//  this.opt.ENABLE_FIXING   = Vecnik.ENABLE_FIXING;
-
-  this.opt.ENABLE_SIMPLIFY = false;
-  this.opt.ENABLE_SNAPPING = false;
-  this.opt.ENABLE_CLIPPING = false;
-  this.opt.ENABLE_FIXING   = false;
-
-  this.baseUrl = 'http://'+ opt.user +'.cartodb.com/api/v2/sql';
+  this.baseUrl = 'http://'+ this.opt.user +'.cartodb.com/api/v2/sql';
 }
 
-var proto = CartoDbApi.prototype;
+var proto = Vecnik.CartoDB.prototype;
 
 proto.debug = function(w) {
   if (this.opt.debug && console) {
@@ -27,9 +19,8 @@ proto.getSql = function(projection, table, x, y, zoom, opt) {
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
   var id_column = 'cartodb_id';
-  var TILE_SIZE = 256;
-  var tile_pixel_width = TILE_SIZE;
-  var tile_pixel_height = TILE_SIZE;
+  var tile_pixel_width = Vecnik.TILE_SIZE;
+  var tile_pixel_height = Vecnik.TILE_SIZE;
 
   //console.log('-- ZOOM: ' + zoom);
 
@@ -49,8 +40,7 @@ proto.getSql = function(projection, table, x, y, zoom, opt) {
   //console.log('-- TOLERANCE: ' + tolerance);
 
   // simplify
-  var ENABLE_SIMPLIFY = opt.ENABLE_SIMPLIFY;
-  if ( ENABLE_SIMPLIFY ) {
+  if (Vecnik.ENABLE_SIMPLIFY) {
     geom_column = 'ST_Simplify(' + geom_column + ', ' + tolerance + ')';
     // may change type
     geom_column = 'ST_CollectionExtract(' + geom_column + ', ST_Dimension( '
@@ -58,8 +48,7 @@ proto.getSql = function(projection, table, x, y, zoom, opt) {
   }
 
   // snap to a pixel grid
-  var ENABLE_SNAPPING = opt.ENABLE_SNAPPING;
-  if ( ENABLE_SNAPPING ) {
+  if (Vecnik.ENABLE_SNAPPING) {
     geom_column = 'ST_SnapToGrid(' + geom_column + ', '
                   + pixel_geo_maxsize + ')';
     // may change type
@@ -68,14 +57,12 @@ proto.getSql = function(projection, table, x, y, zoom, opt) {
   }
 
   // This is the query bounding box
-  var sql_env = "ST_MakeEnvelope("
-    + bbox[0].lng() + "," + bbox[0].lat() + ","
-    + bbox[1].lng() + "," + bbox[1].lat() + ", 4326)";
+  var sql_env = 'ST_MakeEnvelope('
+    + bbox[0].lng() + ',' + bbox[0].lat() + ','
+    + bbox[1].lng() + ',' + bbox[1].lat() + ', 4326)';
 
   // clip
-  var ENABLE_CLIPPING = opt.ENABLE_CLIPPING;
-
-  if (ENABLE_CLIPPING) {
+  if (Vecnik.ENABLE_CLIPPING) {
     // This is a slightly enlarged version of the query bounding box
     var sql_env_exp = 'ST_Expand('+ sql_env +', '+ (pixel_geo_maxsize*2) +')';
     // Also must be snapped to the grid ...
@@ -86,8 +73,7 @@ proto.getSql = function(projection, table, x, y, zoom, opt) {
         + ', ' + pixel_geo_maxsize + ')';
 
     // Make valid (both ST_Snap and ST_SnapToGrid and ST_Expand
-    var ENABLE_FIXING = opt.ENABLE_FIXING;
-    if ( ENABLE_FIXING ) {
+    if (Vecnik.ENABLE_FIXING ) {
       // NOTE: up to PostGIS-2.0.0 beta5 ST_MakeValid did not accept
       //       points nor GeometryCollection objects
       geom_column = 'CASE WHEN ST_Dimension('
@@ -104,24 +90,17 @@ proto.getSql = function(projection, table, x, y, zoom, opt) {
   }
 
   var columns = id_column + ',' + geom_column + ' as the_geom';
-  if(opt.columns) {
-      columns += ',';
-      columns += opt.columns.join(',')
-      columns += ' ';
-  }
-
-  // profiling only
-  var COUNT_ONLY = opt.COUNT_ONLY || false;
-  if ( COUNT_ONLY ) {
-    columns = x +' as x, '+ y +' as y, sum(st_npoints('+ geom_column +')) as the_geom';
+  if (opt.columns) {
+    columns += ',';
+    columns += opt.columns.join(',')
+    columns += ' ';
   }
 
   return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env;
 };
 
 proto.getVectorTileSql = function(table, x, y, zoom) {
-  var projection = new Vecnik.MercatorProjection();
-  return this.getSql(projection, table, x, y, zoom, this.opt);
+//  return this.getSql(new Vecnik.Projection(), table, x, y, zoom, this.opt);
 };
 
 proto.getUrl = function(coordinates) {

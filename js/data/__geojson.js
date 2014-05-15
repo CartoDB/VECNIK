@@ -37,9 +37,9 @@ var GeoJSON = {
     res = new Int32Array(len*2);
 
     for (i = 0; i < len; i++) {
-      px = geoToPixel(coordinates[i][lat], coordinates[i][lon]);
-      res[i*2]   = px.x-ORIGIN_X <<0;
-      res[i*2+1] = px.y-ORIGIN_Y <<0;
+      px = Vecnik.Projection.geoToPixel(coordinates[i][lat], coordinates[i][lon]);
+      res[i*2]   = px.x-Vecnik.Projection.origin.x <<0;
+      res[i*2+1] = px.y-Vecnik.Projection.origin.y <<0;
     }
 
     return res;
@@ -51,9 +51,9 @@ var GeoJSON = {
       px,
       res = new Int32Array();
 
-    px = geoToPixel(coordinates[lat], coordinates[lon]);
-    res[0] = px.x-ORIGIN_X <<0;
-    res[1] = px.y-ORIGIN_Y <<0;
+    px = Vecnik.Projection.geoToPixel(coordinates[lat], coordinates[lon]);
+    res[0] = px.x-Vecnik.Projection.origin.x <<0;
+    res[1] = px.y-Vecnik.Projection.origin.y <<0;
     return res;
   },
 

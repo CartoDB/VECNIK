@@ -1,26 +1,19 @@
 
-L = L || {};
-
-L.VecnikLayer = function(map) {
-  this.canvas = new Vecnik.Canvas;
-  this.offset = { x:0, y:0 };
+L.VecnikLayer = function(map, options) {
+  this.vecnik = new Vecnik(options);
   map.addLayer(this);
 };
 
-var proto = L.VecnikLayer.prototype = new Vecnik.Event();
+var proto = L.VecnikLayer.prototype;
 
 proto.onAdd = function(map) {
   this.map = map;
-  this.canvas.appendTo(map._panes.overlayPane);
+  this.vecnik.append(map._panes.overlayPane);
 
-  var
-    off = this.getOffset(),
-    po = map.getPixelOrigin();
-
-  this.canvas.setSize({ w:map._size.x, h:map._size.y });
-//  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
-//  this.canvas.setZoom(map._zoom);
-  this.canvas.setPosition(-off.x, -off.y);
+  this.vecnik.setSize({ width:map._size.x, height:map._size.y });
+  this.vecnik.setMapSize = Vecnik.TILE_SIZE <<map.getZoom();
+  this.vecnik.setOrigin = map.getPixelOrigin();
+  this.vecnik.setOffset(this.getOffset());
 
   map.on({
     move:      this.onMove,
@@ -38,11 +31,10 @@ proto.onAdd = function(map) {
     map.attributionControl.addAttribution(Vecnik.ATTRIBUTION);
   }
 
-  Vecnik.Data.update();
+  this.vecnik.update();
 };
 
 proto.onRemove = function() {
-  // TODO: emit here
   var map = this.map;
   if (map.attributionControl) {
     map.attributionControl.removeAttribution(Vecnik.ATTRIBUTION);
@@ -56,35 +48,23 @@ proto.onRemove = function() {
     viewreset: this.onViewReset
   }, this);
 
-  this.canvas.remove();
+  this.vecnik.remove();
   map = null;
 };
 
 proto.onMove = function(e) {
-  var off = this.getOffset();
-  this.canvas.setPosition(-off.x, -off.y);
+  this.vecnik.setOffset(this.getOffset());
+  this.vecnik.update();
 };
 
 proto.onMoveEnd = function(e) {
-  // TODO: emit here
-  if (this.skipMoveEnd) { // moveend is also fired after zoom
-    this.skipMoveEnd = false;
-    return;
-  }
-  var
-    map = this.map,
-    off = this.getOffset(),
-    po = map.getPixelOrigin();
-
-  this.offset = off;
-  this.canvas.setPosition(-off.x, -off.y);
-  this.canvas.setSize({ w:map._size.x, h:map._size.y }); // in case this is triggered by resize
-//  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
-  Vecnik.Data.update();
+//  var map = this.map;
+  this.vecnik.setOffset(this.getOffset());
+//this.vecnik.setSize({ width:map._size.x, height:map._size.y }); // in case this is triggered by resize
+  this.vecnik.update();
 };
 
 proto.onZoom = function(e) {
-  // TODO: emit here
 //    var map = this.map,
 //        scale = map.getZoomScale(e.zoom),
 //        offset = map._getCenterOffset(e.center).divideBy(1 - 1/scale),
@@ -95,27 +75,21 @@ proto.onZoom = function(e) {
 };
 
 proto.onZoomEnd = function(e) {
-  // TODO: emit here
-  var
-    map = this.map,
-    off = this.getOffset(),
-    po = map.getPixelOrigin();
-
-  this.canvas.setOrigin({ x:po.x-off.x, y:po.y-off.y });
-  this.canvas.onZoomEnd({ zoom:map._zoom });
-  this.skipMoveEnd = true;
-
-//  setZoom(e.zoom);
-  Vecnik.Data.update();
+  var map = this.map;
+  this.vecnik.projection.origin = map.getPixelOrigin();
+  this.vecnik.setZoom(map._zoom);
+  this.vecnik.setMapSize = Vecnik.TILE_SIZE <<e.zoom;
+  this.vecnik.update();
 };
 
 proto.onViewReset = function() {
-  // TODO: emit here
-  var off = this.getOffset();
-  this.offset = off;
-//  this.canvas.setPosition(-off.x, -off.y);
+  this.vecnik.setOffset(this.getOffset());
 };
 
 proto.getOffset = function() {
   return L.DomUtil.getPosition(this.map._mapPane);
+};
+
+L.vecnikLayer = function(map, options) {
+  return new L.VecnikLayer(map, options);
 };

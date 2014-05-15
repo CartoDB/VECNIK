@@ -1,24 +1,27 @@
-var srcFiles = [
-  'js/core/core.js',
-  'js/core/event.js',
-  'js/core/request.js',
-  'js/map/leaflet.js',
-  'js/provider/cartodb.js',
-  'js/provider/geojson.js',
-  'js/renderer/canvas.js'
-];
 
 module.exports = function(grunt) {
 
+  var files = require('./files');
+
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+
+    concat: {
+      options: {
+        separator: '\n'
+      },
+      dist: {
+        src: files,
+        dest:  'dist/<%= pkg.name %>.debug.js'
+      }
+    },
 
     uglify: {
       options: {
         banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
       },
       build: {
-        src: srcFiles,
+        src: files,
         dest: 'dist/<%= pkg.name %>.js'
       }
     },
@@ -26,7 +29,7 @@ module.exports = function(grunt) {
     'closure-compiler': {
       frontend: {
         closurePath: 'node_modules/closure-compiler/lib',
-        js: srcFiles,
+        js: files,
         jsOutputFile: 'dist/<%= pkg.name %>.cc.js',
         maxBuffer: 500,
         noreport: true,
@@ -38,10 +41,24 @@ module.exports = function(grunt) {
     }
   });
 
+  grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-closure-compiler');
 
   // Default task(s).
-  grunt.registerTask('default', ['uglify']);
+  grunt.registerTask('default', ['concat']);
   grunt.registerTask('compress', ['uglify', 'closure-compiler:frontend']);
 };
+
+//    jasmine: {
+//      pivotal: {
+//          src: cartodb_files.all,
+//          options: {
+//            specs: 'test/spec/**/*.js',
+//            helpers: ['test/lib/sinon-1.3.4.js', 'test/spec/*Helper.js', 'https://maps.google.com/maps/api/js?sensor=false&v=3.12']
+//          }
+//      }
+//    }
+//  });
+
+//  grunt.loadNpmTasks('grunt-contrib-jasmine');

@@ -19,9 +19,11 @@ Vecnik.Canvas = function() {
   context.webkitImageSmoothingEnabled = false;
 };
 
+Vecnik.Canvas.POINT_RADIUS = 2;
+
 var proto = Vecnik.Canvas.prototype;
 
-proto.appendTo = function(container) {
+proto.append = function(container) {
   container.appendChild(this.canvas);
   this.render();
 };
@@ -31,18 +33,17 @@ proto.remove = function() {
   this.canvas.parentNode.removeChild(this.canvas);
 };
 
-proto.setSize = function(width, height) {
-  this.width = width;
-  this.width = height;
-  this.canvas.width  = width;
-  this.canvas.height = height;
+proto.setSize = function(size) {
+  this.width = size.width;
+  this.height = size.height;
+  this.canvas.width  = size.width;
+  this.canvas.height = size.height;
 }
 
-proto.setPosition = function(x, y) {
-  this.canvas.style.left = x +'px';
-  this.canvas.style.top  = y +'px';
+proto.setPosition = function(offset) {
+  this.canvas.style.left = -offset.x +'px';
+  this.canvas.style.top  = -offset.y +'px';
 };
-
 
 
 
@@ -52,7 +53,7 @@ proto.render = function() {
     context = this.context,
     i, il, j, jl,
     item, coordinates,
-//    dataItems = Data.items;
+//    dataItems = Vecnik.Data.items;
     dataItems = [];
 
   context.clearRect(0, 0, this.width, this.height);
@@ -62,7 +63,7 @@ proto.render = function() {
     coordinates = item.coordinates;
 
 //  context.strokeStyle = item.strokeColor;
-//  context.fillStyle = item.fillColor;
+//  context.fillStyle   = item.fillColor;
     context.strokeStyle = 'rgba(255,0,0,0.15)';
     context.fillStyle   = 'rgba(0,0,255,0.15)';
 
@@ -71,13 +72,13 @@ proto.render = function() {
     // TODO: missing a few geometry types
     switch (item.type) {
       case 'Point':
-        this.drawCircle(coordinates[0], coordinates[1], POINT_RADIUS);
+        this.drawCircle(coordinates[0], coordinates[1], Vecnik.Canvas.POINT_RADIUS);
       break;
 
       case 'MultiPoint':
         context.beginPath();
         for (j = 0, jl = coordinates.length; j < jl; j++) {
-          this.drawCircle(coordinates[j][0], coordinates[j][1], POINT_RADIUS);
+          this.drawCircle(coordinates[j][0], coordinates[j][1], Vecnik.Canvas.POINT_RADIUS);
         }
       break;
 
@@ -121,15 +122,5 @@ proto.drawPolygon = function(coordinates) {
 };
 
 proto.drawCircle = function(x, y, radius) {
-  this.context.arc(x, y, radius, 0, PI*2);
+  this.context.arc(x, y, radius, 0, Math.PI*2);
 };
-
-
-
-//proto.setOrigin = function(origin) {
-//  ORIGIN_X = origin.x;
-//  ORIGIN_Y = origin.y;
-//};
-//proto.setZoom = function(z) {
-//  MAP_SIZE = TILE_SIZE <<z;
-//};

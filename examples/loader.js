@@ -16,14 +16,13 @@ function loadFile(url) {
   return xhr.responseText;
 }
 
-var module = {}; // fix missing module environment in browser
-eval(loadFile('Gruntfile.js'));
+eval(loadFile('files.js'));
 
 var str, js = '';
-for (var i = 0; i < srcFiles.length; i++) {
+for (var i = 0; i < files.length; i++) {
   try {
-    eval(loadFile(srcFiles[i]));
+    eval(loadFile(files[i]));
   } catch (ex) {
-    console.error(srcFiles[i] +':\n\n'+ ex);
+    console.error(files[i] +':\n\n'+ ex);
   }
 }
