@@ -14,6 +14,7 @@ proto.on = function(type, listener, scope) {
     }
     listener.call(scope || null, e);
   });
+  return this;
 };
 
 proto.emit = function(type, data) {

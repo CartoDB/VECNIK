@@ -1,8 +1,8 @@
 
-Vecnik.Data = function(projection) {
+Vecnik.Data = function(projection, provider) {
   this.projection = projection;
-  this.cache = new Vecnik.Cache();
-  this.cartodb = new Vecnik.CartoDB();
+  this.cache      = new Vecnik.Cache();
+  this.provider   = provider;
 };
 
 var proto = Vecnik.Data.prototype;
@@ -63,7 +63,7 @@ proto.update = function() {
     s: Math.floor(se.latitude /this.tileSize) * this.tileSize,
     w: Math.floor(nw.longitude/this.tileSize) * this.tileSize
   };
-console.log(bounds);
+
   for (lat = bounds.s; lat <= bounds.n; lat += this.tileSize) {
     for (lon = bounds.w; lon <= bounds.e; lon += this.tileSize) {
       lat = this.cropDecimals(lat);
@@ -73,7 +73,7 @@ console.log(bounds);
       if ((parsedData = this.cache.get(cacheKey))) {
         this.addRenderItems(parsedData);
       } else {
-        new Vecnik.Request(this.cartodb.getUrl({ column:1, row:1, zoom:10 }), {
+        new Vecnik.Request(this.provider.getUrl(x, y, z), {
           n: this.cropDecimals(lat+this.tileSize),
           e: this.cropDecimals(lon+this.tileSize),
           s: lat,

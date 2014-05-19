@@ -23,9 +23,10 @@ Vecnik.Canvas.POINT_RADIUS = 2;
 
 var proto = Vecnik.Canvas.prototype;
 
-proto.append = function(container) {
+proto.appendTo = function(container) {
   container.appendChild(this.canvas);
   this.render();
+  return this.canvas;
 };
 
 proto.remove = function() {
