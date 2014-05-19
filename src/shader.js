@@ -1,8 +1,9 @@
+
 //========================================
 // shader
 //========================================
 
-vecnik.shader = function(sh) {
+(function(VECNIK) {
 
   var mapper = {
       'point-color': 'fillStyle',
@@ -13,45 +14,40 @@ vecnik.shader = function(sh) {
       'polygon-opacity': 'globalAlpha'
   };
 
-
-  var compiled = {};
-  var _shader_src = null;
-
-  function _shader(canvas_ctx, data, render_context) {
-    _shader.apply(canvas_ctx, data, render_context);
+  function CartoShader(shader) {
+      this.compiled = {};
+      this.shader_src = null;
+      this.compile(shader)
   }
 
-  //extend(_shader, vecnik.Event);
+  CartoShader.prototype = new VECNIK.Event();
 
-
-  _shader.compile = function(shader) {
+  CartoShader.prototype.compile = function(shader) {
       if(typeof shader === 'string') {
           shader = eval("(function() { return " + shader +"; })()");
       }
-      _shader_src = shader;
+      this.shader_src = shader;
       for(var attr in shader) {
-        var c = mapper[attr];
-        if(c) {
-          compiled[c] = eval("(function() { return shader[attr]; })();");
-        }
+          var c = mapper[attr];
+          if(c) {
+              this.compiled[c] = eval("(function() { return shader[attr]; })();");
+          }
       }
 
-      //_shader.emit('compiled');
-      return _shader;
+      this.emit('change');
   };
 
   var needed_settings = {
     'LineString': [ 
-      'line-color', 
-      'line-width',
-      'line-opacity'
+        'line-color', 
+        'line-width',
+        'line-opacity'
     ],
     'Polygon': [ 
-      'polygon-fill',
-      'line-width'
+        'polygon-fill'
     ],
     'MultiPolygon': [ 
-      'polygon-fill'
+        'polygon-fill'
     ]
   };
   var defaults = {
@@ -73,55 +69,52 @@ vecnik.shader = function(sh) {
     }
   };
 
-  _shader.needs_render = function(data, render_context, primitive_type) {
-    var variables = needed_settings[primitive_type];
-    var shader = compiled;
-    for(var attr in variables) {
-      var style_attr = variables[attr];
-      var attr_present = _shader_src[style_attr];
-      if(attr_present !== undefined) {
-        var fn = shader[mapper[style_attr]];
-        if(typeof fn === 'function') {
-          fn = fn(data, render_context);
-        } 
-        if(fn !== null && fn !== undefined) {
-          return true;
-        }
-      } 
-    }
-    return false;
+  CartoShader.prototype.needs_render = function(data, render_context, primitive_type) {
+      var variables = needed_settings[primitive_type];
+      var shader = this.compiled;
+      for(var attr in variables) {
+          var style_attr = variables[attr];
+          var attr_present = this.shader_src[style_attr];
+          if(attr_present !== undefined) {
+            var fn = shader[mapper[style_attr]];
+            if(typeof fn === 'function') {
+                fn = fn(data, render_context);
+            } 
+            if(fn !== null && fn !== undefined) {
+              return true;
+            }
+          } 
+      }
+      return false;
+    
   }
 
-  _shader.reset = function(ctx, primitive_type) {
-    var def = defaults[primitive_type];
-    for(var attr in def) {
-      ctx[attr] = def[attr];
-    }
+  CartoShader.prototype.reset = function(ctx, primitive_type) {
+      var def = defaults[primitive_type];
+      for(var attr in def) {
+        ctx[attr] = def[attr];
+      }
   }
 
-  _shader.apply = function(canvas_ctx, data, render_context) {
-    var shader = compiled;
-    for(var attr in shader) {
-        var fn = shader[attr];
-        if(typeof fn === 'function') {
-          fn = fn(data, render_context);
-        } 
-        if(fn !== null && canvas_ctx[attr] != fn) {
-          canvas_ctx[attr] = fn;
-        }
-    }
+  CartoShader.prototype.apply = function(canvas_ctx, data, render_context) {
+      var shader = this.compiled;
+      for(var attr in shader) {
+          var fn = shader[attr];
+          if(typeof fn === 'function') {
+              fn = fn(data, render_context);
+          } 
+          if(fn !== null && canvas_ctx[attr] != fn) {
+            canvas_ctx[attr] = fn;
+          }
+      }
   };
 
-  _shader.stroke = function() {
-      return _shader_src['line-width'] != undefined;
-  }
-  
-  _shader.fill = function() {
-      return _shader_src['polygon-fill'] != undefined;
-  }
+  VECNIK.CartoShader = CartoShader;
 
-  _shader.compile(sh)
+})(VECNIK);
 
-  return _shader;
-
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports.CartoShader = CartoShader;
 }
+
+

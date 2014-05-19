@@ -1,148 +1,111 @@
+//========================================
+// Core
+//
+// base classes
+//========================================
 
-vecnik = window.vecnik || {};
+// create root scope if not exists
 
-window.requestAnimFrame = (function(){
-      return  window.requestAnimationFrame       || 
-              window.webkitRequestAnimationFrame || 
-              window.mozRequestAnimationFrame    || 
-              window.oRequestAnimationFrame      || 
-              window.msRequestAnimationFrame     || 
-              function( callback ){
-                window.setTimeout(callback, 1000 / 60);
-              };
-})();
+var VECNIK = VECNIK || {};
 
-var extend = function(obj, prop) {
-  for(var p in prop) {
-    obj[p] = prop[p];
-  }
-}
+// TODO: Events, XHR
 
-vecnik.extend = extend;
+(function(VECNIK) {
 
-function Event() {}
-Event.prototype.on = function(evt, callback) {
-    var cb = this.callbacks = this.callbacks || {};
-    var l = cb[evt] || (cb[evt] = []);
-    l.push(callback);
-};
+    //========================================
+    // Events
+    //
+    // event management
+    //========================================
 
-Event.prototype.emit = function(evt) {
-    var c = this.callbacks && this.callbacks[evt];
-    for(var i = 0; c && i < c.length; ++i) {
+    function Event() {};
+
+    Event.prototype.on = function(evt, callback) {
+      var cb = this.callbacks = this.callbacks || {};
+      var l = cb[evt] || (cb[evt] = []);
+      l.push(callback);
+    };
+
+    Event.prototype.emit = function(evt) {
+      var c = this.callbacks && this.callbacks[evt];
+      for (var i = 0; c && i < c.length; ++i) {
         c[i].apply(this, Array.prototype.slice.call(arguments, 1));
+      }
+    };
+
+    // http get
+    // should be improved
+    function get(url, callback) {
+      var mygetrequest= new XMLHttpRequest();
+      mygetrequest.onreadystatechange=function() {
+        if (mygetrequest.readyState == 4){
+          if (mygetrequest.status == 200){
+            callback(JSON.parse(mygetrequest.responseText));
+          } else {
+            //error
+          }
+        }
+      };
+      mygetrequest.open("GET", url, true)
+      mygetrequest.send(null)
     }
-};
 
-vecnik.Events = Event;
+    //========================================
+    // model
+    //
+    // pretty basic model funcionallity
+    //========================================
 
-// simple tree implementation
-// usage:
-// extend(obj, vecnik.Tree)
-vecnik.Tree = {
+    function Model() {
+      //this.data = {}; // serializable data
+    }
 
-  add: function(node) {
-    if(!node) return this;
-    var cb = this.children();
-    node._parent = this;
-    cb.push(node);
-    return this;
-  },
+    Model.prototype = new Event();
 
-  remove: function(node) {
-    var cb = this.children();
-    if(cb) {
-      for(var c in cb) {
-        if(node == cb[c]) {
-          node._parent = null;
-          this._children.splice(c, 1);
-          return;
+    Model.prototype.set = function(data, silent) {
+      this.data = this.data || {};
+      for(var v in data) {
+        if(data.hasOwnProperty(v)) {
+          this.data[v] = data[v];
         }
       }
-    }
-    return this;
-  },
-
-  children: function() {
-    return this._children || (this._children = []);
-  },
-
-  each: function(fn) {
-    this.children().forEach(fn);
-    return this;
-  },
-
-  any: function(fn) {
-    for(var i in this.children()) {
-      if(fn(this._children[i]))
-        return true;
-    }
-    return false;
-  }
-
-}
-
-vecnik.timer = (function() {
-
-  function timer(fn) {
-    if(fn._timer) return;
-    fn._last = new Date().getTime();
-    fn._timer = timer;
-    timer.add(fn);
-    requestAnimFrame(timer.tick);
-  }
-
-  timer.tick = function() {
-    var remove = [];
-    timer.each(function(n) {
-      var now = new Date().getTime();
-      var dt = now - n._last;
-      if(!n.update(dt)) {
-        remove.push(n);
+      if(!silent) {
+        this.emit('change', this.data);
       }
-      n._last = now;
-    });
-    for(var r in remove) {
-      var o = remove[r];
-      timer.remove(o);
-      o._timer = null;
-    }
-    if(timer._children.length) requestAnimFrame(timer.tick);
-  }
+    };
 
-  extend(timer, vecnik.Tree);
-
-  return timer;
-
-})();
-
-// http get
-vecnik.getJSON = function(url, callback) {
-  var mygetrequest= new XMLHttpRequest();
-  mygetrequest.onreadystatechange = function() {
-    if (mygetrequest.readyState == 4){
-      if (mygetrequest.status == 200){
-        callback(JSON.parse(mygetrequest.responseText));
-      } else {
-        //error
+    Model.prototype.get = function(attr, def) {
+      if (this.data) {
+        if (attr in this.data) {
+          return this.data[attr];
+        }
+        return def;
       }
-    }
-  };
-  mygetrequest.open("GET", url, true)
-  mygetrequest.send(null)
+      return def;
+    };
+
+    /**
+     * delete the attribute
+     */
+    Model.prototype.unset = function(attr, silent) {
+      delete this.data[attr];
+      if (!silent) {
+        this.emit('change', this.data);
+      }
+    };
+
+    Model.prototype.destroy = function() {
+      this.emit('destroy');
+      delete this.data;
+    };
+
+    VECNIK.Event = Event;
+    VECNIK.Model = Model;
+    VECNIK.get = get;
+
+})(VECNIK);
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports.Event = VECNIK.Event;
+  module.exports.Model = VECNIK.Model;
 }
-
-/*
-var c = prop({
-  x: 0,
-  y: 0
-})
-c.animate({
-  x: 1,
-  y: 1
-})
-function anim() {
-
-}
-
-*/

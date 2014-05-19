@@ -2,20 +2,20 @@
 <html>
 <head>
 <title>Modest Maps JS</title>
-<script type="text/javascript" src="../libs/modestmaps.js"></script>
-<script type="text/javascript" src="../js/core.js"></script>
-<script type="text/javascript" src="../js/cartodb.sql.js"></script>
-<script type="text/javascript" src="../js/mercator.js"></script>
-<script type="text/javascript" src="../js/cartodb_vector.js"></script>
-<script type="text/javascript" src="../js/provider.js"></script>
-<script type="text/javascript" src="../js/cartoshader.js"></script>
-<script type="text/javascript" src="../js/cartodb_vector.modestmaps.js"></script>
+<script type="text/javascript" src="lib/modestmaps.js"></script>
+<script type="text/javascript" src="../src/core.js"></script>
+<script type="text/javascript" src="../src/cartodb.sql.js"></script>
+<script type="text/javascript" src="../src/mercator.js"></script>
+<script type="text/javascript" src="../src/cartodb_vector.js"></script>
+<script type="text/javascript" src="../src/provider.js"></script>
+<script type="text/javascript" src="../src/cartoshader.js"></script>
+<script type="text/javascript" src="../src/cartodb_vector.modestmaps.js"></script>
 <script type="text/javascript" src="stats.js"></script>
 <script type="text/javascript">
     var map;
     function initMap() {
         var stat = new Stats();
-        
+
         var template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png';
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
         var provider = new MM.TemplatedLayer(template, subdomains);
@@ -42,7 +42,7 @@
                 }
                 return '1';
             },
-            'polygon-fill': function(data) { 
+            'polygon-fill': function(data) {
                 return "rgba(200, 200, 200, 0.8)";
             }
         });
@@ -51,7 +51,7 @@
         fg = new MM.Layer(vector_layer);
 
         map = new MM.Map(document.getElementById('map'), [provider, fg])
-        
+
         if(!location.hash) {
           map.setCenterZoom(new MM.Location(0, 0), 2);
         }
@@ -92,7 +92,7 @@
             }
 
             stat.update(stats);
-              
+
         }, 2000);
 
     }

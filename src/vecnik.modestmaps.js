@@ -29,18 +29,18 @@ var VECNIK = VECNIK || {};
     this.tileSize = tileSize || new MM.Point(256, 256)
     this.renderer = renderer;
     this.tiles = new VECNIK.TileManager(dataSource)
-    this.views = new VECNIK.CanvasMapView(shader);
+    this.views = new VECNIK.CanvasTileManager(shader);
     this.shader = shader;
   }
 
   CanvasProvider.prototype.getTile = function(coord) {
       var tile = this.tiles.add(coord);
-      var canvas = new VECNIK.CanvasTileView(tile, this.shader, this.renderer);
+      var canvas = new VECNIK.CanvasTile(tile, this.shader, this.renderer);
       this.views.add(canvas);
       return canvas.el;
   }
 
-  CanvasProvider.prototype.releaseTile = function(coordinates) { 
+  CanvasProvider.prototype.releaseTile = function(coordinates) {
     this.tiles.destroy(coordinates);
   };
 

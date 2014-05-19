@@ -1,4 +1,4 @@
-L['TileLayer']['Canvas'] = L.TileLayer.extend({
+L.TileLayer.Canvas = L.TileLayer.extend({
     options: {
         async: false
     },
@@ -10,7 +10,7 @@ L['TileLayer']['Canvas'] = L.TileLayer.extend({
          table: 'countries_final',
          columns: ['admin']
       });
-      this.views = new CanvasMapView();
+      this.views = new CanvasTileManager();
     },
 
     redraw: function () {
