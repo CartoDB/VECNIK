@@ -20,44 +20,47 @@
   };
 
   proto.cache = function() {
-    var geometry = [];
-    var collection = this.data.features;
+    var collection = [];
+    var features = this.data.features;
 
-    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
-      var worker = new Worker('../src/projector.worker.js');
-      var self = this;
-      worker.onmessage = function(e) {
-        self.set({ geometry: e.data.geometry }, true);
-        self.unset('features', true);
-        self.emit('ready');
-      };
-      worker.postMessage({
-        collection: collection,
-        zoom: this.zoom,
-        x: this.x,
-        y: this.y
-      });
-      return;
-    }
+    // TODO: align property handling
+//    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
+//      var worker = new Worker('../src/projector.worker.js');
+//      var self = this;
+//      worker.onmessage = function(e) {
+//        self.set({ geometry: e.data.geometry }, true);
+//        self.unset('features', true);
+//        self.emit('ready');
+//      };
+//      worker.postMessage({
+//        collection: collection,
+//        zoom: this.zoom,
+//        x: this.x,
+//        y: this.y
+//      });
+//      return;
+//    }
 
     var feature, coordinates;
-    for (var i = 0, il = collection.length; i < il; i++) {
-      feature = collection[i];
+    for (var i = 0, il = features.length; i < il; i++) {
+      feature = features[i];
       if (!feature.geometry) {
         continue;
       }
-      coordinates = VECNIK.project_geometry(feature.geometry, this.zoom, this.x, this.y);
+
+      coordinates = VECNIK.projectGeometry(feature.geometry, this.zoom, this.x, this.y);
       if (!coordinates || !coordinates.length) {
-        delete feature.geometry.coordinates;
         continue;
       }
-      geometry.push({
+
+      collection.push({
         coordinates: coordinates,
         type: feature.geometry.type,
         properties: feature.properties
       });
     }
-    this.set({ geometry: geometry }, true);
+
+    this.set({ collection: collection }, true);
     this.unset('features', true);
     this.emit('ready');
   };

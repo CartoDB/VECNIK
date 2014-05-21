@@ -4,28 +4,38 @@
 
 (function(VECNIK) {
 
-  function Renderer(context) {
-    this.context = context;
+  VECNIK.Renderer = function() {};
+
+  VECNIK.Renderer.POINT_RADIUS = 2;
+
+  var proto = VECNIK.Renderer.prototype;
+
+  proto.setCanvas = function(canvas) {
+    this.context = canvas.getContext('2d');
   };
 
-  var proto = Renderer.prototype;
-
-  proto.drawPolyline = function(coordinates) {
+  proto._drawPolyline = function(coordinates) {
     var context = this.context, i, il;
-    context.moveTo(coordinates[0], coordinates[1]);
-    for (i = 2, il = coordinates.length-1; i < il; i += 2) {
-      context.lineTo(coordinates[i], coordinates[i+1]);
+//    context.moveTo(coordinates[0], coordinates[1]);
+//    for (i = 2, il = coordinates.length-1; i < il; i += 2) {
+//      context.lineTo(coordinates[i], coordinates[i+1]);
+//    }
+    context.moveTo(coordinates[0].x, coordinates[0].y);
+    for (i = 1, il = coordinates.length; i < il; i++) {
+      context.lineTo(coordinates[i].x, coordinates[i].y);
     }
   };
 
-  proto.drawPolygon = function(coordinates) {
+  proto._drawPolygon = function(coordinates) {
     for (var i = 0, il = coordinates.length; i < il; i++) {
-      this.drawPolyline(coordinates[i]);
+      this._drawPolyline(coordinates[i]);
     }
   };
 
-  proto.drawCircle = function(x, y, radius) {
-    this.context.arc(x, y, radius, 0, Math.PI*2);
+//  proto._drawCircle = function(x, y, radius) {
+  proto._drawCircle = function(c, radius) {
+//    this.context.arc(x, y, radius, 0, Math.PI*2);
+    this.context.arc(c.x, c.y, radius, 0, Math.PI*2);
   };
 
 //  proto.render = function(ctx, geometry, zoom, shader) {
@@ -48,76 +58,61 @@
 //    }
 //  };
 
-  proto.render = function(context, geometry) { // zoom, shader
-this.context = context;
+  proto.render = function(queue) { // zoom, shader
     var
-//    context = this.context,
+      context = this.context,
       i, il, j, jl,
-      item, coordinates;
+      feature, coordinates;
 
-//    context.clearRect(0, 0, this.width, this.height);
-    context.canvas.width = context.canvas.width;
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-    for (i = 0, il = geometry.length; i < il; i++) {
-      item = geometry[i];
-      coordinates = item.coordinates;
+    for (i = 0, il = queue.length; i < il; i++) {
+      feature = queue[i];
+      coordinates = feature.coordinates;
 
-  //  context.strokeStyle = item.strokeColor;
-  //  context.fillStyle   = item.fillColor;
-      context.strokeStyle = 'rgba(255,0,0,0.15)';
-      context.fillStyle   = 'rgba(0,0,255,0.15)';
+  //  context.strokeStyle = feature.strokeColor;
+  //  context.fillStyle   = feature.fillColor;
+      context.strokeStyle = 'rgb(255,0,0)';
+      context.fillStyle   = 'rgb(0,0,255)';
 
       context.beginPath();
 
       // TODO: missing a few geometry types
-      switch (item.type) {
+      switch (feature.type) {
         case 'Point':
-          this.drawCircle(coordinates[0], coordinates[1], VECNIK.POINT_RADIUS);
+//          this._drawCircle(coordinates[0], coordinates[1], VECNIK.Renderer.POINT_RADIUS);
+          this._drawCircle(coordinates, VECNIK.Renderer.POINT_RADIUS);
         break;
 
         case 'MultiPoint':
           context.beginPath();
           for (j = 0, jl = coordinates.length; j < jl; j++) {
-            this.drawCircle(coordinates[j][0], coordinates[j][1], VECNIK.POINT_RADIUS);
+//            this._drawCircle(coordinates[j][0], coordinates[j][1], VECNIK.Renderer.POINT_RADIUS);
+            this._drawCircle(coordinates[j], VECNIK.Renderer.POINT_RADIUS);
           }
         break;
 
         case 'Polygon':
-          this.drawPolygon(coordinates);
+          this._drawPolygon(coordinates);
           context.closePath();
         break;
 
         case 'MultiPolygon':
           for (j = 0, jl = coordinates.length; j < jl; j++) {
-            this.drawPolygon(coordinates[j]);
+            this._drawPolygon(coordinates[j]);
           }
           context.closePath();
         break;
 
         case 'LineString':
-          this.drawPolyline(coordinates);
+          this._drawPolyline(coordinates);
         break;
       }
 
-      // TODO: no fill for LineString
+      // TODO: skip fill for LineString
       context.fill();
       context.stroke();
     }
   };
-
-//  function CanvasTile(tile, shader, renderer) {
-//    // shader
-//    this.shader = shader;
-//    if (shader) {
-//      shader.on('change', render);
-//    }
-//  }
-//
-//  CanvasTile.prototype.render = function() {
-//    this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, this.shader);
-//  };
-
-  VECNIK.Renderer = Renderer;
-  VECNIK.POINT_RADIUS = 2;
 
 })(VECNIK);

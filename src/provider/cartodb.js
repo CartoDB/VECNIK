@@ -10,11 +10,18 @@
     this.opts = opts;
     this.base_url = 'http://'+ opts.user +'.cartodb.com/api/v2/sql';
 
-    //set defaults
-    this.opts.ENABLE_SIMPLIFY = VECNIK.settings.get('ENABLE_SIMPLIFY');
-    this.opts.ENABLE_SNAPPING = VECNIK.settings.get('ENABLE_SNAPPING');
-    this.opts.ENABLE_CLIPPING = VECNIK.settings.get('ENABLE_CLIPPING');
-    this.opts.ENABLE_FIXING   = VECNIK.settings.get('ENABLE_FIXING');
+    if (this.opts.ENABLE_SIMPLIFY === undefined) {
+      this.opts.ENABLE_SIMPLIFY = true;
+    }
+    if (this.opts.ENABLE_SNAPPING === undefined) {
+      this.opts.ENABLE_SNAPPING = true;
+    }
+    if (this.opts.ENABLE_CLIPPING === undefined) {
+      this.opts.ENABLE_CLIPPING = true;
+    }
+    if (this.opts.ENABLE_FIXING === undefined) {
+      this.opts.ENABLE_FIXING = true;
+    }
   }
 
   var proto = CartoDBSQLAPI.prototype;

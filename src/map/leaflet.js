@@ -32,9 +32,11 @@ L.CanvasLayer = L.Class.extend({
     //this.project = this._project.bind(this);
     this.render = this.render.bind(this);
     this._canvas = this._createCanvas();
+    this.options.renderer.setCanvas(this._canvas);
+
     // backCanvas for zoom animation
     this._backCanvas = this._createCanvas();
-    this._ctx = this._canvas.getContext('2d');
+
     this.currentAnimationFrame = -1;
 
     this.requestAnimationFrame = window.requestAnimationFrame ||
@@ -107,7 +109,6 @@ L.CanvasLayer = L.Class.extend({
       VECNIK.load(this.options.provider.getUrl(coords.x, coords.y, coords.zoom), function(data) {
         tile.set(data);
         self._tileLoaded(coords, tile);
-  //    self.redraw();
       });
     });
 
@@ -123,7 +124,7 @@ L.CanvasLayer = L.Class.extend({
     back.width = this._canvas.width;
     back.height = this._canvas.height;
 
-    // paint current canvas in back canvas with trasnformation
+    // paint current canvas in back canvas with transformation
     back.getContext('2d').drawImage(this._canvas, 0, 0);
 
     // hide original
@@ -214,15 +215,24 @@ L.CanvasLayer = L.Class.extend({
 
   // TODO: create an interval
   redraw: function() {
-    if (this.currentAnimationFrame >= 0) {
-      this.cancelAnimationFrame.call(window, this.currentAnimationFrame);
-    }
-    this.currentAnimationFrame = this.requestAnimationFrame.call(window, this.render);
+//    if (this.currentAnimationFrame >= 0) {
+//      this.cancelAnimationFrame.call(window, this.currentAnimationFrame);
+//    }
+//    this.currentAnimationFrame = this.requestAnimationFrame.call(window, this.render);
+
+    this.requestAnimationFrame(this.render);
+    setTimeout(this.redraw.bind(this), 17);
   },
 
   onResize: function() {},
 
   render: function() {
-    this.options.renderer.render();
+    // TODO: turn tile data into a single render queue
+    // TODO: all coordinates as buffers
+console.log("=== RENDER FRAME ================================")
+    for (var key in this._tiles) {
+      this.options.renderer.render(this._tiles[key].get('collection'));
+console.log("=== RENDER TILE ===")
+    }
   }
 });

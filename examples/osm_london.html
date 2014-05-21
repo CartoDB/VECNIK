@@ -41,7 +41,7 @@
         var template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png';
         template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-light/{Z}/{X}/{Y}.png64';
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
-        var provider = new MM.TemplatedLayer(template, subdomains);
+        new MM.TemplatedLayer(template, subdomains);
 
         var dataSource = new VECNIK.CartoDB.API({
            user: 'viz2',
@@ -55,11 +55,11 @@
            //table: 'barcelona_osm_line',
            columns: ['type'], //do not include the_geom or cartodb_id, are implicit
            //columns: ['highway'], //do not include the_geom or cartodb_id, are implicit
+           debug: true,
            ENABLE_CLIPPING: true,
            ENABLE_SIMPLIFY: true,
            ENABLE_FIXING: true,
-           ENABLE_SNAPPING: true,
-           debug: true
+           ENABLE_SNAPPING: true
         });
 
         var shader = new VECNIK.CartoShader({
@@ -189,8 +189,7 @@ textarea {
 </head>
    <body onload="initMap()">
    <div id="map"></div>
-  <!--<div id="livecode" class="highlight">-->
-   </div>
+  <!--<div id="livecode" class="highlight"></div>-->
    <textarea id="code">
 #roads {
   [zoom > 12] {

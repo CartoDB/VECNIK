@@ -56,13 +56,12 @@
         if(!location.hash) {
           map.setCenterZoom(new MM.Location(0, 0), 2);
         }
-        var hash = new MM.Hash(map);
+        new MM.Hash(map);
         document.body.appendChild(stat.el);
 
         setInterval(function() {
             //collect stats
-            var stats =  {
-            }
+            var stats =  {};
             function _compute(s, tstats) {
                 stats[s] = stats[s] || {
                   avg: 0,

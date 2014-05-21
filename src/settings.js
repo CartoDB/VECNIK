@@ -16,11 +16,7 @@ var VECNIK = VECNIK || {};
   // default settings
   VECNIK.settings = new Settings({
     WEBWORKERS: false,
-    BACKBUFFER: true,
-    ENABLE_SIMPLIFY: true,
-    ENABLE_SNAPPING: true,
-    ENABLE_CLIPPING: true,
-    ENABLE_FIXING: true
+    BACKBUFFER: true
   });
 
 })(VECNIK);

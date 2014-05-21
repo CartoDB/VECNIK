@@ -2,11 +2,11 @@ var MercatorProjection = require('../src/mercator').MercatorProjection;
 var CartoDBSQL = require('../src/provider/cartodb.sql').CartoDBSQL;
 
 function data_for_tile(table, x, y, z, callback) {
-    var opts =  {
-           ENABLE_CLIPPING: true,
-           ENABLE_SIMPLIFY: true,
-           ENABLE_FIXING: true,
-           ENABLE_SNAPPING: true
+    var opts = {
+      ENABLE_CLIPPING: true,
+      ENABLE_SIMPLIFY: true,
+      ENABLE_FIXING: true,
+      ENABLE_SNAPPING: true
     };
     var prj = new MercatorProjection();
     var sql = CartoDBSQL(prj, table, x, y, z, opts);
@@ -62,6 +62,4 @@ if (process.argv.length < 4) {
       data_for_tile(table, x, y, zoom, logger);
     }
   }
-
 }
-

@@ -40,8 +40,7 @@ var VECNIK = VECNIK || {};
       //console.log('-- TOLERANCE: ' + tolerance);
 
       // simplify
-      var ENABLE_SIMPLIFY = opts.ENABLE_SIMPLIFY;
-      if ( ENABLE_SIMPLIFY ) {
+      if (opts.ENABLE_SIMPLIFY) {
         geom_column = 'ST_Simplify(' + geom_column + ', ' + tolerance + ')';
         // may change type
         geom_column = 'ST_CollectionExtract(' + geom_column + ', ST_Dimension( '
@@ -49,8 +48,7 @@ var VECNIK = VECNIK || {};
       }
 
       // snap to a pixel grid
-      var ENABLE_SNAPPING = opts.ENABLE_SNAPPING;
-      if ( ENABLE_SNAPPING ) {
+      if (opts.ENABLE_SNAPPING ) {
         geom_column = 'ST_SnapToGrid(' + geom_column + ', '
                       + pixel_geo_maxsize + ')';
         // may change type
@@ -64,8 +62,7 @@ var VECNIK = VECNIK || {};
         + bbox[1].lng() + "," + bbox[1].lat() + ", 4326)";
 
       // clip
-      var ENABLE_CLIPPING = opts.ENABLE_CLIPPING;
-      if ( ENABLE_CLIPPING ) {
+      if (opts.ENABLE_CLIPPING ) {
 
         // This is a slightly enlarged version of the query bounding box
         var sql_env_exp = 'ST_Expand(' + sql_env + ', '
@@ -79,8 +76,7 @@ var VECNIK = VECNIK || {};
             + ', ' + pixel_geo_maxsize + ')';
 
         // Make valid (both ST_Snap and ST_SnapToGrid and ST_Expand
-        var ENABLE_FIXING = opts.ENABLE_FIXING;
-        if ( ENABLE_FIXING ) {
+        if (opts.ENABLE_FIXING ) {
           // NOTE: up to PostGIS-2.0.0 beta5 ST_MakeValid did not accept
           //       points nor GeometryCollection objects
           geom_column = 'CASE WHEN ST_Dimension('
@@ -97,10 +93,10 @@ var VECNIK = VECNIK || {};
       }
 
       var columns = id_column + ',' + geom_column + ' as the_geom';
-      if(opts.columns) {
-          columns += ',';
-          columns += opts.columns.join(',')
-          columns += ' ';
+      if (opts.columns) {
+        columns += ',';
+        columns += opts.columns.join(',')
+        columns += ' ';
       }
 
       // profiling only

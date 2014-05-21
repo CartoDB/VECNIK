@@ -114,17 +114,15 @@
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
         var provider = new MM.TemplatedLayer(template, subdomains);
 
-        VECNIK.settings.set({
-           ENABLE_CLIPPING: true,
-           ENABLE_SIMPLIFY: true,
-           ENABLE_FIXING: true,
-           ENABLE_SNAPPING: true
-        });
         var dataSource = new VECNIK.CartoDB.API({
            user: 'viz2',
            table: 'countries_export_2',
            //columns: [''], //do not include the_geom or cartodb_id, are implicit
-           debug: true
+           debug: true,
+           ENABLE_CLIPPING: true,
+           ENABLE_SIMPLIFY: true,
+           ENABLE_FIXING: true,
+           ENABLE_SNAPPING: true
         });
 
         var shader = new VECNIK.CartoShader({
@@ -193,7 +191,6 @@ textarea {
 </head>
    <body onload="initMap()">
    <div id="map"></div>
-  <!--<div id="livecode" class="highlight">-->
-   </div>
+   <!--<div id="livecode" class="highlight"></div>-->
 </body>
 </html>

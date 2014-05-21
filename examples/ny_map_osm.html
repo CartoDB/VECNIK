@@ -15,7 +15,7 @@
 
 <script src="../src/provider/cartodb.sql.js"></script>
 <script src="../src/provider/cartodb.js"></script>
-<script src="../src/geojson.provider.js"></script>
+<script src="../src/provider/geojson.js"></script>
 
 <script src="stats.js"></script>
 
@@ -112,25 +112,22 @@
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
         var provider = new MM.TemplatedLayer(template, subdomains);
 
-        VECNIK.settings.set({
-           ENABLE_CLIPPING: true,
-           ENABLE_SIMPLIFY: true,
-           ENABLE_FIXING: true,
-           ENABLE_SNAPPING: true,
-        });
         /*
         var dataSource = new VECNIK.CartoDB.API({
            user: 'viz2',
            table: 'ny',
            //columns: [''], //do not include the_geom or cartodb_id, are implicit
-           debug: true
+           debug: true,
+           ENABLE_CLIPPING: true,
+           ENABLE_SIMPLIFY: true,
+           ENABLE_FIXING: true,
+           ENABLE_SNAPPING: true
         });
         */
 
         var dataSource = new VECNIK.GeoJSONTile({
           template: 'http://a.tile.openstreetmap.us/vectiles-highroad/{z}/{x}/{y}.json'
         });
-
 
         var shader = new VECNIK.CartoShader({
             'point-color': '#fff',
@@ -199,7 +196,6 @@ textarea {
 </head>
    <body onload="initMap()">
    <div id="map"></div>
-  <!--<div id="livecode" class="highlight">-->
-   </div>
+   <!--<div id="livecode" class="highlight"></div>-->
 </body>
 </html>

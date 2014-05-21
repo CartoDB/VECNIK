@@ -4,7 +4,7 @@ var files = [
   'src/carto.js',
   'src/provider/cartodb.js',
   'src/provider/cartodb.sql.js',
-  'src/geojson.provider.js',
+  'src/provider/geojson.js',
   'src/geometry.js',
   'src/mercator.js',
   'src/models.js',
