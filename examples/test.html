@@ -2,16 +2,17 @@
 <html>
 <head>
 <title>Modest Maps JS</title>
-<script type="text/javascript" src="lib/modestmaps.js"></script>
-<script type="text/javascript" src="../src/core.js"></script>
-<script type="text/javascript" src="../src/cartodb.sql.js"></script>
-<script type="text/javascript" src="../src/mercator.js"></script>
-<script type="text/javascript" src="../src/cartodb_vector.js"></script>
-<script type="text/javascript" src="../src/provider.js"></script>
-<script type="text/javascript" src="../src/cartoshader.js"></script>
-<script type="text/javascript" src="../src/cartodb_vector.modestmaps.js"></script>
-<script type="text/javascript" src="stats.js"></script>
-<script type="text/javascript">
+<script src="lib/modestmaps.js"></script>
+<script src="../src/core.js"></script>
+<script src="../src/provider/cartodb.sql.js"></script>
+<script src="../src/provider/cartodb.js"></script>
+<script src="../src/mercator.js"></script>
+<script src="../src/cartodb_vector.js"></script>
+<script src="../src/shader.js"></script>
+<script src="../src/map/modestmaps.js"></script>
+<script src="../src/map/modestmaps.tiles.js"></script>
+<script src="stats.js"></script>
+<script>
     var map;
     function initMap() {
         var stat = new Stats();

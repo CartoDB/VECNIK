@@ -36,8 +36,8 @@ L.Mixin.TileLoader = {
         Math.floor(bounds.max.x / tileSize),
         Math.floor(bounds.max.y / tileSize)
       ),
+      tileBounds = new L.Bounds(nwTilePoint, seTilePoint);
 
-    tileBounds = new L.Bounds(nwTilePoint, seTilePoint);
     this._addTilesFromCenterOut(tileBounds);
     this._removeOtherTiles(tileBounds);
   },
@@ -87,12 +87,12 @@ L.Mixin.TileLoader = {
     return !(k in this._tiles) && !(k in this._tilesLoading);
   },
 
-  _tileLoaded: function(tilePoint, tileData) {
+  _tileLoaded: function(coords, tile) {
     this._tilesToLoad--;
-    var k = tilePoint.x + ':' + tilePoint.y + ':' + tilePoint.zoom
-    this._tiles[k] = tileData;
-    delete this._tilesLoading[k];
-    if(this._tilesToLoad === 0) {
+    var key = coords.x +':'+ coords.y +':'+ coords.zoom
+    this._tiles[key] = tile;
+    delete this._tilesLoading[key];
+    if (this._tilesToLoad === 0) {
       this.fire('tilesLoaded');
     }
   },

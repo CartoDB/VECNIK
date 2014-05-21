@@ -1,5 +1,5 @@
-var MercatorProjection = require('../js/mercator').MercatorProjection;
-var CartoDBSQL = require('../js/cartodb.sql').CartoDBSQL;
+var MercatorProjection = require('../src/mercator').MercatorProjection;
+var CartoDBSQL = require('../src/provider/cartodb.sql').CartoDBSQL;
 
 function data_for_tile(table, x, y, z, callback) {
     var opts =  {
@@ -63,5 +63,5 @@ if (process.argv.length < 4) {
     }
   }
 
-} 
+}
 

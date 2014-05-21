@@ -36,14 +36,14 @@
 //      };
 //      var isActive = true;
 //      if (shader) {
-//        is_active = shader.needs_render(geo.metadata, render_context, geo.type);
+//        is_active = shader.needs_render(geo.properties, render_context, geo.type);
 //        if (isActive) {
 //          shader.reset(ctx, geo.type);
-//          shader.apply(ctx, geo.metadata, render_context);
+//          shader.apply(ctx, geo.properties, render_context);
 //        }
 //      }
 //      if (isActive) {
-//        renderer(ctx, geo.vertexBuffer);
+//        renderer(ctx, geo.coordinates);
 //      }
 //    }
 //  };
@@ -60,7 +60,7 @@ this.context = context;
 
     for (i = 0, il = geometry.length; i < il; i++) {
       item = geometry[i];
-      coordinates = item.vertexBuffer;
+      coordinates = item.coordinates;
 
   //  context.strokeStyle = item.strokeColor;
   //  context.fillStyle   = item.fillColor;
@@ -105,68 +105,19 @@ this.context = context;
     }
   };
 
-  //========================================
-  // Canvas tile view
-  //========================================
-  function CanvasTile(tile, shader, renderer) {
-    this.tileSize = new VECNIK.Point(256, 256);
-    var canvas = document.createElement('canvas');
-    canvas.width = this.tileSize.x;
-    canvas.height = this.tileSize.y;
-    this.ctx = canvas.getContext('2d');
-    this.canvas = canvas;
-
-    this.el = canvas;
-    this.id = tile.key();
-    this.el.setAttribute('id', tile.key());
-    var self = this;
-    this.tile = tile;
-    var render =  function(){self.render();};
-    tile.on('geometry_ready', render);
-
-    // shader
-    this.shader = shader;
-    if (shader) {
-      shader.on('change', render);
-    }
-    this.renderer = renderer || new Renderer();
-
-    this.profiler = new VECNIK.Profiler('tile_render');
-    this.stats = {
-      rendering_time: 0
-    }
-  }
-
-  CanvasTile.prototype.remove = function() {};
-
-  CanvasTile.prototype.render = function() {
-    var ctx = this.ctx;
-
-    this.profiler.start('render');
-    this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, this.shader);
-
-    this.stats.rendering_time = this.profiler.end();
-  };
-
-  //========================================
-  // Map view
-  // manages the list of tiles
-  //========================================
-  function CanvasTileManager() {
-    this.tiles = {};
-  }
-
-  CanvasTileManager.prototype.add = function(canvasview) {
-    this.tiles[canvasview.id] = canvasview;
-  };
-
-  CanvasTileManager.prototype.getByElement = function(el) {
-    return this.tiles[el.getAttribute('id')];
-  };
+//  function CanvasTile(tile, shader, renderer) {
+//    // shader
+//    this.shader = shader;
+//    if (shader) {
+//      shader.on('change', render);
+//    }
+//  }
+//
+//  CanvasTile.prototype.render = function() {
+//    this.renderer.render(ctx, this.tile.geometry(), this.tile.zoom, this.shader);
+//  };
 
   VECNIK.Renderer = Renderer;
   VECNIK.POINT_RADIUS = 2;
-  VECNIK.CanvasTile = CanvasTile;
-  VECNIK.CanvasTileManager = CanvasTileManager;
 
 })(VECNIK);

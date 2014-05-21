@@ -1,57 +1,3 @@
-//L.TileLayer.Canvas = L.TileLayer.extend({
-//
-//  options: {
-//    async: false
-//  },
-//
-//  initialize: function(options) {
-//    this.tileSize = tileSize || new MM.Point(256, 256)
-//    this.tiles = new CartoDBSQLAPI({
-//       user: 'vizzuality',
-//       table: 'countries_final',
-//       columns: ['admin']
-//    });
-//    this.views = new CanvasTileManager();
-//  },
-//
-//  redraw: function() {},
-//
-//  _createTileProto: function() {
-//    var proto = this._canvasProto = L.DomUtil.create('canvas', 'leaflet-tile');
-//
-//    var tileSize = this.options.tileSize;
-//    proto.width = tileSize;
-//    proto.height = tileSize;
-//  },
-//
-//  _createTile: function() {
-//    var tile = this._canvasProto.cloneNode(false);
-//    tile.onselectstart = tile.onmousemove = L.Util.falseFn;
-//    return tile;
-//  },
-//
-//  _loadTile: function(tile, tilePoint, zoom) {
-//    tile._layer = this;
-//    tile._tilePoint = tilePoint;
-//    tile._zoom = zoom;
-//
-//    this.drawTile(tile, tilePoint, zoom);
-//
-//    if (!this.options.async) {
-//      this.tileDrawn(tile);
-//    }
-//  },
-//
-//  _resetTile: function(tile) {},
-//
-//  drawTile: function(tile, tilePoint, zoom) {
-//    // override with rendering code
-//  },
-//
-//  tileDrawn: function (tile) {
-//    this._tileOnLoad.call(tile);
-//  }
-//});
 
 L.CanvasLayer = L.Class.extend({
 
@@ -73,6 +19,15 @@ L.CanvasLayer = L.Class.extend({
   initialize: function(options) {
     options = options || {};
     L.Util.setOptions(this, options);
+
+    if (!this.options.provider) {
+      throw new Error('CanvasLayer requires a provider');
+    }
+
+    // TODO: use internal renderer as default
+    if (!this.options.renderer) {
+      throw new Error('CanvasLayer requires a renderer');
+    }
 
     //this.project = this._project.bind(this);
     this.render = this.render.bind(this);
@@ -146,10 +101,12 @@ L.CanvasLayer = L.Class.extend({
 
     this._initTileLoader();
 
-    this.on('tileAdded', function(t) {
-      VECNIK.get(this.options.provider.getUrl(t.x, t.y, t.zoom), function(res) {
-  //    var tile = new Tile(data, self.renderer)
-  //    self._tileLoaded(t, tile);
+    var self = this;
+    this.on('tileAdded', function(coords) {
+      var tile = new VECNIK.Tile(coords.x, coords.y, coords.zoom)
+      VECNIK.load(this.options.provider.getUrl(coords.x, coords.y, coords.zoom), function(data) {
+        tile.set(data);
+        self._tileLoaded(coords, tile);
   //    self.redraw();
       });
     });
@@ -157,7 +114,7 @@ L.CanvasLayer = L.Class.extend({
     this._reset();
   },
 
-  _animateZoom: function (e) {
+  _animateZoom: function(e) {
     if (!this._animating) {
       this._animating = true;
     }
@@ -208,7 +165,7 @@ L.CanvasLayer = L.Class.extend({
     this._container.parentNode.removeChild(this._container);
     map.off({
       viewreset: this._reset,
-      move:      this._render,
+      move:      this.render,
       resize:    this._reset,
       zoomanim:  this._animateZoom,
       zoomend:   this._endZoomAnim
@@ -243,7 +200,7 @@ L.CanvasLayer = L.Class.extend({
     this._canvas.width = size.x;
     this._canvas.height = size.y;
     this.onResize();
-    this._render();
+    this.render();
   },
 
   /*
@@ -255,25 +212,17 @@ L.CanvasLayer = L.Class.extend({
 
   _updateOpacity: function() {},
 
-  _render: function() {
+  // TODO: create an interval
+  redraw: function() {
     if (this.currentAnimationFrame >= 0) {
       this.cancelAnimationFrame.call(window, this.currentAnimationFrame);
     }
     this.currentAnimationFrame = this.requestAnimationFrame.call(window, this.render);
   },
 
-  // use direct: true if you are inside an animation frame call
-  redraw: function(direct) {
-    if (direct) {
-      this.render();
-    } else {
-      this._render();
-    }
-  },
-
   onResize: function() {},
 
   render: function() {
-    throw new Error('render function should be implemented');
+    this.options.renderer.render();
   }
 });

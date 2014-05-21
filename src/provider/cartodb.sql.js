@@ -9,10 +9,10 @@ var VECNIK = VECNIK || {};
   var sql = function(projection, table, x, y, zoom, opts) {
 
       opts = opts || {
-           ENABLE_CLIPPING: false,
-           ENABLE_SIMPLIFY: false,
-           ENABLE_FIXING: false,
-           ENABLE_SNAPPING: false
+        ENABLE_CLIPPING: false,
+        ENABLE_SIMPLIFY: false,
+        ENABLE_FIXING: false,
+        ENABLE_SNAPPING: false
       };
       var bbox = projection.tileBBox(x, y, zoom);
       var geom_column = '"the_geom"';

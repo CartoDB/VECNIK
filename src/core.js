@@ -35,7 +35,7 @@ var VECNIK = VECNIK || {};
 
     // http get
     // should be improved
-    function get(url, callback) {
+    function load(url, callback) {
       var mygetrequest = new XMLHttpRequest();
       mygetrequest.onreadystatechange=function() {
         if (mygetrequest.readyState == 4){
@@ -57,29 +57,25 @@ var VECNIK = VECNIK || {};
     //========================================
 
     function Model() {
-      //this.data = {}; // serializable data
+      this.data = {};
     }
 
     Model.prototype = new Event();
 
     Model.prototype.set = function(data, silent) {
-      this.data = this.data || {};
-      for(var v in data) {
-        if(data.hasOwnProperty(v)) {
+      for (var v in data) {
+        if (data.hasOwnProperty(v)) {
           this.data[v] = data[v];
         }
       }
-      if(!silent) {
+      if (!silent) {
         this.emit('change', this.data);
       }
     };
 
     Model.prototype.get = function(attr, def) {
-      if (this.data) {
-        if (attr in this.data) {
-          return this.data[attr];
-        }
-        return def;
+      if (attr in this.data) {
+        return this.data[attr];
       }
       return def;
     };
@@ -101,7 +97,7 @@ var VECNIK = VECNIK || {};
 
     VECNIK.Event = Event;
     VECNIK.Model = Model;
-    VECNIK.get = get;
+    VECNIK.load = load;
 
 })(VECNIK);
 
