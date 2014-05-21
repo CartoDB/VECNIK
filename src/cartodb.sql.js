@@ -1,5 +1,5 @@
 //========================================
-// sql generator for cartodb 
+// sql generator for cartodb
 //========================================
 
 var VECNIK = VECNIK || {};
@@ -48,7 +48,7 @@ var VECNIK = VECNIK || {};
           + geom_column_orig + ') + 1 )';
       }
 
-      // snap to a pixel grid 
+      // snap to a pixel grid
       var ENABLE_SNAPPING = opts.ENABLE_SNAPPING;
       if ( ENABLE_SNAPPING ) {
         geom_column = 'ST_SnapToGrid(' + geom_column + ', '
@@ -127,4 +127,3 @@ var VECNIK = VECNIK || {};
 if (typeof module !== 'undefined' && module.exports) {
   module.exports.CartoDBSQL = VECNIK.CartoDB.SQL;
 }
-

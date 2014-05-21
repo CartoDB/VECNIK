@@ -67,20 +67,21 @@ L.CanvasLayer = L.Class.extend({
     zoomOffset: 0,
     opacity: 1,
     unloadInvisibleTiles: L.Browser.mobile,
-    updateWhenIdle: L.Browser.mobile,
-    tileLoader: false // installs tile loading events
+    updateWhenIdle: L.Browser.mobile
   },
 
   initialize: function(options) {
     options = options || {};
+    L.Util.setOptions(this, options);
+
     //this.project = this._project.bind(this);
     this.render = this.render.bind(this);
-    L.Util.setOptions(this, options);
     this._canvas = this._createCanvas();
     // backCanvas for zoom animation
     this._backCanvas = this._createCanvas();
     this._ctx = this._canvas.getContext('2d');
     this.currentAnimationFrame = -1;
+
     this.requestAnimationFrame = window.requestAnimationFrame ||
       window.mozRequestAnimationFrame ||
       window.webkitRequestAnimationFrame ||
@@ -88,6 +89,7 @@ L.CanvasLayer = L.Class.extend({
       function(callback) {
         return window.setTimeout(callback, 1000 / 60);
       };
+
     this.cancelAnimationFrame = window.cancelAnimationFrame ||
       window.mozCancelAnimationFrame ||
       window.webkitCancelAnimationFrame ||
@@ -103,7 +105,7 @@ L.CanvasLayer = L.Class.extend({
     canvas.style.position = 'absolute';
     canvas.style.top = 0;
     canvas.style.left = 0;
-    canvas.style.pointerEvents = "none";
+    canvas.style.pointerEvents = 'none';
     canvas.style.zIndex = this.options.zIndex || 0;
     var className = 'leaflet-tile-container leaflet-zoom-animated';
     canvas.setAttribute('class', className);
@@ -117,13 +119,13 @@ L.CanvasLayer = L.Class.extend({
     // the container is moved in the oposite direction of the
     // map pane to keep the canvas always in (0, 0)
     var tilePane = this._map._panes.tilePane;
-    var _container = L.DomUtil.create('div', 'leaflet-layer');
-    _container.appendChild(this._canvas);
-    _container.appendChild(this._backCanvas);
+    var container = L.DomUtil.create('div', 'leaflet-layer');
+    container.appendChild(this._canvas);
+    container.appendChild(this._backCanvas);
     this._backCanvas.style.display = 'none';
-    tilePane.appendChild(_container);
+    tilePane.appendChild(container);
 
-    this._container = _container;
+    this._container = container;
 
     // hack: listen to predrag event launched by dragging to
     // set container in position (0, 0) in screen coordinates
@@ -142,9 +144,15 @@ L.CanvasLayer = L.Class.extend({
       zoomend:   this._endZoomAnim
     }, this);
 
-    if(this.options.tileLoader) {
-      this._initTileLoader();
-    }
+    this._initTileLoader();
+
+    this.on('tileAdded', function(t) {
+      VECNIK.get(this.options.provider.getUrl(t.x, t.y, t.zoom), function(res) {
+  //    var tile = new Tile(data, self.renderer)
+  //    self._tileLoaded(t, tile);
+  //    self.redraw();
+      });
+    });
 
     this._reset();
   },
@@ -169,13 +177,13 @@ L.CanvasLayer = L.Class.extend({
     var oldCenter = map._latLngToNewLayerPoint(e.center, e.zoom, e.center);
 
     var origin = {
-      x: newCenter.x - oldCenter.x,
-      y: newCenter.y - oldCenter.y
+      x: newCenter.x-oldCenter.x,
+      y: newCenter.y-oldCenter.y
     };
 
     var bg = back;
     var transform = L.DomUtil.TRANSFORM;
-    bg.style[transform] =  L.DomUtil.getTranslateString(origin) + ' scale(' + e.scale + ') ';
+    bg.style[transform] = L.DomUtil.getTranslateString(origin) +' scale('+ e.scale +') ';
   },
 
   _endZoomAnim: function () {

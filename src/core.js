@@ -36,7 +36,7 @@ var VECNIK = VECNIK || {};
     // http get
     // should be improved
     function get(url, callback) {
-      var mygetrequest= new XMLHttpRequest();
+      var mygetrequest = new XMLHttpRequest();
       mygetrequest.onreadystatechange=function() {
         if (mygetrequest.readyState == 4){
           if (mygetrequest.status == 200){

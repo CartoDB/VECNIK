@@ -1,7 +1,7 @@
 //========================================
 // Carto stylesheets support
 //
-// this is basically a hack on top of branch browser of carto 
+// this is basically a hack on top of branch browser of carto
 // repository: Compiles carto to javascript shader
 //========================================
 
@@ -70,7 +70,7 @@
 
   function createFn(ops) {
     var body = ops.join('\n');
-    return Function("data","ctx", "var _value = null; " +  body + "; return _value; ");
+    return Function("data", "ctx", "var _value = null; " +  body + "; return _value; ");
   }
 
   function toCartoShader(ruleset) {
@@ -86,7 +86,6 @@
       console.log(e);
       return null;
     }
-
 
     return shaderAttrs;
   }
@@ -128,5 +127,4 @@
 
 })(VECNIK);
 
-if (typeof module !== 'undefined' && module.exports) {
-}
+if (typeof module !== 'undefined' && module.exports) {}
