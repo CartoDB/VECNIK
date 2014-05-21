@@ -18,7 +18,7 @@ var VECNIK = VECNIK || {};
     // event management
     //========================================
 
-    function Event() {};
+    function Event() {}
 
     Event.prototype.on = function(evt, callback) {
       var cb = this.callbacks = this.callbacks || {};
@@ -46,8 +46,8 @@ var VECNIK = VECNIK || {};
           }
         }
       };
-      mygetrequest.open("GET", url, true)
-      mygetrequest.send(null)
+      mygetrequest.open("GET", url, true);
+      mygetrequest.send(null);
     }
 
     //========================================

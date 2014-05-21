@@ -46,7 +46,7 @@ var VECNIK = VECNIK || {};
         var converted = [];
         var projector = primitiveProjectors.LineString;
         for (var i = 0, il = coordinates.length; i < il; i++) {
-          converted.push(projector(x, y, zoom, coordinates[i]))
+          converted.push(projector(x, y, zoom, coordinates[i]));
         }
         return converted;
       },
@@ -55,7 +55,7 @@ var VECNIK = VECNIK || {};
         var converted = [];
         var projector = primitiveProjectors.Polygon;
         for (var i = 0, il = coordinates.length; i < il; i++) {
-          converted.push(projector(x, y, zoom, coordinates[i]))
+          converted.push(projector(x, y, zoom, coordinates[i]));
         }
         return converted;
       }

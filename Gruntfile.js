@@ -37,25 +37,29 @@ module.exports = function(grunt) {
            language_in: 'ECMASCRIPT5_STRICT'
         }
       }
+    },
+
+    jasmine: {
+      pivotal: {
+        src: files,
+        options: {
+//          specs: 'test/spec/**/*.js',
+//          helpers: ['test/lib/sinon-1.3.4.js', 'test/spec/*Helper.js', 'https://maps.google.com/maps/api/js?sensor=false&v=3.12']
+        }
+      }
+    },
+
+    jshint: {
+      all: ['src/**/*.js']
     }
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-closure-compiler');
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
+
   grunt.registerTask('default', ['concat']);
   grunt.registerTask('compress', ['uglify', 'closure-compiler:frontend']);
 };
-
-//    jasmine: {
-//      pivotal: {
-//          src: cartodb_files.all,
-//          options: {
-//            specs: 'test/spec/**/*.js',
-//            helpers: ['test/lib/sinon-1.3.4.js', 'test/spec/*Helper.js', 'https://maps.google.com/maps/api/js?sensor=false&v=3.12']
-//          }
-//      }
-//    }
-//  });
-
-//  grunt.loadNpmTasks('grunt-contrib-jasmine');

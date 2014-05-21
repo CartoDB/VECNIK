@@ -105,7 +105,7 @@ L.CanvasLayer = L.Class.extend({
 
     var self = this;
     this.on('tileAdded', function(coords) {
-      var tile = new VECNIK.Tile(coords.x, coords.y, coords.zoom)
+      var tile = new VECNIK.Tile(coords.x, coords.y, coords.zoom);
       VECNIK.load(this.options.provider.getUrl(coords.x, coords.y, coords.zoom), function(data) {
         tile.set(data);
         self._tileLoaded(coords, tile);

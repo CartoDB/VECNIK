@@ -9,13 +9,13 @@
 
   // monkey patch less classes
   tree.Value.prototype.toJS = function() {
-      var v = this.value[0].value[0];
-      val = v.toString();
-      if(v.is === "color") {
-        val = "'" + val + "'";
-      }
-      return "_value = " + val + ";"
-  }
+    var v = this.value[0].value[0];
+    val = v.toString();
+    if(v.is === "color") {
+      val = "'" + val + "'";
+    }
+    return "_value = " + val + ";";
+  };
 
   tree.Selector.prototype.toJS = function() {
     var self = this;
@@ -38,7 +38,7 @@
         return attrs + "." + filter.key  + " " + op + " " + val;
       })
     ).join(" && ");
-  }
+  };
 
   tree.Ruleset.prototype.toJS = function() {
     var shaderAttrs = {};
@@ -66,7 +66,7 @@
         }
     });
     return shaderAttrs;
-  }
+  };
 
   function createFn(ops) {
     var body = ops.join('\n');
@@ -111,14 +111,14 @@
         callback(null);
       }
     });
-  }
+  };
 
   var init = function(callback) {
     carto_initialize(carto, './reference.json', function(carto) {
       VECNIK.Carto._carto = carto;
       if(callback) callback(carto);
     });
-  }
+  };
 
   VECNIK.Carto = {
     init: init,

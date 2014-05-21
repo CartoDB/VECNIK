@@ -6,7 +6,7 @@
     this.y = y;
     this.zoom = zoom;
 
-    this.on('change', this.cache.bind(this))
+    this.on('change', this.cache.bind(this));
   };
 
   var proto = VECNIK.Tile.prototype = new VECNIK.Model();

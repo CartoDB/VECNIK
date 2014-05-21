@@ -41,78 +41,60 @@ var VECNIK = VECNIK || {};
 
       // simplify
       if (opts.ENABLE_SIMPLIFY) {
-        geom_column = 'ST_Simplify(' + geom_column + ', ' + tolerance + ')';
+        geom_column = 'ST_Simplify('+ geom_column +', '+ tolerance +')';
         // may change type
-        geom_column = 'ST_CollectionExtract(' + geom_column + ', ST_Dimension( '
-          + geom_column_orig + ') + 1 )';
+        geom_column = 'ST_CollectionExtract('+ geom_column +', ST_Dimension('+ geom_column_orig +') + 1)';
       }
 
       // snap to a pixel grid
       if (opts.ENABLE_SNAPPING ) {
-        geom_column = 'ST_SnapToGrid(' + geom_column + ', '
-                      + pixel_geo_maxsize + ')';
+        geom_column = 'ST_SnapToGrid('+ geom_column +', '+ pixel_geo_maxsize +')';
         // may change type
-        geom_column = 'ST_CollectionExtract(' + geom_column + ', ST_Dimension( '
-          + geom_column_orig + ') + 1 )';
+        geom_column = 'ST_CollectionExtract('+ geom_column +', ST_Dimension('+ geom_column_orig +') + 1)';
       }
 
       // This is the query bounding box
-      var sql_env = "ST_MakeEnvelope("
-        + bbox[0].lng() + "," + bbox[0].lat() + ","
-        + bbox[1].lng() + "," + bbox[1].lat() + ", 4326)";
+      var sql_env = 'ST_MakeEnvelope('+
+        bbox[0].lng() +','+ bbox[0].lat() +','+
+        bbox[1].lng() +','+ bbox[1].lat() +', 4326)';
 
       // clip
-      if (opts.ENABLE_CLIPPING ) {
-
+      if (opts.ENABLE_CLIPPING) {
         // This is a slightly enlarged version of the query bounding box
-        var sql_env_exp = 'ST_Expand(' + sql_env + ', '
-                                       + ( pixel_geo_maxsize * 2 ) + ')';
+        var sql_env_exp = 'ST_Expand('+ sql_env +', '+ (pixel_geo_maxsize*2) +')';
         // Also must be snapped to the grid ...
-        sql_env_exp = 'ST_SnapToGrid(' + sql_env_exp + ','
-                                       + pixel_geo_maxsize + ')';
+        sql_env_exp = 'ST_SnapToGrid('+ sql_env_exp +','+ pixel_geo_maxsize +')';
 
         // snap to box
-        geom_column = 'ST_Snap(' + geom_column + ', ' + sql_env_exp
-            + ', ' + pixel_geo_maxsize + ')';
+        geom_column = 'ST_Snap('+ geom_column +', '+ sql_env_exp +', '+ pixel_geo_maxsize +')';
 
         // Make valid (both ST_Snap and ST_SnapToGrid and ST_Expand
-        if (opts.ENABLE_FIXING ) {
+        if (opts.ENABLE_FIXING) {
           // NOTE: up to PostGIS-2.0.0 beta5 ST_MakeValid did not accept
           //       points nor GeometryCollection objects
-          geom_column = 'CASE WHEN ST_Dimension('
-            + geom_column + ') = 0 OR GeometryType('
-            + geom_column + ") = 'GEOMETRYCOLLECTION' THEN "
-            + geom_column + ' ELSE ST_CollectionExtract(ST_MakeValid('
-            + geom_column + '), ST_Dimension(' + geom_column_orig
-            + ') + 1 ) END';
+          geom_column = 'CASE WHEN ST_Dimension('+
+            geom_column +') = 0 OR GeometryType('+
+            geom_column +") = 'GEOMETRYCOLLECTION' THEN "+
+            geom_column +' ELSE ST_CollectionExtract(ST_MakeValid('+
+            geom_column +'), ST_Dimension(' + geom_column_orig +
+            ') + 1) END';
         }
 
         // clip by box
-        geom_column = 'ST_Intersection(' + geom_column
-          + ', ' + sql_env_exp + ')';
+        geom_column = 'ST_Intersection('+ geom_column +', '+ sql_env_exp +')';
       }
 
-      var columns = id_column + ',' + geom_column + ' as the_geom';
+      var columns = id_column +','+ geom_column +' as the_geom';
       if (opts.columns) {
-        columns += ',';
-        columns += opts.columns.join(',')
-        columns += ' ';
+        columns += ','+ opts.columns.join(',') +' ';
       }
 
       // profiling only
-      var COUNT_ONLY = opts.COUNT_ONLY || false;
-      if ( COUNT_ONLY ) {
-        columns = x + ' as x, ' + y + ' as y, sum(st_npoints('
-                  + geom_column + ')) as the_geom';
+      if (COUNT_ONLY) {
+        columns = x +' AS x, '+ y +' AS y, SUM(st_npoints('+ geom_column +')) AS the_geom';
       }
 
-      var sql = "select " + columns +" from " + table;
-      sql += " WHERE the_geom && " + sql_env;
-      //sql += " LIMIT 100";
-
-      //console.log('-- SQL: ' + sql);
-
-      return sql;
+      return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env; // +' LIMIT 100';
   };
 
   VECNIK.CartoDB = VECNIK.CartoDB || {};

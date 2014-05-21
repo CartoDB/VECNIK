@@ -19,7 +19,7 @@ var VECNIK = VECNIK || {};
     function LatLng(lat, lon) {
       this.latitude = lat || 0;
       this.longitude = lon || 0;
-    };
+    }
 
     LatLng.prototype.lat = function() {
       return this.latitude;
@@ -30,8 +30,8 @@ var VECNIK = VECNIK || {};
     };
 
     function bound(value, opt_min, opt_max) {
-      if (opt_min != null) value = Math.max(value, opt_min);
-      if (opt_max != null) value = Math.min(value, opt_max);
+      if (opt_min !== null) value = Math.max(value, opt_min);
+      if (opt_max !== null) value = Math.min(value, opt_max);
       return value;
     }
 

@@ -4,7 +4,6 @@ $(document).ready(function() {
 
   module("vecnik.geo");
 
-
   test("parseGeoJSON", function() {
     var g = vecnik.geo().parseGeoJSON(JSON.parse(geojson).features[0].geometry);
     equal(g.children().length, 1)
@@ -15,6 +14,5 @@ $(document).ready(function() {
     var g = vecnik.geo().parseGeoJSON(JSON.parse(geojson));
     equal(g.children().length, 2)
   });
-
 
 });
