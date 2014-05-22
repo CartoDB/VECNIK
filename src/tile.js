@@ -1,4 +1,9 @@
 
+// TODO: refactor tiles to be simpler structure, create a generic tile manager
+// TODO: fix projection origin per tile
+// TODO: add geometries into a render queue
+// TODO: filter duplicate features
+
 (function(VECNIK) {
 
   VECNIK.Tile = function(x, y, zoom) {
@@ -48,7 +53,7 @@
         continue;
       }
 
-      coordinates = VECNIK.projectGeometry(feature.geometry, this.zoom, this.x, this.y);
+      coordinates = VECNIK.projectGeometry(feature.geometry, this.zoom);
       if (!coordinates || !coordinates.length) {
         continue;
       }

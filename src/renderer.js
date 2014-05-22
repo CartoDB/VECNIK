@@ -2,6 +2,8 @@
 // vecnik views
 //========================================
 
+// TODO: do we want a render loop, or rendering on demand, or loop+throttling
+
 (function(VECNIK) {
 
   VECNIK.Renderer = function() {};
@@ -19,14 +21,15 @@
   };
 
   proto._drawPolyline = function(coordinates) {
+    var origin = this._origin;
     var context = this.context, i, il;
-//    context.moveTo(coordinates[0], coordinates[1]);
+//    context.moveTo(coordinates[0]-origin.x, coordinates[1]-origin.y);
 //    for (i = 2, il = coordinates.length-1; i < il; i += 2) {
-//      context.lineTo(coordinates[i], coordinates[i+1]);
+//      context.lineTo(coordinates[i]-origin.x, coordinates[i+1]-origin.y);
 //    }
-    context.moveTo(coordinates[0].x, coordinates[0].y);
+    context.moveTo(coordinates[0].x-origin.x, coordinates[0].y-origin.y);
     for (i = 1, il = coordinates.length; i < il; i++) {
-      context.lineTo(coordinates[i].x, coordinates[i].y);
+      context.lineTo(coordinates[i].x-origin.x, coordinates[i].y-origin.y);
     }
   };
 
@@ -38,8 +41,9 @@
 
 //  proto._drawCircle = function(x, y, radius) {
   proto._drawCircle = function(c, radius) {
-//    this.context.arc(x, y, radius, 0, Math.PI*2);
-    this.context.arc(c.x, c.y, radius, 0, Math.PI*2);
+    var origin = this._origin;
+//    this.context.arc(x-origin.x, y-origin.y, radius, 0, Math.PI*2);
+    this.context.arc(c.x-origin.x, c.y-origin.y, radius, 0, Math.PI*2);
   };
 
 //  proto.render = function(ctx, geometry, zoom, shader) {
@@ -66,11 +70,13 @@
   proto.clear = function() {
     var context = this.context;
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-    context.strokeStyle = 'rgb('+ (255*Math.random()<<0) +',0,0)';
-    context.fillStyle   = 'rgb(0,0,'+ (255*Math.random()<<0) +')';
+    context.strokeStyle = '#000000';
+    context.fillStyle   = 'rgba(240,220,200,0.5)';
   };
 
-  proto.render = function(queue) {
+  proto.render = function(queue, origin) {
+    this._origin = origin;
+
     var
       context = this.context,
       i, il, j, jl,

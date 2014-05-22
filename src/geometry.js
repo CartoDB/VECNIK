@@ -9,66 +9,54 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
-  var LatLng = VECNIK.LatLng;
-
-  //stats
-  var stats = { vertices: 0 };
-
-  var latlng = new LatLng(0, 0);
-  var prj = new VECNIK.MercatorProjection();
-
-  function map_latlon(ll, x, y, zoom) {
-    latlng.latitude  = ll[1];
-    latlng.longitude = ll[0];
-    stats.vertices++;
-    return prj.latLngToTilePoint(latlng, x, y, zoom);
-  }
+  var latlng = new VECNIK.LatLng(0, 0);
+  var mercator = new VECNIK.MercatorProjection();
 
   var primitiveProjectors = {
-      Point: function(x, y, zoom, coordinates) {
-        return map_latlon(coordinates, x, y, zoom);
+      Point: function(coordinates, zoom) {
+        latlng.latitude  = coordinates[1];
+        latlng.longitude = coordinates[0];
+        return mercator.latLngToWorldPoint(latlng, zoom);
       },
 
-      MultiPoint: function(x, y, zoom, coordinates) {
+      MultiPoint: function(coordinates, zoom) {
         var converted = [];
         var projector = primitiveProjectors.Point;
         for (var i = 0, il = coordinates.length; i < il; i++) {
-          converted.push(projector(x, y, zoom, coordinates[i]));
+          converted.push(projector(coordinates[i], zoom));
         }
         return converted;
       },
 
-      LineString: function(x, y, zoom, coordinates) {
-        return primitiveProjectors.MultiPoint(x, y, zoom, coordinates);
+      LineString: function(coordinates, zoom) {
+        return primitiveProjectors.MultiPoint(coordinates, zoom);
       },
 
-      Polygon: function(x, y, zoom, coordinates) {
+      Polygon: function(coordinates, zoom) {
         var converted = [];
         var projector = primitiveProjectors.LineString;
         for (var i = 0, il = coordinates.length; i < il; i++) {
-          converted.push(projector(x, y, zoom, coordinates[i]));
+          converted.push(projector(coordinates[i], zoom));
         }
         return converted;
       },
 
-      MultiPolygon: function(x, y, zoom, coordinates) {
+      MultiPolygon: function(coordinates, zoom) {
         var converted = [];
         var projector = primitiveProjectors.Polygon;
         for (var i = 0, il = coordinates.length; i < il; i++) {
-          converted.push(projector(x, y, zoom, coordinates[i]));
+          converted.push(projector(coordinates[i], zoom));
         }
         return converted;
       }
     };
 
-    VECNIK.projectGeometry = function(feature, zoom, x, y) {
+    VECNIK.projectGeometry = function(feature, zoom) {
       var projector = primitiveProjectors[feature.type];
       if (projector) {
-        return projector(x, y , zoom, feature.coordinates);
+        return projector(feature.coordinates, zoom);
       }
     };
-
-   VECNIK.geometry_stats = stats;
 
 })(VECNIK);
 

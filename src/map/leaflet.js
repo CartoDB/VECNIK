@@ -201,9 +201,13 @@ L.CanvasLayer = L.Class.extend({
     // TODO: all coordinates as buffers
     this.options.renderer.clear();
     for (var key in this._tiles) {
-      this.options.renderer.render(this._tiles[key].get('collection'));
+      this.options.renderer.render(this._tiles[key].get('collection'), this._geometryOrigin);
     }
 
-    requestAnimationFrame(this.render.bind(this));
+    var render_bound = this.render.bind(this);
+    setTimeout(function() {
+      requestAnimationFrame(render_bound);
+    }, 100);
+
   }
 });
