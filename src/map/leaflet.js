@@ -29,31 +29,13 @@ L.CanvasLayer = L.Class.extend({
       throw new Error('CanvasLayer requires a renderer');
     }
 
-    //this.project = this._project.bind(this);
-    this.render = this.render.bind(this);
     this._canvas = this._createCanvas();
     this.options.renderer.setCanvas(this._canvas);
 
     // backCanvas for zoom animation
     this._backCanvas = this._createCanvas();
 
-    this.currentAnimationFrame = -1;
-
-    this.requestAnimationFrame = window.requestAnimationFrame ||
-      window.mozRequestAnimationFrame ||
-      window.webkitRequestAnimationFrame ||
-      window.msRequestAnimationFrame ||
-      function(callback) {
-        return window.setTimeout(callback, 1000 / 60);
-      };
-
-    this.cancelAnimationFrame = window.cancelAnimationFrame ||
-      window.mozCancelAnimationFrame ||
-      window.webkitCancelAnimationFrame ||
-      window.msCancelAnimationFrame ||
-      function(id) {
-        clearTimeout(id);
-      };
+    requestAnimationFrame(this.render.bind(this));
   },
 
   _createCanvas: function() {
@@ -63,9 +45,10 @@ L.CanvasLayer = L.Class.extend({
     canvas.style.top = 0;
     canvas.style.left = 0;
     canvas.style.pointerEvents = 'none';
+    canvas.style.webkitTransform = 'translate3d(0,0,0)'; // turn on hw acceleration
+    canvas.style.imageRendering  = 'optimizeSpeed';
     canvas.style.zIndex = this.options.zIndex || 0;
-    var className = 'leaflet-tile-container leaflet-zoom-animated';
-    canvas.setAttribute('class', className);
+    canvas.setAttribute('class', 'leaflet-tile-container leaflet-zoom-animated');
     return canvas;
   },
 
@@ -95,23 +78,21 @@ L.CanvasLayer = L.Class.extend({
 
     map.on({
       viewreset: this._reset,
-      move:      this.render,
       resize:    this._reset,
       zoomanim:  this._animateZoom,
       zoomend:   this._endZoomAnim
     }, this);
 
-    this._initTileLoader();
-
     var self = this;
     this.on('tileAdded', function(coords) {
-      var tile = new VECNIK.Tile(coords.x, coords.y, coords.zoom);
       VECNIK.load(this.options.provider.getUrl(coords.x, coords.y, coords.zoom), function(data) {
+        var tile = new VECNIK.Tile(coords.x, coords.y, coords.zoom);
         tile.set(data);
         self._tileLoaded(coords, tile);
       });
     });
 
+    this._initTileLoader(); // has to be called after on(tileAdded) in order to have event listeners ready TODO: refactor this
     this._reset();
   },
 
@@ -166,7 +147,6 @@ L.CanvasLayer = L.Class.extend({
     this._container.parentNode.removeChild(this._container);
     map.off({
       viewreset: this._reset,
-      move:      this.render,
       resize:    this._reset,
       zoomanim:  this._animateZoom,
       zoomend:   this._endZoomAnim
@@ -201,7 +181,6 @@ L.CanvasLayer = L.Class.extend({
     this._canvas.width = size.x;
     this._canvas.height = size.y;
     this.onResize();
-    this.render();
   },
 
   /*
@@ -213,26 +192,18 @@ L.CanvasLayer = L.Class.extend({
 
   _updateOpacity: function() {},
 
-  // TODO: create an interval
-  redraw: function() {
-//    if (this.currentAnimationFrame >= 0) {
-//      this.cancelAnimationFrame.call(window, this.currentAnimationFrame);
-//    }
-//    this.currentAnimationFrame = this.requestAnimationFrame.call(window, this.render);
-
-    this.requestAnimationFrame(this.render);
-    setTimeout(this.redraw.bind(this), 17);
-  },
+  redraw: function() {},
 
   onResize: function() {},
 
   render: function() {
     // TODO: turn tile data into a single render queue
     // TODO: all coordinates as buffers
-console.log("=== RENDER FRAME ================================")
+    this.options.renderer.clear();
     for (var key in this._tiles) {
       this.options.renderer.render(this._tiles[key].get('collection'));
-console.log("=== RENDER TILE ===")
     }
+
+    requestAnimationFrame(this.render.bind(this));
   }
 });

@@ -14,20 +14,20 @@
       this.opts.ENABLE_SIMPLIFY = true;
     }
     if (this.opts.ENABLE_SNAPPING === undefined) {
-      this.opts.ENABLE_SNAPPING = true;
+      this.opts.ENABLE_SNAPPING = false;
     }
     if (this.opts.ENABLE_CLIPPING === undefined) {
-      this.opts.ENABLE_CLIPPING = true;
+      this.opts.ENABLE_CLIPPING = false;
     }
     if (this.opts.ENABLE_FIXING === undefined) {
-      this.opts.ENABLE_FIXING = true;
+      this.opts.ENABLE_FIXING = false;
     }
   }
 
   var proto = CartoDBSQLAPI.prototype;
 
   proto.debug = function(w) {
-    if (this.opts.debug && console) {
+    if (this.opts.debug) {
       console.log(w);
     }
   };

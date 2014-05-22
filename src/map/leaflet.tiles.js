@@ -137,12 +137,14 @@ L.Mixin.TileLoader = {
 
     this._tilesToLoad += tilesToLoad;
 
+    var tile, key;
     for (i = 0; i < tilesToLoad; i++) {
-      var t = queue[i];
-      var k = this._tileKey(t);
-      this._tilesLoading[k] = t;
-      this.fire('tileAdded', t);
+      var tile = queue[i];
+      var key = this._tileKey(tile);
+      this._tilesLoading[key] = tile;
+      this.fire('tileAdded', tile);
     }
+
     this.fire('tilesLoading');
   }
 };

@@ -19,6 +19,7 @@ html, body {
 </style>
 <script src="lib/leaflet/leaflet-src.js"></script>
 
+<script src="../src/polyfills.js"></script>
 <script src="../src/core.js"></script>
 <script src="../src/settings.js"></script>
 <script src="../src/mercator.js"></script>
@@ -50,24 +51,16 @@ new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { max
 var provider = new VECNIK.CartoDB.API({
   user: 'pluto',
   table: 'mn_mappluto_13v1',
-  debug: true
+  debug: false
 });
 
 var renderer = new VECNIK.Renderer();
-
-//var VecnikLayer = L.CanvasLayer.extend({
-//  render: function() {
-//    var canvas = this.getCanvas();
-//    var ctx = canvas.getContext('2d');
-//    ctx.clearRect(0, 0, canvas.width, canvas.height);
-//    this.redraw();
-//  }
-//});
 
 var vlayer = new L.CanvasLayer({
   provider: provider,
   renderer: renderer
 }).addTo(map);
+
 L.control.layers({}, { VECNIK: vlayer }).addTo(map);
 
 //VECNIK.Carto.init(function(carto) {

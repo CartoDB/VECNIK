@@ -9,10 +9,10 @@ var VECNIK = VECNIK || {};
   var sql = function(projection, table, x, y, zoom, opts) {
 
       opts = opts || {
-        ENABLE_CLIPPING: false,
         ENABLE_SIMPLIFY: false,
-        ENABLE_FIXING: false,
-        ENABLE_SNAPPING: false
+        ENABLE_CLIPPING: false,
+        ENABLE_SNAPPING: false,
+        ENABLE_FIXING:   false
       };
       var bbox = projection.tileBBox(x, y, zoom);
       var geom_column = '"the_geom"';
@@ -57,7 +57,6 @@ var VECNIK = VECNIK || {};
       var sql_env = 'ST_MakeEnvelope('+
         bbox[0].lng() +','+ bbox[0].lat() +','+
         bbox[1].lng() +','+ bbox[1].lat() +', 4326)';
-
       // clip
       if (opts.ENABLE_CLIPPING) {
         // This is a slightly enlarged version of the query bounding box
@@ -90,7 +89,7 @@ var VECNIK = VECNIK || {};
       }
 
       // profiling only
-      if (COUNT_ONLY) {
+      if (opts.COUNT_ONLY) {
         columns = x +' AS x, '+ y +' AS y, SUM(st_npoints('+ geom_column +')) AS the_geom';
       }
 

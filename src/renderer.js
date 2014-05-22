@@ -11,7 +11,11 @@
   var proto = VECNIK.Renderer.prototype;
 
   proto.setCanvas = function(canvas) {
-    this.context = canvas.getContext('2d');
+    var context = this.context = canvas.getContext('2d');
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.mozImageSmoothingEnabled = false;
+    context.webkitImageSmoothingEnabled = false;
   };
 
   proto._drawPolyline = function(coordinates) {
@@ -58,13 +62,22 @@
 //    }
 //  };
 
-  proto.render = function(queue) { // zoom, shader
+  // TODO: this goes away once we provide a queue of all tile data
+  proto.clear = function() {
+    var context = this.context;
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    context.strokeStyle = 'rgb('+ (255*Math.random()<<0) +',0,0)';
+    context.fillStyle   = 'rgb(0,0,'+ (255*Math.random()<<0) +')';
+  };
+
+  proto.render = function(queue) {
     var
       context = this.context,
       i, il, j, jl,
       feature, coordinates;
 
-    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    // TODO: this will be enabled once we provide a queue of all tile data
+    // context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
     for (i = 0, il = queue.length; i < il; i++) {
       feature = queue[i];
@@ -72,8 +85,6 @@
 
   //  context.strokeStyle = feature.strokeColor;
   //  context.fillStyle   = feature.fillColor;
-      context.strokeStyle = 'rgb(255,0,0)';
-      context.fillStyle   = 'rgb(0,0,255)';
 
       context.beginPath();
 

@@ -56,13 +56,12 @@ var VECNIK = VECNIK || {};
     // pretty basic model funcionallity
     //========================================
 
-    function Model() {
-      this.data = {};
-    }
+    function Model() {} // if this.data = {} is initialized here, but never called, it gets shared across descendants!
 
     Model.prototype = new Event();
 
     Model.prototype.set = function(data, silent) {
+      this.data = this.data || {};
       for (var v in data) {
         if (data.hasOwnProperty(v)) {
           this.data[v] = data[v];
@@ -74,6 +73,7 @@ var VECNIK = VECNIK || {};
     };
 
     Model.prototype.get = function(attr, def) {
+      this.data = this.data || {};
       if (attr in this.data) {
         return this.data[attr];
       }
@@ -84,6 +84,7 @@ var VECNIK = VECNIK || {};
      * delete the attribute
      */
     Model.prototype.unset = function(attr, silent) {
+      this.data = this.data || {};
       delete this.data[attr];
       if (!silent) {
         this.emit('change', this.data);

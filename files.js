@@ -1,5 +1,6 @@
 
 var files = [
+  'src/polyfills.js',
   'src/core.js',
   'src/carto.js',
   'src/provider/cartodb.js',

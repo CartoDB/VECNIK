@@ -43,7 +43,7 @@ module.exports = function(grunt) {
       pivotal: {
         src: files,
         options: {
-//          specs: 'test/spec/**/*.js',
+          specs: 'test/**/*.spec.js'//,
 //          helpers: ['test/lib/sinon-1.3.4.js', 'test/spec/*Helper.js', 'https://maps.google.com/maps/api/js?sensor=false&v=3.12']
         }
       }
