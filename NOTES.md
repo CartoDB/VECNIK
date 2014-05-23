@@ -2,19 +2,29 @@
 Technical considerations
 ========================
 
+
+### Rendering strategies
+
+Use cases are contradictionary. I.e. static data requires intial render + updates after map movement.
+Heavy CartoCSS play in Editor adds updates on style change but not in parallel with map movement.
+It can probably be speed up by splitting into layers (behind/affected/above) but rules can be very complex and affect a dynamic range of items. Needs investigation.
+
+In Torque everything changes at all times. Effectively causing a render loop as worst case.
+We need to discuss, whether Torque should be fully covered by the same rendering mechanisms.
+
+
+
+- We will render on demand only. That includes: tile loading, (map movement/zoom), style changes, a torque timeline tick. Esp. the last can easily result in continous rendering. *IMPORTANT*
+- Need to triangulate lines in WebGL.
+- Renderers with proper interface can be injected, VECNIK.renderer is default
+
+
 ### Tile based rendering
 
 #### pro
 - Data tiles map directly to render tiles -> easier to understand.
 - No need to clip data, but maybe in order to save bandwidth.
 - Assume we render on demand only: a change of a tile doesn't require a full refresh. *IMPORTANT*
-
-
-### Rendering strategies
-
-- We will render on demand only. That includes: tile loading, (map movement/zoom), style changes, a torque timeline tick. Esp. the last can easily result in continous rendering. *IMPORTANT*
-- Need to triangulate lines in WebGL.
-- Renderers with proper interface can be injected, VECNIK.renderer is default
 
 
 ### Viewport based rendering
@@ -32,7 +42,7 @@ Technical considerations
 - Sort items by layer, then by style. *IMPORTANT*
 - Keep style classes as reference to features. *IMPORTANT*
 - No full state changes. *IMPORTANT*
-- 2d: try to render a path over all objects with same style. *IMPORTANT*!
+- 2d: try to render a path over all objects with same style. *IMPORTANT*
 - Investigate whether condition checks vs. compilation ist faster. We use functions anyway..
 - Use workers for compilation if suitable.
 - Unclear, how these match to WebGL.
