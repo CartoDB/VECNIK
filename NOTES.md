@@ -2,9 +2,6 @@
 Technical considerations
 ========================
 
-Points are mostly for 2d.
-
-
 ### Tile based rendering
 
 #### pro
@@ -42,36 +39,19 @@ Points are mostly for 2d.
 
 
 ### Map integration
-
 - Rendering on map movement should be avoided. Translating the canvas during map move saves from missing borders but keeping it along the map saves from redraw. We can probably render at full tile overage (overscan) for good compromise.
-- Rethink level of integration:
-      deep
-      - nice play
-      - prepared for future changes
-      - less code
-      - common usage for users
-      flexible
-      - less things to investigate
-      - slim adapters
-      - from product perpective: uniform interface
-
+- Rethink level of integration: deeply provides a nice play with all map features, but also relies a lot on it and is massive api investigation.
+  Generalized approach allows more and simpler map adapters, is less common to specific map programmers but more common for a single product.
 
 ### Other
-
 - For hit detection we should investigate hit maps, r-trees, bbox+polygon intersections, intersection with x/y index. Likely bbox+poly intersection is good enough. (tile based rendering would reduce complexity here)
 - GeoJSON or VectorTile providers with proper interface can be injected, CartoDB is default. We will have parsers for both. Triangulation should be part of the WebGL renderer.
 
 
 ### VECNIK TODO
-
-- Events handling could be optimized
+- Event handling could be optimized
 - XHR can be reworked, also in order to handle CORS better on IE.
-
-- Tile Loading
-- (ENGINES => tile handler, tile
-
-
-arraybuffers
-
-events xhr
-simpler tieles (model!)
+- Consider Tile objects and managers less connected to map engines.
+- Use array buffers where applicalble.
+- Avoid coplex point/coordinate objects. p[x,y] is fine.
+- Rethink data models. They are straightformward to use baut also overhead.
