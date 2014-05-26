@@ -5,7 +5,9 @@
 
 (function(VECNIK) {
 
-  function CartoDBSQLAPI(opts) {
+  VECNIK.CartoDB = VECNIK.CartoDB || {};
+
+  VECNIK.CartoDB.API = function(opts) {
     this.projection = new VECNIK.MercatorProjection();
     this.opts = opts;
     this.base_url = 'http://'+ opts.user +'.cartodb.com/api/v2/sql';
@@ -22,31 +24,24 @@
     if (this.opts.ENABLE_FIXING === undefined) {
       this.opts.ENABLE_FIXING = false;
     }
-  }
+  };
 
-  var proto = CartoDBSQLAPI.prototype;
+  var proto = VECNIK.CartoDB.API.prototype;
 
-  proto.debug = function(w) {
+  proto._debug = function(msg) {
     if (this.opts.debug) {
-      console.log(w);
+      console.log(msg);
     }
   };
 
   proto._getSqlUrl = function(sql) {
-    this.debug(sql);
+    this._debug(sql);
     return this.base_url +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
-  };
-
-  proto.url = function(coordinates) {
-    return this.getUrl(coordinates.column, coordinates.row, coordinates.zoom);
   };
 
   proto.getUrl = function(x, y, z) {
     var sql = VECNIK.CartoDB.SQL(this.projection, this.opts.table, x, y, z, this.opts);
     return this._getSqlUrl(sql);
   };
-
-  VECNIK.CartoDB = VECNIK.CartoDB || {};
-  VECNIK.CartoDB.API = CartoDBSQLAPI;
 
 })(VECNIK);

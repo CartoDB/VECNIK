@@ -5,7 +5,7 @@
     global.webkitRequestAnimationFrame ||
     global.msRequestAnimationFrame ||
     function(callback) {
-      return global.setTimeout(callback, 1000/60);
+      return global.setTimeout(callback, 16);
     };
 
   global.Int32Array = global.Int32Array || global.Array,

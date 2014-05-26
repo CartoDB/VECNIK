@@ -1,22 +1,22 @@
 
 //========================================
-// CartoDB data provider
+// GeoJSON data provider
 //========================================
 
 (function(VECNIK) {
 
-  VECNIK.GeoJSONTile = function(opts) {
+  VECNIK.GeoJSON = function(opts) {
     this.opts = opts;
     this.template = opts.template;
   };
 
-  var proto = VECNIK.GeoJSONTile.prototype;
+  var proto = VECNIK.GeoJSON.prototype;
 
-  proto.url = function(coord) {
+  proto.getUrl = function(x, y, z) {
     return this.template
-      .replace('{z}', coord.zoom.toFixed(0))
-      .replace('{x}', coord.column.toFixed(0))
-      .replace('{y}', coord.row.toFixed(0));
+      .replace('{z}', z.toFixed(0))
+      .replace('{x}', x.toFixed(0))
+      .replace('{y}', y.toFixed(0));
   };
 
 })(VECNIK);

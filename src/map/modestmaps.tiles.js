@@ -31,7 +31,7 @@
         coordinates.zoom
     );
 
-    VECNIK.load(this.provider.url(coordinates), function(data) {
+    VECNIK.load(this.provider.getUrl(coordinates.column, coordinates.row, coordinates.zoom), function(data) {
         tile.set(data);
     });
 
