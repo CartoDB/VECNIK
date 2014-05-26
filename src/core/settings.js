@@ -7,14 +7,15 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
-  function Settings(defaults) {
+  VECNIK.Settings = function(defaults) {
+    VECNIK.Model.prototype.constructor.call(this);
     this.set(defaults);
   }
 
-  Settings.prototype = new VECNIK.Model();
+  var proto = VECNIK.Settings.prototype = new VECNIK.Model();
 
   // default settings
-  VECNIK.settings = new Settings({
+  VECNIK.settings = new VECNIK.Settings({
     WEBWORKERS: false,
     BACKBUFFER: true
   });
@@ -24,6 +25,7 @@ var VECNIK = VECNIK || {};
 if (typeof module !== 'undefined' && module.exports) {
   module.exports.settings = VECNIK.settings;
 }
+
 if (typeof self !== 'undefined') {
   self.VECNIK = VECNIK;
 }

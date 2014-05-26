@@ -15,12 +15,13 @@
   };
 
   function CartoShader(shader) {
+    VECNIK.Events.prototype.constructor.call(this);
     this.compiled = {};
     this.shader_src = null;
     this.compile(shader);
   }
 
-  CartoShader.prototype = new VECNIK.Event();
+  CartoShader.prototype = new VECNIK.Events();
 
   CartoShader.prototype.compile = function(shader) {
     if (typeof shader === 'string') {

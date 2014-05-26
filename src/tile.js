@@ -7,11 +7,12 @@
 (function(VECNIK) {
 
   VECNIK.Tile = function(x, y, zoom) {
+    VECNIK.Model.prototype.constructor.call(this);
     this.x = x;
     this.y = y;
     this.zoom = zoom;
 
-    this.on('change', this.cache.bind(this));
+    this.on('change', this.cache, this);
   };
 
   var proto = VECNIK.Tile.prototype = new VECNIK.Model();

@@ -1,7 +1,10 @@
 
 var files = [
   'src/polyfills.js',
-  'src/core.js',
+  'src/core/core.js',
+  'src/core/events.js',
+  'src/core/model.js',
+  'src/core/settings.js',
   'src/carto.js',
   'src/provider/cartodb.js',
   'src/provider/cartodb.sql.js',
@@ -12,7 +15,6 @@ var files = [
   'src/tile.js',
   'src/projector.worker.js',
   'src/renderer.js',
-  'src/settings.js',
   'src/shader.js',
   'src/map/leaflet.tiles.js',
   'src/map/leaflet.js'
