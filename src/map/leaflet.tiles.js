@@ -5,6 +5,10 @@ L.Mixin.TileLoader = {
     this._tilesLoading = {};
     this._tilesToLoad = 0;
     this._map.on('moveend', this._updateTiles, this);
+
+    this._tileManager = new VECNIK.TileManager(this.options.provider)
+      .on('tileloaded', this._tileLoaded, this);
+
     this._updateTiles();
   },
 
@@ -88,9 +92,9 @@ L.Mixin.TileLoader = {
     return !(k in this._tiles) && !(k in this._tilesLoading);
   },
 
-  _tileLoaded: function(coords, tile) {
+  _tileLoaded: function(tile) {
     this._tilesToLoad--;
-    var key = coords.x +':'+ coords.y +':'+ coords.zoom;
+    var key = tile.getKey();
     this._tiles[key] = tile;
     delete this._tilesLoading[key];
     if (this._tilesToLoad === 0) {
@@ -136,6 +140,9 @@ L.Mixin.TileLoader = {
       tile = queue[i];
       key = this._tileKey(tile);
       this._tilesLoading[key] = tile;
+
+      this._tileManager.add(tile.x, tile.y, tile.zoom).on('load', function() { console.log(123) });
+
       this.fire('tileAdded', tile);
     }
 

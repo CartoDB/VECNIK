@@ -39,8 +39,8 @@
     return this.base_url +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
   };
 
-  proto.getUrl = function(x, y, z) {
-    var sql = VECNIK.CartoDB.SQL(this.projection, this.opts.table, x, y, z, this.opts);
+  proto.getUrl = function(x, y, zoom) {
+    var sql = VECNIK.CartoDB.SQL(this.projection, this.opts.table, x, y, zoom, this.opts);
     return this._getSqlUrl(sql);
   };
 

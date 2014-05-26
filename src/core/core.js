@@ -8,27 +8,25 @@
 
 var VECNIK = VECNIK || {};
 
-// TODO: XHR
-
 (function(VECNIK) {
 
-    // http get
-    // should be improved
-    function load(url, callback) {
-      var mygetrequest = new XMLHttpRequest();
-      mygetrequest.onreadystatechange=function() {
-        if (mygetrequest.readyState == 4){
-          if (mygetrequest.status == 200){
-            callback(JSON.parse(mygetrequest.responseText));
-          } else {
-            //error
-          }
+  // TODO: http get - should be improved
+  VECNIK.load = function(url) {
+    var req = new XMLHttpRequest();
+    var events = new VECNIK.Events();
+    req.onreadystatechange = function() {
+      if (req.readyState === 4) {
+        if (req.status === 200) {
+//          callback(JSON.parse(req.responseText));
+          events.emit('load', JSON.parse(req.responseText))
         }
-      };
-      mygetrequest.open("GET", url, true);
-      mygetrequest.send(null);
-    }
+      }
+    };
 
-    VECNIK.load = load;
+    req.open('GET', url, true);
+    req.send(null);
+
+    return events;
+  }
 
 })(VECNIK);

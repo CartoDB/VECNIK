@@ -12,9 +12,9 @@
 
   var proto = VECNIK.GeoJSON.prototype;
 
-  proto.getUrl = function(x, y, z) {
+  proto.getUrl = function(x, y, zoom) {
     return this.template
-      .replace('{z}', z.toFixed(0))
+      .replace('{z}', zoom.toFixed(0))
       .replace('{x}', x.toFixed(0))
       .replace('{y}', y.toFixed(0));
   };

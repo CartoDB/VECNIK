@@ -13,6 +13,7 @@ var files = [
   'src/mercator.js',
   'src/models.js',
   'src/tile.js',
+  'src/tilemanager.js',
   'src/projector.worker.js',
   'src/renderer.js',
   'src/shader.js',

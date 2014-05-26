@@ -1,5 +1,5 @@
 
-// TODO: refactor tiles to be simpler structure, create a generic tile manager
+// TODO: refactor tiles to be simpler structure
 // TODO: fix projection origin per tile
 // TODO: add geometries into a render queue
 // TODO: filter duplicate features
@@ -8,26 +8,28 @@
 
   VECNIK.Tile = function(x, y, zoom) {
     VECNIK.Model.prototype.constructor.call(this);
-    this.x = x;
-    this.y = y;
-    this.zoom = zoom;
-
-    this.on('change', this.cache, this);
+    this._x = x;
+    this._y = y;
+    this._zoom = zoom;
   };
 
   var proto = VECNIK.Tile.prototype = new VECNIK.Model();
 
-  proto.key = function() {
-    return [this.x, this.y, this.zoom].join(';');
+  proto.getKey = function() {
+    return [this._x, this._y, this._zoom].join(';');
+  };
+
+  proto.setData = function(data) {
+    this._features = data.features;
+    this._collection = this._convert(this._features);
   };
 
   proto.geometry = function() {
     return this.get('geometry');
   };
 
-  proto.cache = function() {
+  proto._convert = function(features) {
     var collection = [];
-    var features = this.data.features;
 
     // TODO: align property handling
 //    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
@@ -40,9 +42,9 @@
 //      };
 //      worker.postMessage({
 //        collection: collection,
-//        zoom: this.zoom,
-//        x: this.x,
-//        y: this.y
+//        zoom: this._zoom,
+//        x: this._x,
+//        y: this._y
 //      });
 //      return;
 //    }
@@ -54,7 +56,7 @@
         continue;
       }
 
-      coordinates = VECNIK.projectGeometry(feature.geometry, this.zoom);
+      coordinates = VECNIK.projectGeometry(feature.geometry, this._zoom);
       if (!coordinates || !coordinates.length) {
         continue;
       }
@@ -66,9 +68,8 @@
       });
     }
 
-    this.set({ collection: collection }, true);
-    this.unset('features', true);
-    this.emit('ready');
+    this.emit('ready', collection);
+    return collection;
   };
 
 })(VECNIK);

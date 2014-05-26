@@ -20,10 +20,6 @@ L.CanvasLayer = L.Class.extend({
     options = options || {};
     L.Util.setOptions(this, options);
 
-    if (!this.options.provider) {
-      throw new Error('CanvasLayer requires a provider');
-    }
-
     // TODO: use internal renderer as default
     if (!this.options.renderer) {
       throw new Error('CanvasLayer requires a renderer');
@@ -83,16 +79,7 @@ L.CanvasLayer = L.Class.extend({
       zoomend:   this._endZoomAnim
     }, this);
 
-    var self = this;
-    this.on('tileAdded', function(coords) {
-      VECNIK.load(this.options.provider.getUrl(coords.x, coords.y, coords.zoom), function(data) {
-        var tile = new VECNIK.Tile(coords.x, coords.y, coords.zoom);
-        tile.set(data);
-        self._tileLoaded(coords, tile);
-      });
-    });
-
-    this._initTileLoader(); // has to be called after on(tileAdded) in order to have event listeners ready TODO: refactor this
+    this._initTileLoader();
     this._reset();
   },
 
@@ -201,7 +188,8 @@ L.CanvasLayer = L.Class.extend({
     // TODO: all coordinates as buffers
     this.options.renderer.clear();
     for (var key in this._tiles) {
-      this.options.renderer.render(this._tiles[key].get('collection'), this._geometryOrigin);
+      // WIP
+      this.options.renderer.render(this._tiles[key]._collection, this._geometryOrigin);
     }
 
     var render_bound = this.render.bind(this);
