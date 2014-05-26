@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Modest Maps JS</title>
+
+<script src="../src/core.js"></script>
+<script src="../src/settings.js"></script>
+<script src="../src/mercator.js"></script>
+<script src="../src/geometry.js"></script>
+<script src="../src/models.js"></script>
+<script src="../src/tile.js"></script>
+<script src="../src/renderer.js"></script>
+<script src="../src/shader.js"></script>
+
+
+<script src="../src/provider/cartodb.sql.js"></script>
+<script src="../src/provider/cartodb.js"></script>
+
+<script src="stats.js"></script>
+
+<!-- carto -->
+<script src="lib/underscore.js"></script>
+<script src="lib/carto.js"></script>
+
+<script src="lib/modestmaps.js"></script>
+<script src="../src/map/modestmaps.js"></script>
+<script src="../src/map/modestmaps.tiles.js"></script>
+
+<script src="../src/carto.js"></script>
+
+<script>
+    var map;
+    function initMap() {
+        VECNIK.Carto.init(function(carto) {
+            VECNIK.Carto.compile(
+              "#world { line-width: 2; line-color: #f00; [TYPEY='test']{ line-width: 2; } [ZOOM = 0]{ line-width: 2; } }"
+              , function() {});
+        });
+        var stat = new Stats();
+
+        var template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png';
+        template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-light/{Z}/{X}/{Y}.png64';
+        var subdomains = [ '', 'a.', 'b.', 'c.' ];
+        var provider = new MM.TemplatedLayer(template, subdomains);
+
+        var dataSource = new VECNIK.CartoDB.API({
+           user: 'viz2',
+           user: 'jatorre',
+           //user: 'staging',
+           //user: 'mapnik-tests',
+           //table: 'countries_final',
+           //table: 'roads',
+           //table: 'nyc_buildings',
+           table: 'ny_districts',
+           //table: 'nycblocks10',
+           //table: 'barcelona_osm_line',
+           //columns: ['type'], //do not include the_geom or cartodb_id, are implicit
+           columns: ['num_stops_normalized'], //do not include the_geom or cartodb_id, are implicit
+           debug: true,
+           ENABLE_CLIPPING: true,
+           ENABLE_SIMPLIFY: false,
+           ENABLE_FIXING: true,
+           ENABLE_SNAPPING: true
+        });
+
+        var shader = new VECNIK.CartoShader({
+            'point-color': '#fff',
+            'line-color': '#fff',
+            'line-width': function(data) {
+                return '1';
+            },
+            'polygon-fill': function(data) {
+                return "rgba(200, 200, 200, 0.8)";
+            }
+        });
+
+        var vector_layer = new VECNIK.MM.CanvasProvider(dataSource, shader);
+        fg = new MM.Layer(vector_layer);
+
+        map = new MM.Map(document.getElementById('map'), [provider, fg])
+
+        if(!location.hash) {
+          map.setCenterZoom(new MM.Location(51.4942, -0.1671), 14);
+        }
+
+        new MM.Hash(map);
+
+        var code = document.getElementById('code')
+        var codeOld= '';
+        var compileShader = _.debounce(function() {
+            VECNIK.Carto.compile(code.value , function(shaderData) {
+                if(shaderData) {
+                  console.log(code.value);
+                  shader.compile(shaderData);
+
+    function init() {
+       var CartoDB = Backbone.CartoDB({ user: 'viz2' });
+       var BusRoutes = CartoDB.CartoDBCollection.extend({
+
+          initialize: function() {
+            _.bindAll(this, 'transform_dates');
+            this.bind('reset', this.transform_dates);
+          },
+
+          transform_dates: function() {
+            this.each(function(m) {
+              m.set({'time': new Date(m.get('timestamp'))});
+            })
+            this.lat_range = d3.time.scale()
+              .domain(this.models.map(function(m) { return m.get('time'); }))
+              .range(this.models.map(function(m) {
+                  return m.get('position').coordinates[0];
+               }));
+            this.lon_range = d3.time.scale()
+              .domain(this.models.map(function(m) { return m.get('time'); }))
+              .range(this.models.map(function(m) {
+                  return m.get('position').coordinates[1];
+               }));
+          },
+
+          getPosAt: function(time) {
+            return new MM.Location(this.lon_range(time), this.lat_range(time));
+          },
+
+          startTime: function() {
+            return this.first().get('time');
+          },
+
+          table: 'ny_bus', //public table
+          columns: {
+              'timestamp': 'timestamp',
+              'position': 'the_geom',
+              'vehicle_id': 'vehicle_id'
+          },
+          'where': "vehicle_id = '7573' and timestamp >= '2011/04/20'  and timestamp < '2011/04/21'"
+       });
+
+       var buses = new BusRoutes()
+       return buses;
+    }
+
+    function Overlay(map, buses) {
+        this.buses = buses;
+        this.time = buses.startTime().getTime();
+
+        this.div = document.createElement('div');
+        this.div.style.position = 'absolute';
+        this.div.style.width = '900px';
+        this.div.style.height = '900px';
+        map.parent.appendChild(this.div);
+        this.svg = d3.select(this.div).append("svg:svg")
+               .attr("width",  900)
+               .attr("height", 900);
+
+        this.coord = map.locationCoordinate(new MM.Location(40.77, -73.98));
+        this.draw();
+        var self = this;
+        var callback = function(m, a) {
+          return self.draw(m);
+        };
+        map.addCallback('drawn', callback);
+        this.draw(map);
+
+    }
+
+    Overlay.prototype = {
+      draw: function(map) {
+        var self = this;
+        try {
+            point = map.coordinatePoint(this.coord);
+        } catch(e) {
+            // too soon?
+            return;
+        }
+        var node = this.svg.selectAll("g")
+              .data([this.buses])
+                .attr('transform', function(p) {
+                      var p = self.buses.getPosAt(self.time);
+                      p = map.coordinatePoint(map.locationCoordinate(p));
+                      return "translate(" + p.x + "," + p.y +")";
+                 })
+              .enter()
+                .append('g')
+                .attr('transform', function(p) {
+                      var p = self.buses.getPosAt(self.time);
+                      p = map.coordinatePoint(map.locationCoordinate(p));
+                      return "translate(" + p.x + "," + p.y +")";
+              })
+        node.append("circle")
+         .attr("r", 2)
+      }
+    }
+
+
+    var map;
+    function initMap() {
+        var buses = init();
+
+        var src = document.getElementById('src');
+        template = 'http://b.tiles.mapbox.com/v3/mapbox.mapbox-light/{Z}/{X}/{Y}.png64';
+        var subdomains = [ '', 'a.', 'b.', 'c.' ];
+        var provider = new MM.TemplatedLayer(template, subdomains);
+
+        map = new MM.Map('map', provider, new MM.Point(900,900))
+
+
+        map.setCenterZoom(new MM.Location(40.77, -73.98), 10);
+        buses.bind('reset', function() {
+          var f = new Overlay(map, this);
+          setInterval(function() {
+            f.time += 10000;
+            f.draw(map);
+          },100);
+        })
+        buses.fetch();
+    }
+                }
+            });
+          }, 200);
+
+        code.onkeyup = function() {
+          if(code.value != codeOld) {
+            compileShader();
+            codeOld = code.value;
+          }
+        }
+        compileShader(code.value);
+        document.body.appendChild(stat.el);
+
+        setInterval(function() {
+            //collect stats
+            var stats =  {
+            }
+            function _compute(s, tstats) {
+                stats[s] = stats[s] || {
+                  avg: 0,
+                  max: 0,
+                  min: 9999999,
+                  total: 0
+                }
+                stats[s].total += tstats[s]
+                stats[s].max = Math.max(stats[s].max, tstats[s]);
+                stats[s].min = Math.min(stats[s].min, tstats[s]);
+            }
+            var len = 0;
+            for(var t in vector_layer.tiles.tiles) {
+              var tile = vector_layer.tiles.tiles[t];
+              for(var s in tile.stats) {
+                _compute(s, tile.stats);
+              }
+              len++;
+            }
+            for(var t in vector_layer.views.tile_views) {
+              var tile = vector_layer.views.tile_views[t];
+              for(var s in tile.stats) {
+                _compute(s, tile.stats);
+              }
+            }
+            for(var i in stats) {
+              stats[i].avg = stats[i].total / len;
+            }
+
+            stat.update(stats);
+
+        }, 2000);
+
+    }
+</script>
+<style>
+html, body, #map {
+  width: 100%; height: 100%;
+  padding: 0;
+  margin: 0;
+}
+#livecode {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 450px;
+  padding-left: 10px;
+  box-shadow: 0px 0px 5px 6px #ccc;
+}
+textarea {
+  color: rgba(0,0,0,0.9);
+  background-color:rgba(255,255,255,0.7);
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  font-family: monospace;
+  font-size: 19px;
+  width: 450px;
+  border: 0;
+  outline: none;
+
+}
+          /* code */
+.highlight {
+  font-family: monospace;
+  font-size: 19px;
+}
+
+
+</style>
+</head>
+   <body onload="initMap()">
+   <div id="map"></div>
+   <!--<div id="livecode" class="highlight"></div>-->
+   <textarea id="code">
+#roads {
+  polygon-fill: #300;
+  [num_stops_normalized > 40] {
+    polygon-fill: #F00;
+  }
+}
+   </textarea>
+</body>
+</html>
