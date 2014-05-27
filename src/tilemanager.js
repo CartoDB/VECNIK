@@ -14,12 +14,11 @@
     }
 
     this._provider = options.provider;
-    this._tileSize = options.tileSize;
+    this._tileSize = options.tileSize || 256;
     this._minZoom  = options.minZoom || 0;
     this._maxZoom  = options.maxZoom || 20;
 
-    this._data = [];  // TODO: refactor this to be buffer + indexes
-
+    this._data = [];
     this._mapZoom = 0;
 
     this._tiles = {};
@@ -28,6 +27,10 @@
   };
 
   var proto = VECNIK.TileManager.prototype;
+
+  proto.setZoom = function(zoom) {
+    this._mapZoom = zoom;
+  },
 
   proto.update = function(bounds) {
     var tileSize = this._tileSize;
@@ -42,8 +45,6 @@
       e: bounds.max.x/tileSize <<0,
       s: bounds.max.y/tileSize <<0
     };
-
-console.log(bounds.max, bounds.min, tileBounds)
 
     this._addTilesFromCenterOut(tileBounds);
     this._removeInvisibleTiles(tileBounds);
@@ -71,7 +72,7 @@ console.log(bounds.max, bounds.min, tileBounds)
     delete this._tiles[key];
     delete this._tilesLoading[key];
 // tile.destroy();
-// TODO rebuild the buffers
+// TODO: rebuild the buffers URGENT!
   },
 
   proto._tileShouldBeLoaded = function(x, y, zoom) {
@@ -97,8 +98,12 @@ console.log(bounds.max, bounds.min, tileBounds)
         if (this._tileShouldBeLoaded(x, y, this._mapZoom)) {
           tile = new VECNIK.Tile(x, y, this._mapZoom)
             .on('ready', function() {
-              // TODO: refactor
+              // TODO: refactor for proper access
               this._data = this._data.concat(tile._data);
+//              (id[])
+//              type[]
+//              properties[{}]
+//              coordinates[]
             }, this);
 
           queue.push(tile);
@@ -127,7 +132,6 @@ console.log(bounds.max, bounds.min, tileBounds)
       tile = queue[i];
       key = tile.getKey();
       this._tilesLoading[key] = tile;
-console.log(unescape(this._provider.getUrl(tile.x, tile.y, tile.zoom)))
       VECNIK.load(this._provider.getUrl(tile.x, tile.y, tile.zoom))
         .on('load', function(data) {
           tile.setData(data);
