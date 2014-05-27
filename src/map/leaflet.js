@@ -1,13 +1,4 @@
 
-
-/***
- * L Layer:
- *
- * map.on('moveend', TM.update);
- * onmoveend? => setBounds(map.getPixelBounds())
- * map.on('zoom', TM.setZoom);
- *
- */
 L.CanvasLayer = L.Class.extend({
 
   options: {
@@ -32,13 +23,13 @@ L.CanvasLayer = L.Class.extend({
       throw new Error('CanvasLayer requires a renderer');
     }
 
+    this._renderer = this.options.renderer;
+
     this._canvas = this._createCanvas();
-    this.options.renderer.setCanvas(this._canvas);
+    this._renderer.setCanvas(this._canvas);
 
     // backCanvas for zoom animation
     this._backCanvas = this._createCanvas();
-
-    requestAnimationFrame(this.render.bind(this));
   },
 
   _createCanvas: function() {
@@ -61,53 +52,63 @@ L.CanvasLayer = L.Class.extend({
     // add container with the canvas to the tile pane
     // the container is moved in the oposite direction of the
     // map pane to keep the canvas always in (0, 0)
-    var tilePane = this._map._panes.tilePane;
+    var mapPane = this._map._panes.tilePane;
     var container = L.DomUtil.create('div', 'leaflet-layer');
     container.appendChild(this._canvas);
     container.appendChild(this._backCanvas);
     this._backCanvas.style.display = 'none';
-    tilePane.appendChild(container);
+    mapPane.appendChild(container);
 
     this._container = container;
-
-    // hack: listen to predrag event launched by dragging to
-    // set container in position (0, 0) in screen coordinates
-    if (map.dragging.enabled()) {
-      map.dragging._draggable.on('predrag', function() {
-        var d = map.dragging._draggable;
-        L.DomUtil.setPosition(this._canvas, { x: -d._newPos.x, y: -d._newPos.y });
-      }, this);
-    }
 
     map.on({
       viewreset: this._reset,
       resize:    this._reset,
+      moveend: function() {
+        requestAnimationFrame(function() {
+//        var d = map.dragging._draggable;
+//        L.DomUtil.setPosition(container, { x: -d._newPos.x, y: -d._newPos.y });
+          L.DomUtil.setPosition(container, L.DomUtil.getPosition(map._mapPane).multiplyBy(-1));
+        });
+      },
       zoomanim:  this._animateZoom,
       zoomend:   this._endZoomAnim
     }, this);
 
-
+    //*** TileManager Adapter *************************************************
 
     // TODO: add proper destroy() methods
-    this._tileManager = new VECNIK.TileManager({
+    var tileManager = new VECNIK.TileManager({
       provider: this.options.provider,
       tileSize: this.options.tileSize,
       minZoom:  this.options.minZoom,
       maxZoom:  this.options.maxZoom
     });
 
+    // TODO: there should be updates during move as well
+
     map.on('moveend', function() {
-      this._tileManager.update(map.getPixelBounds())
-    }, this);
+      tileManager.update(map.getPixelBounds())
+    });
 
     map.on('zoomend', function() {
-      this._tileManager.setZoom(map.getZoom())
+      tileManager.setZoom(map.getZoom())
+    });
+
+    tileManager.setZoom(map.getZoom());
+    tileManager.update(map.getPixelBounds());
+
+    tileManager.on('change', function(tileData) {
+      // TODO: turn tile data into a single render queue
+      // TODO: all coordinates as buffers
+      // TODO: consider drawing tile by tile as they arrive
+      var renderer = this._renderer;
+      requestAnimationFrame(function() {
+        renderer.render(tileData, map.getPixelBounds().min);
+      });
     }, this);
 
-    this._tileManager.setZoom(map.getZoom());
-    this._tileManager.update(map.getPixelBounds());
-
-
+    //*************************************************************************
 
     this._reset();
   },
@@ -210,16 +211,6 @@ L.CanvasLayer = L.Class.extend({
 
   redraw: function() {},
 
-  onResize: function() {},
+  onResize: function() {}
 
-  render: function() {
-    // TODO: turn tile data into a single render queue
-    // TODO: all coordinates as buffers
-    var bounds = this._map.getPixelBounds();
-    this.options.renderer.render(this._tileManager._data, bounds.min);
-    var render_bound = this.render.bind(this);
-    setTimeout(function() {
-      requestAnimationFrame(render_bound);
-    }, 100);
-  }
 });

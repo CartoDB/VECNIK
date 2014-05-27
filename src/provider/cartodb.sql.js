@@ -60,7 +60,11 @@ var VECNIK = VECNIK || {};
     // clip
     if (opts.ENABLE_CLIPPING) {
       // This is a slightly enlarged version of the query bounding box
-      var sql_env_exp = 'ST_Expand('+ sql_env +', '+ (pixel_geo_maxsize*2) +')';
+
+// TODO: discuss reasons for expanded clip area
+//      var sql_env_exp = 'ST_Expand('+ sql_env +', '+ (pixel_geo_maxsize*2) +')';
+var sql_env_exp = '('+ sql_env +')';
+
       // Also must be snapped to the grid ...
       sql_env_exp = 'ST_SnapToGrid('+ sql_env_exp +','+ pixel_geo_maxsize +')';
 

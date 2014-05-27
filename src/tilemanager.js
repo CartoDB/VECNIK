@@ -26,7 +26,7 @@
     this._numTilesToLoad = 0;
   };
 
-  var proto = VECNIK.TileManager.prototype;
+  var proto = VECNIK.TileManager.prototype = new VECNIK.Events();
 
   proto.setZoom = function(zoom) {
     this._mapZoom = zoom;
@@ -73,6 +73,7 @@
     delete this._tilesLoading[key];
 // tile.destroy();
 // TODO: rebuild the buffers URGENT!
+    this.emit('change', this._data);
   },
 
   proto._tileShouldBeLoaded = function(x, y, zoom) {
@@ -104,6 +105,7 @@
 //              type[]
 //              properties[{}]
 //              coordinates[]
+              this.emit('change', this._data);
             }, this);
 
           queue.push(tile);

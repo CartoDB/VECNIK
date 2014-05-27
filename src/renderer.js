@@ -75,8 +75,8 @@
       feature, coordinates;
 
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-context.strokeStyle = '#000000';
-context.fillStyle   = 'rgba(240,220,200,0.5)';
+context.strokeStyle = '#ffcc00';
+context.fillStyle   = 'rgba(100,150,100,0.5)';
 
     for (i = 0, il = queue.length; i < il; i++) {
       feature = queue[i];
@@ -119,9 +119,8 @@ context.fillStyle   = 'rgba(240,220,200,0.5)';
         break;
       }
 
-      // TODO: skip fill for LineString
-      context.fill();
       context.stroke();
+      context.fill(); // TODO: skip fill for LineString
     }
   };
 

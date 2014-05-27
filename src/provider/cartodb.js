@@ -16,13 +16,13 @@
       this.options.ENABLE_SIMPLIFY = true;
     }
     if (this.options.ENABLE_SNAPPING === undefined) {
-      this.options.ENABLE_SNAPPING = false;
+      this.options.ENABLE_SNAPPING = true;
     }
     if (this.options.ENABLE_CLIPPING === undefined) {
-      this.options.ENABLE_CLIPPING = false;
+      this.options.ENABLE_CLIPPING = true;
     }
     if (this.options.ENABLE_FIXING === undefined) {
-      this.options.ENABLE_FIXING = false;
+      this.options.ENABLE_FIXING = true;
     }
   };
 
