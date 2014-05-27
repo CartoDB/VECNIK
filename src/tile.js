@@ -1,38 +1,34 @@
 
-// TODO: refactor tiles to be simpler structure
-// TODO: fix projection origin per tile
 // TODO: add geometries into a render queue
-// TODO: filter duplicate features
 
 (function(VECNIK) {
 
   VECNIK.Tile = function(x, y, zoom) {
-    VECNIK.Model.prototype.constructor.call(this);
-    this._x = x;
-    this._y = y;
-    this._zoom = zoom;
+    VECNIK.Events.prototype.constructor.call(this);
+    this.x = x;
+    this.y = y;
+    this.zoom = zoom;
   };
 
-  var proto = VECNIK.Tile.prototype = new VECNIK.Model();
+  VECNIK.Tile.getKey = function(x, y, zoom) {
+    return [x, y, zoom].join(',');
+  };
+
+  var proto = VECNIK.Tile.prototype = new VECNIK.Events();
 
   proto.getKey = function() {
-    return [this._x, this._y, this._zoom].join(';');
+    return VECNIK.Tile.getKey(this.x, this.y, this.zoom);
   };
 
   proto.setData = function(data) {
-    this._features = data.features;
-    this._collection = this._convert(this._features);
+    this._convert(data.features);
   };
 
-  proto.geometry = function() {
-    return this.get('geometry');
-  };
-
-  proto._convert = function(features) {
-    var collection = [];
+  proto._convert = function(collection) {
+    this._data = [];
 
     // TODO: align property handling
-//    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
+    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
 //      var worker = new Worker('../src/projector.worker.js');
 //      var self = this;
 //      worker.onmessage = function(e) {
@@ -42,34 +38,31 @@
 //      };
 //      worker.postMessage({
 //        collection: collection,
-//        zoom: this._zoom,
-//        x: this._x,
-//        y: this._y
+//        zoom: this.zoom
 //      });
-//      return;
-//    }
+      return;
+    }
 
     var feature, coordinates;
-    for (var i = 0, il = features.length; i < il; i++) {
-      feature = features[i];
+    for (var i = 0, il = collection.length; i < il; i++) {
+      feature = collection[i];
       if (!feature.geometry) {
         continue;
       }
 
-      coordinates = VECNIK.projectGeometry(feature.geometry, this._zoom);
+      coordinates = VECNIK.projectGeometry(feature.geometry, this.zoom);
       if (!coordinates || !coordinates.length) {
         continue;
       }
 
-      collection.push({
+      this._data.push({
         coordinates: coordinates,
         type: feature.geometry.type,
         properties: feature.properties
       });
     }
 
-    this.emit('ready', collection);
-    return collection;
+    this.emit('ready');
   };
 
 })(VECNIK);

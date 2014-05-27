@@ -66,14 +66,6 @@
 //    }
 //  };
 
-  // TODO: this goes away once we provide a queue of all tile data
-  proto.clear = function() {
-    var context = this.context;
-    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-    context.strokeStyle = '#000000';
-    context.fillStyle   = 'rgba(240,220,200,0.5)';
-  };
-
   proto.render = function(queue, origin) {
     this._origin = origin;
 
@@ -82,8 +74,9 @@
       i, il, j, jl,
       feature, coordinates;
 
-    // TODO: this will be enabled once we provide a queue of all tile data
-    // context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+context.strokeStyle = '#000000';
+context.fillStyle   = 'rgba(240,220,200,0.5)';
 
     for (i = 0, il = queue.length; i < il; i++) {
       feature = queue[i];

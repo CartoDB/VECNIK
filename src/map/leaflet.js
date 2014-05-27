@@ -1,7 +1,14 @@
 
-L.CanvasLayer = L.Class.extend({
 
-  includes: [L.Mixin.Events, L.Mixin.TileLoader],
+/***
+ * L Layer:
+ *
+ * map.on('moveend', TM.update);
+ * onmoveend? => setBounds(map.getPixelBounds())
+ * map.on('zoom', TM.setZoom);
+ *
+ */
+L.CanvasLayer = L.Class.extend({
 
   options: {
     minZoom: 0,
@@ -79,7 +86,29 @@ L.CanvasLayer = L.Class.extend({
       zoomend:   this._endZoomAnim
     }, this);
 
-    this._initTileLoader();
+
+
+    // TODO: add proper destroy() methods
+    this._tileManager = new VECNIK.TileManager({
+      provider: this.options.provider,
+      tileSize: this.options.tileSize,
+      minZoom:  this.options.minZoom,
+      maxZoom:  this.options.maxZoom
+    });
+
+    map.on('moveend', function() {
+      this._tileManager.update(map.getPixelBounds())
+    }, this);
+
+    map.on('zoomend', function() {
+      this._tileManager.setZoom(map.getZoom())
+    }, this);
+
+    this._tileManager.setZoom(map.getZoom());
+    this._tileManager.update(map.getPixelBounds());
+
+
+
     this._reset();
   },
 
@@ -186,16 +215,11 @@ L.CanvasLayer = L.Class.extend({
   render: function() {
     // TODO: turn tile data into a single render queue
     // TODO: all coordinates as buffers
-    this.options.renderer.clear();
-    for (var key in this._tiles) {
-      // WIP
-      this.options.renderer.render(this._tiles[key]._collection, this._geometryOrigin);
-    }
-
+    var bounds = this._map.getPixelBounds();
+    this.options.renderer.render(this._tileManager._data, bounds.min);
     var render_bound = this.render.bind(this);
     setTimeout(function() {
       requestAnimationFrame(render_bound);
     }, 100);
-
   }
 });

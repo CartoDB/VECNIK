@@ -7,29 +7,29 @@
 
   VECNIK.CartoDB = VECNIK.CartoDB || {};
 
-  VECNIK.CartoDB.API = function(opts) {
+  VECNIK.CartoDB.API = function(options) {
     this.projection = new VECNIK.MercatorProjection();
-    this.opts = opts;
-    this.base_url = 'http://'+ opts.user +'.cartodb.com/api/v2/sql';
+    this.options = options;
+    this.base_url = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
 
-    if (this.opts.ENABLE_SIMPLIFY === undefined) {
-      this.opts.ENABLE_SIMPLIFY = true;
+    if (this.options.ENABLE_SIMPLIFY === undefined) {
+      this.options.ENABLE_SIMPLIFY = true;
     }
-    if (this.opts.ENABLE_SNAPPING === undefined) {
-      this.opts.ENABLE_SNAPPING = false;
+    if (this.options.ENABLE_SNAPPING === undefined) {
+      this.options.ENABLE_SNAPPING = false;
     }
-    if (this.opts.ENABLE_CLIPPING === undefined) {
-      this.opts.ENABLE_CLIPPING = false;
+    if (this.options.ENABLE_CLIPPING === undefined) {
+      this.options.ENABLE_CLIPPING = false;
     }
-    if (this.opts.ENABLE_FIXING === undefined) {
-      this.opts.ENABLE_FIXING = false;
+    if (this.options.ENABLE_FIXING === undefined) {
+      this.options.ENABLE_FIXING = false;
     }
   };
 
   var proto = VECNIK.CartoDB.API.prototype;
 
   proto._debug = function(msg) {
-    if (this.opts.debug) {
+    if (this.options.debug) {
       console.log(msg);
     }
   };
@@ -40,7 +40,7 @@
   };
 
   proto.getUrl = function(x, y, zoom) {
-    var sql = VECNIK.CartoDB.SQL(this.projection, this.opts.table, x, y, zoom, this.opts);
+    var sql = VECNIK.CartoDB.SQL(this.projection, this.options.table, x, y, zoom, this.options);
     return this._getSqlUrl(sql);
   };
 

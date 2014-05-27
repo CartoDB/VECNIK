@@ -8,41 +8,42 @@
 
     VECNIK.Model = function() {
       VECNIK.Events.prototype.constructor.call(this);
+      this._data = {};
     };
 
     var proto = VECNIK.Model.prototype = new VECNIK.Events();
 
     proto.set = function(data, silent) {
-      this.data = this.data || {};
-      for (var v in data) {
-        if (data.hasOwnProperty(v)) {
-          this.data[v] = data[v];
+      var keys = [];
+      for (var key in data) {
+        if (data.hasOwnProperty(key)) {
+          this._data[key] = data[key];
+          keys.push(key);
         }
       }
       if (!silent) {
-        this.emit('change', this.data);
+        this.emit('change', keys);
       }
     };
 
-    proto.get = function(attr, def) {
-      this.data = this.data || {};
-      if (attr in this.data) {
-        return this.data[attr];
+    proto.get = function(key, def) {
+      if (key in this._data) {
+        return this._data[key];
       }
       return def;
     };
 
-    proto.unset = function(attr, silent) {
-      this.data = this.data || {};
-      delete this.data[attr];
+    proto.unset = function(key, silent) {
+      this._data = this._data || {};
+      delete this._data[key];
       if (!silent) {
-        this.emit('change', this.data);
+        this.emit('change', [key]);
       }
     };
 
     proto.destroy = function() {
       this.emit('destroy');
-      delete this.data;
+      delete this._data;
     };
 
 })(VECNIK);
