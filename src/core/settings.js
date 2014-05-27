@@ -16,7 +16,7 @@ var VECNIK = VECNIK || {};
 
   // default settings
   VECNIK.settings = new VECNIK.Settings({
-    WEBWORKERS: false,
+    WEBWORKERS: true,
     BACKBUFFER: true
   });
 

@@ -1,6 +1,4 @@
 
-// TODO: add geometries into a render queue
-
 (function(VECNIK) {
 
   VECNIK.Tile = function(x, y, zoom) {
@@ -27,19 +25,17 @@
   proto._convert = function(collection) {
     this._data = [];
 
-    // TODO: align property handling
     if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
-//      var worker = new Worker('../src/projector.worker.js');
-//      var self = this;
-//      worker.onmessage = function(e) {
-//        self.set({ geometry: e.data.geometry }, true);
-//        self.unset('features', true);
-//        self.emit('ready');
-//      };
-//      worker.postMessage({
-//        collection: collection,
-//        zoom: this.zoom
-//      });
+      var worker = new Worker('../src/projector.worker.js');
+      var self = this;
+      worker.onmessage = function(e) {
+        self._data = e.data;
+        self.emit('ready');
+      };
+      worker.postMessage({
+        collection: collection,
+        zoom: this.zoom
+      });
       return;
     }
 

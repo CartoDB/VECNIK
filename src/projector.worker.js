@@ -1,22 +1,30 @@
-importScripts('../js/mercator.js');
-importScripts('../js/geometry.js');
+importScripts('../src/mercator.js');
+importScripts('../src/geometry.js');
 
-this.onmessage = function(event) {
-  var data = event.data;
-  var collection = data.collection;
-  var geometry = [];
-  for (var i = 0; i < collection.length; ++i) {
-    var p = collection[i];
-    if (p.geometry) {
-      var coordinates = VECNIK.projectGeometry(p.geometry, data.zoom);
-      if (coordinates && coordinates.length !== 0) {
-         geometry.push({
-           coordinates: coordinates,
-           type: p.geometry.type,
-           properties: p.properties
-         });
-      }
+this.onmessage = function(e) {
+  var
+    collection = e.data.collection,
+    zoom = e.data.zoom,
+    res = [];
+
+  var feature, coordinates;
+  for (var i = 0, il = collection.length; i < il; i++) {
+    feature = collection[i];
+    if (!feature.geometry) {
+      continue;
     }
+
+    coordinates = VECNIK.projectGeometry(feature.geometry, zoom);
+    if (!coordinates || !coordinates.length) {
+      continue;
+    }
+
+    res.push({
+      coordinates: coordinates,
+      type: feature.geometry.type,
+      properties: feature.properties
+    });
   }
-  this.postMessage({ geometry: geometry });
+
+  this.postMessage(res);
 };
