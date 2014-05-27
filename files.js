@@ -17,7 +17,6 @@ var files = [
   'src/projector.worker.js',
   'src/renderer.js',
   'src/shader.js',
-  'src/map/leaflet.tiles.js',
   'src/map/leaflet.js'
 //  'src/map/modestmaps.tiles.js',
 //  'src/map/modestmaps.js'
