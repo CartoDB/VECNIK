@@ -17,7 +17,6 @@ var VECNIK = VECNIK || {};
     req.onreadystatechange = function() {
       if (req.readyState === 4) {
         if (req.status === 200) {
-//          callback(JSON.parse(req.responseText));
           events.emit('load', JSON.parse(req.responseText))
         }
       }
