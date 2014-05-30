@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vecnik - Leaflet 0.8 + VECNIK</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="stylesheet" href="lib/leaflet-0.8/dist/leaflet.css">
+<style type="text/css">
+html, body {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+#map {
+  height: 100%;
+}
+</style>
+<script src="lib/leaflet-0.8/dist/leaflet-src.js"></script>
+
+<script src="../src/polyfills.js"></script>
+<script src="../src/core/core.js"></script>
+<script src="../src/core/events.js"></script>
+<script src="../src/core/model.js"></script>
+<script src="../src/core/settings.js"></script>
+<script src="../src/mercator.js"></script>
+<script src="../src/geometry.js"></script>
+<script src="../src/models.js"></script>
+<script src="../src/tile.js"></script>
+<script src="../src/tilemanager.js"></script>
+<script src="../src/renderer.js"></script>
+<script src="../src/shader.js"></script>
+
+<script src="../src/provider/cartodb.sql.js"></script>
+<script src="../src/provider/cartodb.js"></script>
+
+<script src="../src/map/leaflet.js"></script>
+
+<script src="lib/underscore.js"></script>
+<script src="lib/carto.js"></script>
+
+<script src="../src/carto.js"></script>
+</head>
+
+<body>
+<div id="map"></div>
+
+<script>
+var map = new L.Map('map').setView([40.735291, -73.990731], 16);
+new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
+
+var provider = new VECNIK.CartoDB.API({
+  user: 'pluto',
+  table: 'mn_mappluto_13v1',
+  debug: false
+});
+
+var renderer = new VECNIK.Renderer();
+
+var vlayer = new L.CanvasLayer({
+  provider: provider,
+  renderer: renderer
+});
+
+vlayer.addTo(map);
+/*
+L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+***/
+
+//VECNIK.Carto.init(function(carto) {
+//  VECNIK.Carto.compile(
+//    "#world { line-width: 2; line-color: #f00; [TYPEY='test']{ line-width: 2; } [ZOOM = 0]{ line-width: 2; } }",
+//    function() {}
+//  );
+//});
+//
+//var shader = new VECNIK.CartoShader({
+//  'point-color': '#fff',
+//  'line-color': '#F00',
+//  'line-width': function(data) {
+//    return '3';
+//  },
+//  'polygon-fill': function(data) {
+//    return "rgba(200, 200, 200, 0.8)";
+//  }
+//});
+</script>
+</body>
+</html>

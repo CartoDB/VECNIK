@@ -46,12 +46,17 @@ L.CanvasLayer = L.Class.extend({
     return canvas;
   },
 
-  onAdd: function (map) {
-    this._map = map;
+  onAdd: function(e) {
+    // for Leaflet 0.8 compatibility
+    this._map = e.target ? e.target : e;
 
     // add container with the canvas to the tile pane
     // the container is moved in the oposite direction of the
     // map pane to keep the canvas always in (0, 0)
+
+debugger
+    var self = this;
+
     var mapPane = this._map._panes.tilePane;
     var container = L.DomUtil.create('div', 'leaflet-layer');
     container.appendChild(this._canvas);
@@ -61,14 +66,14 @@ L.CanvasLayer = L.Class.extend({
 
     this._container = container;
 
-    map.on({
+    this._map.on({
       viewreset: this._reset,
       resize:    this._reset,
       moveend: function() {
         requestAnimationFrame(function() {
-//        var d = map.dragging._draggable;
+//        var d = this._map.dragging._draggable;
 //        L.DomUtil.setPosition(container, { x: -d._newPos.x, y: -d._newPos.y });
-          L.DomUtil.setPosition(container, L.DomUtil.getPosition(map._mapPane).multiplyBy(-1));
+          L.DomUtil.setPosition(container, L.DomUtil.getPosition(self._map._mapPane).multiplyBy(-1));
         });
       },
       zoomanim:  this._animateZoom,
@@ -87,16 +92,16 @@ L.CanvasLayer = L.Class.extend({
 
     // TODO: there should be updates during move as well
 
-    map.on('moveend', function() {
-      tileManager.update(map.getPixelBounds())
-    });
+    this._map.on('moveend', function() {
+      tileManager.update(this._map.getPixelBounds())
+    }, this);
 
-    map.on('zoomend', function() {
-      tileManager.setZoom(map.getZoom())
-    });
+    this._map.on('zoomend', function() {
+      tileManager.setZoom(this._map.getZoom())
+    }, this);
 
-    tileManager.setZoom(map.getZoom());
-    tileManager.update(map.getPixelBounds());
+    tileManager.setZoom(this._map.getZoom());
+    tileManager.update(this._map.getPixelBounds());
 
     tileManager.on('change', function(tileData) {
       // TODO: turn tile data into a single render queue
@@ -104,7 +109,7 @@ L.CanvasLayer = L.Class.extend({
       // TODO: consider drawing tile by tile as they arrive
       var renderer = this._renderer;
       requestAnimationFrame(function() {
-        renderer.render(tileData, map.getPixelBounds().min);
+        renderer.render(tileData, self._map.getPixelBounds().min);
       });
     }, this);
 
@@ -214,3 +219,8 @@ L.CanvasLayer = L.Class.extend({
   onResize: function() {}
 
 });
+
+// for Leaflet 0.8 compatibility
+L.CanvasLayer.prototype._layerAdd    = L.CanvasLayer.prototype.onAdd;
+L.CanvasLayer.prototype._layerRemove = L.CanvasLayer.prototype.onRemove;
+
