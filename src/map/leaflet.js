@@ -54,7 +54,6 @@ L.CanvasLayer = L.Class.extend({
     // the container is moved in the oposite direction of the
     // map pane to keep the canvas always in (0, 0)
 
-debugger
     var self = this;
 
     var mapPane = this._map._panes.tilePane;
@@ -103,13 +102,17 @@ debugger
     tileManager.setZoom(this._map.getZoom());
     tileManager.update(this._map.getPixelBounds());
 
+self._geojson = L.geoJson().addTo(self._map);
+
     tileManager.on('change', function(tileData) {
       // TODO: turn tile data into a single render queue
       // TODO: all coordinates as buffers
       // TODO: consider drawing tile by tile as they arrive
       var renderer = this._renderer;
       requestAnimationFrame(function() {
-        renderer.render(tileData, self._map.getPixelBounds().min);
+//      renderer.render(tileData, self._map.getPixelBounds().min);
+        self._geojson.clearLayers();
+        self._geojson.addData(tileData);
       });
     }, this);
 

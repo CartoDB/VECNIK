@@ -19,6 +19,8 @@
   };
 
   proto.setData = function(data) {
+this.emit('ready', data.features);
+return;
     this._convert(data.features);
   };
 
@@ -30,7 +32,7 @@
       var self = this;
       worker.onmessage = function(e) {
         self._data = e.data;
-        self.emit('ready');
+        self.emit('ready', self._data);
       };
       worker.postMessage({
         collection: collection,
@@ -58,7 +60,7 @@
       });
     }
 
-    this.emit('ready');
+    this.emit('ready', this._data);
   };
 
 })(VECNIK);

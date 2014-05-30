@@ -98,9 +98,9 @@
       for (x = tileBounds.w; x <= tileBounds.e; x++) {
         if (this._tileShouldBeLoaded(x, y, this._mapZoom)) {
           tile = new VECNIK.Tile(x, y, this._mapZoom)
-            .on('ready', function() {
+            .on('ready', function(tileData) {
               // TODO: refactor for proper access
-              this._data = this._data.concat(tile._data);
+              this._data = this._data.concat(tileData);
 //              (id[])
 //              type[]
 //              properties[{}]
