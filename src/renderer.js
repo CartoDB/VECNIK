@@ -76,7 +76,7 @@
 
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 context.strokeStyle = '#ffcc00';
-context.fillStyle   = 'rgba(100,150,100,0.5)';
+context.fillStyle = 'rgba(100,150,100,0.5)';
 
     for (i = 0, il = queue.length; i < il; i++) {
       feature = queue[i];

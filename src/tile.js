@@ -19,8 +19,9 @@
   };
 
   proto.setData = function(data) {
-this.emit('ready', data.features);
-return;
+// TODO: enable this if Leaflet should handle projection
+//this.emit('ready', data.features);
+//return;
     this._convert(data.features);
   };
 

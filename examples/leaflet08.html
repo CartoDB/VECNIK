@@ -35,7 +35,8 @@ html, body {
 <script src="../src/provider/cartodb.sql.js"></script>
 <script src="../src/provider/cartodb.js"></script>
 
-<script src="../src/map/leaflet.js"></script>
+<!--script src="../src/map/leaflet.js"></script-->
+<script src="../src/l.vecnik.js"></script>
 
 <script src="lib/underscore.js"></script>
 <script src="lib/carto.js"></script>
@@ -58,15 +59,13 @@ var provider = new VECNIK.CartoDB.API({
 
 var renderer = new VECNIK.Renderer();
 
-var vlayer = new L.CanvasLayer({
+var vlayer = new L.Vecnik({
   provider: provider,
   renderer: renderer
 });
 
 vlayer.addTo(map);
-/*
 L.control.layers({}, { VECNIK: vlayer }).addTo(map);
-***/
 
 //VECNIK.Carto.init(function(carto) {
 //  VECNIK.Carto.compile(
