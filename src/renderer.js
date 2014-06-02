@@ -13,7 +13,7 @@
   var proto = VECNIK.Renderer.prototype;
 
   proto.setCanvas = function(canvas) {
-    var context = this.context = canvas.getContext('2d');
+    var context = this._context = canvas.getContext('2d');
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.mozImageSmoothingEnabled = false;
@@ -22,7 +22,7 @@
 
   proto._drawPolyline = function(coordinates) {
     var origin = this._origin;
-    var context = this.context, i, il;
+    var context = this._context, i, il;
 //    context.moveTo(coordinates[0]-origin.x, coordinates[1]-origin.y);
 //    for (i = 2, il = coordinates.length-1; i < il; i += 2) {
 //      context.lineTo(coordinates[i]-origin.x, coordinates[i+1]-origin.y);
@@ -42,8 +42,8 @@
 //  proto._drawCircle = function(x, y, radius) {
   proto._drawCircle = function(c, radius) {
     var origin = this._origin;
-//    this.context.arc(x-origin.x, y-origin.y, radius, 0, Math.PI*2);
-    this.context.arc(c.x-origin.x, c.y-origin.y, radius, 0, Math.PI*2);
+//    this._context.arc(x-origin.x, y-origin.y, radius, 0, Math.PI*2);
+    this._context.arc(c.x-origin.x, c.y-origin.y, radius, 0, Math.PI*2);
   };
 
 //  proto.render = function(ctx, geometry, zoom, shader) {
@@ -70,7 +70,7 @@
     this._origin = origin;
 
     var
-      context = this.context,
+      context = this._context,
       i, il, j, jl,
       feature, coordinates;
 
