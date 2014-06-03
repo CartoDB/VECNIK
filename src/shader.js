@@ -5,7 +5,7 @@
 
 (function(VECNIK) {
 
-  var mapper = {
+  var propertyMapping = {
     'point-color': 'fillStyle',
     'line-color': 'strokeStyle',
     'line-width': 'lineWidth',
@@ -14,31 +14,7 @@
     'polygon-opacity': 'globalAlpha'
   };
 
-  function CartoShader(shader) {
-    VECNIK.Events.prototype.constructor.call(this);
-    this.compiled = {};
-    this.shader_src = null;
-    this.compile(shader);
-  }
-
-  CartoShader.prototype = new VECNIK.Events();
-
-  CartoShader.prototype.compile = function(shader) {
-    if (typeof shader === 'string') {
-      shader = eval("(function() { return " + shader +"; })()");
-    }
-    this.shader_src = shader;
-    for (var attr in shader) {
-      var c = mapper[attr];
-      if (c) {
-        this.compiled[c] = eval("(function() { return shader[attr]; })();");
-      }
-    }
-
-    this.emit('change');
-  };
-
-  var needed_settings = {
+  var requiredProperties = {
     'LineString': [
       'line-color',
       'line-width',
@@ -51,7 +27,8 @@
       'polygon-fill'
     ]
   };
-  var defaults = {
+
+  var defaultProperties = {
     'LineString': {
       'strokeStyle': '#000',
       'lineWidth': 1,
@@ -70,16 +47,39 @@
     }
   };
 
-  CartoShader.prototype.needs_render = function(data, render_context, primitive_type) {
-    var variables = needed_settings[primitive_type];
+  VECNIK.CartoShader = function(shader) {
+    VECNIK.Events.prototype.constructor.call(this);
+    this.compiled = {};
+    this.compile(shader);
+  }
+
+  var proto = VECNIK.CartoShader.prototype = new VECNIK.Events();
+
+  proto.compile = function(shader) {
+    this.shaderSrc = shader;
+    if (typeof shader === 'string') {
+      shader = eval("(function() { return " + shader +"; })()");
+    }
+    var property;
+    for (var attr in shader) {
+      if (property = propertyMapping[attr]) {
+        this.compiled[property] = eval("(function() { return shader[attr]; })();");
+      }
+    }
+
+    this.emit('change');
+  };
+
+  proto.isDirty = function(data, context, primitiveType) {
+    var variables = requiredProperties[primitiveType];
     var shader = this.compiled;
     for (var attr in variables) {
       var style_attr = variables[attr];
-      var attr_present = this.shader_src[style_attr];
+      var attr_present = this.shaderSrc[style_attr];
       if (attr_present !== undefined) {
-        var fn = shader[mapper[style_attr]];
+        var fn = shader[propertyMapping[style_attr]];
         if (typeof fn === 'function') {
-          fn = fn(data, render_context);
+          fn = fn(data, context);
         }
         if (fn !== null && fn !== undefined) {
           return true;
@@ -89,27 +89,25 @@
     return false;
   };
 
-  CartoShader.prototype.reset = function(ctx, primitive_type) {
-    var def = defaults[primitive_type];
+  proto.reset = function(ctx, primitiveType) {
+    var def = defaultProperties[primitiveType];
     for (var attr in def) {
       ctx[attr] = def[attr];
     }
   };
 
-  CartoShader.prototype.apply = function(canvas_ctx, data, render_context) {
+  proto.apply = function(canvas_ctx, data, context) {
     var shader = this.compiled;
     for (var attr in shader) {
       var fn = shader[attr];
       if (typeof fn === 'function') {
-        fn = fn(data, render_context);
+        fn = fn(data, context);
       }
       if (fn !== null && canvas_ctx[attr] != fn) {
         canvas_ctx[attr] = fn;
       }
     }
   };
-
-  VECNIK.CartoShader = CartoShader;
 
 })(VECNIK);
 

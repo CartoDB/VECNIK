@@ -40,8 +40,6 @@ html, body {
 
 <script src="lib/underscore.js"></script>
 <script src="lib/carto.js"></script>
-
-<script src="../src/carto.js"></script>
 </head>
 
 <body>
@@ -67,23 +65,16 @@ var vlayer = new L.Vecnik({
 vlayer.addTo(map);
 L.control.layers({}, { VECNIK: vlayer }).addTo(map);
 
-VECNIK.Carto.init(function(carto) {
-  VECNIK.Carto.compile(
-    "#world { line-width: 2; line-color: #f00; [TYPEY='test']{ line-width: 2; } [ZOOM = 0]{ line-width: 2; } }",
-    function() {}
-  );
+var shader = new VECNIK.CartoShader({
+  'point-color': '#fff',
+  'line-color': '#F00',
+  'line-width': function(data) {
+    return 3;
+  },
+  'polygon-fill': function(data) {
+    return 'rgba(200, 200, 200, 0.8)';
+  }
 });
-
-//var shader = new VECNIK.CartoShader({
-//  'point-color': '#fff',
-//  'line-color': '#F00',
-//  'line-width': function(data) {
-//    return '3';
-//  },
-//  'polygon-fill': function(data) {
-//    return "rgba(200, 200, 200, 0.8)";
-//  }
-//});
 </script>
 </body>
 </html>

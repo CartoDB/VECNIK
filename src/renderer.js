@@ -54,7 +54,7 @@
 //      };
 //      var isActive = true;
 //      if (shader) {
-//        is_active = shader.needs_render(geo.properties, render_context, geo.type);
+//        is_active = shader.isDirty(geo.properties, render_context, geo.type);
 //        if (isActive) {
 //          shader.reset(ctx, geo.type);
 //          shader.apply(ctx, geo.properties, render_context);
