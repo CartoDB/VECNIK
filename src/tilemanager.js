@@ -50,6 +50,10 @@
     this._removeInvisibleTiles(tileBounds);
   };
 
+  proto.getData = function() {
+    return this._data;
+  },
+
   proto._removeAllTiles = function() {
     for (var key in this._tiles) {
       this._removeTile(key);

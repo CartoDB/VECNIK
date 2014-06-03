@@ -1,4 +1,6 @@
 
+// TODO: there should be updates during move as well
+
 L.Vecnik = L.Canvas.extend({
 
   initialize: function(options) {
@@ -10,6 +12,14 @@ L.Vecnik = L.Canvas.extend({
     }
 
     this._renderer = this.options.renderer;
+
+    // TODO: add proper destroy() methods
+    this._tileManager = new VECNIK.TileManager({
+      provider: this.options.provider,
+      tileSize: this.options.tileSize,
+      minZoom:  this.options.minZoom,
+      maxZoom:  this.options.maxZoom
+    });
   },
 
   onAdd: function(map) {
@@ -35,33 +45,24 @@ L.Vecnik = L.Canvas.extend({
 //		}
 //		this._ctx.translate(-boundsMin.x, -boundsMin.y);
 
-    // TODO: add proper destroy() methods
-    var tileManager = new VECNIK.TileManager({
-      provider: this.options.provider,
-      tileSize: this.options.tileSize,
-      minZoom:  this.options.minZoom,
-      maxZoom:  this.options.maxZoom
-    });
-
-    // TODO: there should be updates during move as well
-
     map.on('moveend', function() {
-      tileManager.update(map.getPixelBounds())
+      this._tileManager.update(map.getPixelBounds())
     }, this);
 
     map.on('zoomend', function() {
-      tileManager.setZoom(map.getZoom())
+      this._tileManager.setZoom(map.getZoom())
     }, this);
 
-    tileManager.setZoom(map.getZoom());
-    tileManager.update(map.getPixelBounds());
-
-    tileManager.on('change', function(tileData) {
+    this._tileManager.on('change', function(tileData) {
       var renderer = this._renderer;
-//      requestAnimationFrame(function() {
-      renderer.render(tileData, map.getPixelBounds().min);
-//      });
+      // TODO: maybe move RAF to renderer
+      requestAnimationFrame(function() {
+        renderer.render(tileData, map.getPixelBounds().min);
+      });
     }, this);
+
+    this._tileManager.setZoom(map.getZoom());
+    this._tileManager.update(map.getPixelBounds());
   },
 
   _update: function() {
@@ -76,6 +77,8 @@ L.Vecnik = L.Canvas.extend({
 		  container = this._container;
 
     L.DomUtil.setPosition(container, boundsMin);
+
+    this._renderer.render(this._tileManager.getData(), this._map.getPixelBounds().min);
 
 //  translate so we use the same path coordinates after canvas element moves
 //	this._ctx.translate(-boundsMin.x, -boundsMin.y);
