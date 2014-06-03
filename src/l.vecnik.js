@@ -78,7 +78,9 @@ L.Vecnik = L.Canvas.extend({
 
     L.DomUtil.setPosition(container, boundsMin);
 
-    this._renderer.render(this._tileManager.getData(), this._map.getPixelBounds().min);
+    if (this._renderer._context) { // TODO: improve this check
+      this._renderer.render(this._tileManager.getData(), this._map.getPixelBounds().min);
+    }
 
 //  translate so we use the same path coordinates after canvas element moves
 //	this._ctx.translate(-boundsMin.x, -boundsMin.y);
