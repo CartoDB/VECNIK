@@ -17,6 +17,24 @@ L.Vecnik = L.Canvas.extend({
 
     this._renderer.setCanvas(this._ctx.canvas);
 
+		var
+      boundsMin = this._bounds.min,
+		  container = this._container,
+		  size = this._bounds.getSize(),
+		  r = L.Browser.retina ? 2 : 1;
+
+		L.DomUtil.setPosition(container, boundsMin);
+
+		container.width  = r*size.x;
+		container.height = r*size.y;
+		container.style.width  = size.x +'px';
+		container.style.height = size.y +'px';
+
+//		if (L.Browser.retina) {
+//			this._ctx.scale(2, 2);
+//		}
+//		this._ctx.translate(-boundsMin.x, -boundsMin.y);
+
     // TODO: add proper destroy() methods
     var tileManager = new VECNIK.TileManager({
       provider: this.options.provider,
@@ -39,9 +57,6 @@ L.Vecnik = L.Canvas.extend({
     tileManager.update(map.getPixelBounds());
 
     tileManager.on('change', function(tileData) {
-      // TODO: turn tile data into a single render queue
-      // TODO: all coordinates as buffers
-      // TODO: consider drawing tile by tile as they arrive
       var renderer = this._renderer;
 //      requestAnimationFrame(function() {
       renderer.render(tileData, map.getPixelBounds().min);
@@ -50,19 +65,21 @@ L.Vecnik = L.Canvas.extend({
   },
 
   _update: function() {
-    if (!this._renderer._context) {
+		if (this._map._animatingZoom && this._bounds) {
       return;
     }
 
-    L.Canvas.prototype._update.call(this);
+		L.Renderer.prototype._update.call(this);
 
-    this._renderer.render([], this._map.getPixelBounds().min);
+		var
+      boundsMin = this._bounds.min,
+		  container = this._container;
 
-    var container = this._container;
-//  var d = this._map.dragging._draggable;
-//  L.DomUtil.setPosition(container, { x: -d._newPos.x, y: -d._newPos.y });
-    L.DomUtil.setPosition(container, L.DomUtil.getPosition(container).multiplyBy(-1));
+    L.DomUtil.setPosition(container, boundsMin);
+
+//  translate so we use the same path coordinates after canvas element moves
+//	this._ctx.translate(-boundsMin.x, -boundsMin.y);
+//  L.DomUtil.setPosition(container, L.DomUtil.getPosition(container).multiplyBy(-2));
 //  L.DomUtil.setPosition(container, { x: 0, y: 0 });
   }
-
 });
