@@ -12,14 +12,11 @@ var files = [
   'src/geometry.js',
   'src/mercator.js',
   'src/models.js',
-  'src/tile.js',
   'src/tilemanager.js',
   'src/projector.worker.js',
   'src/renderer.js',
   'src/shader.js',
   'src/map/leaflet.js'
-//  'src/map/modestmaps.tiles.js',
-//  'src/map/modestmaps.js'
 ];
 
 var module = module || {};

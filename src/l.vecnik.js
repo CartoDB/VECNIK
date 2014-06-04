@@ -86,5 +86,30 @@ L.Vecnik = L.Canvas.extend({
 //	this._ctx.translate(-boundsMin.x, -boundsMin.y);
 //  L.DomUtil.setPosition(container, L.DomUtil.getPosition(container).multiplyBy(-2));
 //  L.DomUtil.setPosition(container, { x: 0, y: 0 });
-  }
+  },
+
+	_onMouseMove: function (e) {
+		if (!this._map || this._map._animatingZoom) {
+      return;
+    }
+
+		var point = this._map.mouseEventToLayerPoint(e);
+
+//		if (this._containsPoint(point)) {
+//			// if we just got inside the layer, fire mouseover
+//			if (!this._mouseInside) {
+//				L.DomUtil.addClass(this._container, 'leaflet-clickable'); // change cursor
+//				this._fireMouseEvent(e, 'mouseover');
+//				this._mouseInside = true;
+//			}
+//			// fire mousemove
+//			this._fireMouseEvent(e);
+//		}
+//    else if (layer._mouseInside) {
+//			// if we're leaving the layer, fire mouseout
+//			L.DomUtil.removeClass(this._container, 'leaflet-clickable');
+//			layer._fireMouseEvent(e, 'mouseout');
+//			layer._mouseInside = false;
+//		}
+	}
 });

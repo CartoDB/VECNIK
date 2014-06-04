@@ -3,9 +3,9 @@ importScripts('../src/geometry.js');
 
 this.onmessage = function(e) {
   var
+    res = [],
     collection = e.data.collection,
-    zoom = e.data.zoom,
-    res = [];
+    zoom = e.data.zoom;
 
   var feature, coordinates;
   for (var i = 0, il = collection.length; i < il; i++) {

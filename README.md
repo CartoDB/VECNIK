@@ -2,7 +2,7 @@
 
 VECNIK
 ======
-Veknik is a JS library that render features from [CartoDB](http://cartodb.com/) using HTML5 on top of [Modestmaps](http://modestmaps.com/). It includes an implementation of the [Carto](https://github.com/mapbox/carto) language for dynamically styling features using its CSS language.
+Veknik is a JS library that render features from [CartoDB](http://cartodb.com/) using HTML5 on top of [LeafletJS](http://leafletjs.com/). It includes an implementation of the [Carto](https://github.com/mapbox/carto) language for dynamically styling features using its CSS language.
 
 This is a prototype implementation to showcase the use of Carto for rendering maps on the client, not on the server. The library retrieves  vector data from CartoDB using the [SQL API](http://developers.cartodb.com/api/sql.html) on geojson format.
 
@@ -32,5 +32,5 @@ Having the browser render the style of the geospatial data allows for a new worl
 
 This project is only possible because of lot of other people releasing their source code as Open Source, particularly the Mapbox team who did a great work on Carto.
 
-- [Modestmaps](http://modestmaps.com/)
+- [LeafletJS](http://leafletjs.com/)
 - [Carto parser from Mapbox](https://github.com/mapbox/carto/tree/browser)

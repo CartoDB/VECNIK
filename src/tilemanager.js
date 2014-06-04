@@ -22,8 +22,6 @@
     this._mapZoom = 0;
 
     this._tiles = {};
-    this._tilesLoading = {};
-    this._numTilesToLoad = 0;
   };
 
   var proto = VECNIK.TileManager.prototype = new VECNIK.Events();
@@ -33,11 +31,11 @@
   },
 
   proto.update = function(bounds) {
-    var tileSize = this._tileSize;
-
     if (this._mapZoom > this._maxZoom || this._mapZoom < this._minZoom) {
       return;
     }
+
+    var tileSize = this._tileSize;
 
     var tileBounds = {
       w: bounds.min.x/tileSize <<0,
@@ -50,14 +48,8 @@
     this._removeInvisibleTiles(tileBounds);
   };
 
-  proto.getData = function() {
-    return this._data;
-  },
-
-  proto._removeAllTiles = function() {
-    for (var key in this._tiles) {
-      this._removeTile(key);
-    }
+  proto._getTileKey = function(tile) {
+    return [tile.x, tile.y, tile.zoom].join(',');
   };
 
   proto._removeInvisibleTiles = function(tileBounds) {
@@ -72,47 +64,41 @@
     }
   };
 
-  proto._removeTile = function(key) {
-    delete this._tiles[key];
-    delete this._tilesLoading[key];
-// tile.destroy();
-// TODO: rebuild the buffers URGENT!
-    this.emit('change', this._data);
-  },
+  proto._addTile = function(tile, data) {
+    this._convert(data).on('ready', function(convertedData) {
+      tile.data = convertedData;
+      this._tiles[ this._getTileKey(tile) ] = tile;
 
-  proto._tileShouldBeLoaded = function(x, y, zoom) {
-    var key = VECNIK.Tile.getKey(x, y, zoom);
-    return !(key in this._tiles) && !(key in this._tilesLoading);
+      this._data = this._data.concat(tile.data);
+
+      this.emit('change', this._data);
+    }, this);
   };
 
-  proto._onTileLoad = function(tile) {
-    this._numTilesToLoad--;
-    var key = tile.getKey();
-    this._tiles[key] = tile;
-    delete this._tilesLoading[key];
-    if (!this._numTilesToLoad) {
-      // EMIT tilesLoaded?
+  proto._removeTile = function(key) {
+    delete this._tiles[key];
+    this._data = [];
+    for (key in this._tiles) {
+      this._data = this._data.concat(this._tiles[key].data);
     }
+    this.emit('change', this._data);
+  };
+
+  proto._tileShouldBeLoaded = function(x, y, zoom) {
+    var key = this._getTileKey({ x:x, y:y, zoom:zoom });
+    return !(key in this._tiles);
   };
 
   proto._addTilesFromCenterOut = function(tileBounds) {
-    var queue = [], x, y, tile;
+    var
+      queue = [],
+      x, y,
+      tile;
 
     for (y = tileBounds.n; y <= tileBounds.s; y++) {
       for (x = tileBounds.w; x <= tileBounds.e; x++) {
         if (this._tileShouldBeLoaded(x, y, this._mapZoom)) {
-          tile = new VECNIK.Tile(x, y, this._mapZoom)
-            .on('ready', function(tileData) {
-              // TODO: refactor for proper access
-              this._data = this._data.concat(tileData);
-//              (id[])
-//              type[]
-//              properties[{}]
-//              coordinates[]
-              this.emit('change', this._data);
-            }, this);
-
-          queue.push(tile);
+          queue.push({ x:x, y:y, zoom:this._mapZoom });
         }
       }
     }
@@ -122,30 +108,81 @@
       return;
     }
 
-    this._numTilesToLoad += numTilesToLoad;
-
     var center = {
-      x: (tileBounds.e-tileBounds.w) / 2,
-      y: (tileBounds.n-tileBounds.s) / 2
+      x: tileBounds.w + (tileBounds.e-tileBounds.w) / 2,
+      y: tileBounds.s + (tileBounds.n-tileBounds.s) / 2
     };
 
     queue.sort(function(a, b) {
       return sqDistance(a, center) - sqDistance(b, center);
     });
 
-    var key;
     for (var i = 0; i < numTilesToLoad; i++) {
       tile = queue[i];
-      key = tile.getKey();
-      this._tilesLoading[key] = tile;
-      VECNIK.load(this._provider.getUrl(tile.x, tile.y, tile.zoom))
-        .on('load', function(data) {
-          tile.setData(data);
-          this._onTileLoad(tile);
-        }, this);
+      VECNIK.load(this._provider.getUrl(tile.x, tile.y, tile.zoom)).on('load', function(data) {
+        this._addTile(tile, data);
+      }, this);
     }
-    // EMIT tilesLoading?
   };
+
+  proto.getData = function() {
+    return this._data;
+  };
+
+  proto._convert = function(data) {
+    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
+      var worker = new Worker('../src/projector.worker.js');
+      var self = this;
+      worker.onmessage = function(e) {
+        self.emit('ready', e.data);
+      };
+      worker.postMessage({ collection:data.features, zoom:this._mapZoom });
+      return this;
+    }
+
+    var
+      res = [],
+      collection = data.features,
+      feature, coordinates;
+
+    for (var i = 0, il = collection.length; i < il; i++) {
+      feature = collection[i];
+      if (!feature.geometry) {
+        continue;
+      }
+
+      coordinates = VECNIK.projectGeometry(feature.geometry, this._mapZoom);
+      if (!coordinates || !coordinates.length) {
+        continue;
+      }
+
+      res.push({
+        coordinates: coordinates,
+        type: feature.geometry.type,
+        properties: feature.properties
+      });
+    }
+
+    this.emit('ready', res);
+
+    return this;
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 })(VECNIK);
 
 if (typeof module !== 'undefined' && module.exports) {

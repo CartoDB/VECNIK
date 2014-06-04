@@ -27,7 +27,6 @@ html, body {
 <script src="../src/mercator.js"></script>
 <script src="../src/geometry.js"></script>
 <script src="../src/models.js"></script>
-<script src="../src/tile.js"></script>
 <script src="../src/tilemanager.js"></script>
 <script src="../src/renderer.js"></script>
 <script src="../src/shader.js"></script>
@@ -72,9 +71,6 @@ var vlayer = new L.Vecnik({
   provider: provider,
   renderer: renderer
 });
-
-// TODO: refactor this (needed for addressing web workers)
-VECNIK.baseDir = '../src';
 
 vlayer.addTo(map);
 L.control.layers({}, { VECNIK: vlayer }).addTo(map);
