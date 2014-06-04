@@ -14,97 +14,57 @@
     'polygon-opacity': 'globalAlpha'
   };
 
-  var requiredProperties = {
-    'LineString': [
-      'line-color',
-      'line-width',
-      'line-opacity'
-    ],
-    'Polygon': [
-      'polygon-fill'
-    ],
-    'MultiPolygon': [
-      'polygon-fill'
-    ]
-  };
-
-  var defaultProperties = {
-    'LineString': {
-      'strokeStyle': '#000',
-      'lineWidth': 1,
-      'globalAlpha': 1.0,
-      'lineCap': 'round'
-    },
-    'Polygon': {
-      'strokeStyle': '#000',
-      'lineWidth': 1,
-      'globalAlpha': 1.0
-    },
-    'MultiPolygon': {
-      'strokeStyle': '#000',
-      'lineWidth': 1,
-      'globalAlpha': 1.0
-    }
+  var defaults = {
+    strokeStyle: '#000000',
+    lineWidth: 1,
+    globalAlpha: 1.0,
+    lineCap: 'round'
   };
 
   VECNIK.CartoShader = function(shader) {
     VECNIK.Events.prototype.constructor.call(this);
-    this.compiled = {};
+    this._compiled = {};
     this.compile(shader);
-  }
+  };
 
   var proto = VECNIK.CartoShader.prototype = new VECNIK.Events();
 
+  proto.setContext = function(context) {
+    this._context = context;
+  },
+
   proto.compile = function(shader) {
-    this.shaderSrc = shader;
+    this._shaderSrc = shader;
     if (typeof shader === 'string') {
       shader = eval("(function() { return " + shader +"; })()");
     }
     var property;
     for (var attr in shader) {
       if (property = propertyMapping[attr]) {
-        this.compiled[property] = eval("(function() { return shader[attr]; })();");
+        this._compiled[property] = eval("(function() { return shader[attr]; })();");
       }
     }
 
     this.emit('change');
   };
 
-  proto.isDirty = function(data, context, primitiveType) {
-    var variables = requiredProperties[primitiveType];
-    var shader = this.compiled;
-    for (var attr in variables) {
-      var style_attr = variables[attr];
-      var attr_present = this.shaderSrc[style_attr];
-      if (attr_present !== undefined) {
-        var fn = shader[propertyMapping[style_attr]];
-        if (typeof fn === 'function') {
-          fn = fn(data, context);
-        }
-        if (fn !== null && fn !== undefined) {
-          return true;
-        }
+  proto.apply = function(featureProperties, zoom) {
+    var
+      shader = this._compiled,
+      val;
+    for (var prop in shader) {
+      val = shader[prop];
+      if (typeof val === 'function') {
+        // TODO: inject map zoom
+        val = val(featureProperties, zoom);
       }
-    }
-    return false;
-  };
-
-  proto.reset = function(ctx, primitiveType) {
-    var def = defaultProperties[primitiveType];
-    for (var attr in def) {
-      ctx[attr] = def[attr];
-    }
-  };
-
-  proto.apply = function(canvas_ctx, data, context) {
-    var shader = this.compiled;
-    for (var attr in shader) {
-      var fn = shader[attr];
-      if (typeof fn === 'function') {
-        fn = fn(data, context);
+      if (val === null) {
+        val = defaults[prop];
       }
-      if (fn !== null && canvas_ctx[attr] != fn) {
-        canvas_ctx[attr] = fn;
+      // TODO: careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+      // mybe store current values or ideally pre-expand them
+      if (this._context[prop] !== val) {
+        this._context[prop] = val;
       }
     }
   };

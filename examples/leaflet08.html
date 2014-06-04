@@ -55,7 +55,19 @@ var provider = new VECNIK.CartoDB.API({
   debug: false
 });
 
-var renderer = new VECNIK.Renderer();
+
+var shader = new VECNIK.CartoShader({
+  'point-color': '#ffffff',
+  'line-color':  function(data) {
+    return data.cartodb_id % 2 ? '#cc0000' : '#00cc00';
+  },
+  'line-width': 1.5,
+  'polygon-fill': function(data) {
+    return 'rgba(200, 200, 200, 0.8)';
+  }
+});
+
+var renderer = new VECNIK.Renderer({ shader: shader });
 
 var vlayer = new L.Vecnik({
   provider: provider,
@@ -64,17 +76,6 @@ var vlayer = new L.Vecnik({
 
 vlayer.addTo(map);
 L.control.layers({}, { VECNIK: vlayer }).addTo(map);
-
-var shader = new VECNIK.CartoShader({
-  'point-color': '#fff',
-  'line-color': '#F00',
-  'line-width': function(data) {
-    return 3;
-  },
-  'polygon-fill': function(data) {
-    return 'rgba(200, 200, 200, 0.8)';
-  }
-});
 </script>
 </body>
 </html>

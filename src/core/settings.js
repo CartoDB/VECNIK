@@ -12,7 +12,7 @@ var VECNIK = VECNIK || {};
     this.set(defaults);
   }
 
-  var proto = VECNIK.Settings.prototype = new VECNIK.Model();
+  VECNIK.Settings.prototype = new VECNIK.Model();
 
   // default settings
   VECNIK.settings = new VECNIK.Settings({
