@@ -3,30 +3,34 @@
 <head>
 <title>Sketchy-old style map</title>
 
-<script type="text/javascript" src="../js/core.js"></script>
-<script type="text/javascript" src="../js/settings.js"></script>
-<script type="text/javascript" src="../js/mercator.js"></script>
-<script type="text/javascript" src="../js/geometry.js"></script>
-<script type="text/javascript" src="../js/model.js"></script>
-<script type="text/javascript" src="../js/renderer.js"></script>
-<script type="text/javascript" src="../js/shader.js"></script>
+<script src="../src/core/core.js"></script>
+<script src="../src/core/events.js"></script>
+<script src="../src/core/model.js"></script>
+<script src="../src/core/settings.js"></script>
+<script src="../src/mercator.js"></script>
+<script src="../src/geometry.js"></script>
+<script src="../src/models.js"></script>
+<script src="../src/tile.js"></script>
+<script src="../src/renderer.js"></script>
+<script src="../src/shader.js"></script>
 
 
-<script type="text/javascript" src="../js/cartodb.sql.js"></script>
-<script type="text/javascript" src="../js/cartodb.provider.js"></script>
+<script src="../src/provider/cartodb.sql.js"></script>
+<script src="../src/provider/cartodb.js"></script>
 
-<script type="text/javascript" src="stats.js"></script>
+<script src="stats.js"></script>
 
 <!-- carto -->
-<script src='../libs/underscore.js' type='text/javascript'></script>
-<script src='../libs/carto.js' type='text/javascript'></script>
+<script src="lib/underscore.js"></script>
+<script src="lib/carto.js"></script>
 
-<script type="text/javascript" src="../libs/modestmaps.js"></script>
-<script type="text/javascript" src="../js/vecnik.modestmaps.js"></script>
+<script src="lib/modestmaps.js"></script>
+<script src="../src/map/modestmaps.js"></script>
+<script src="../src/map/modestmaps.tiles.js"></script>
 
-<script type="text/javascript" src="../js/carto.js"></script>
+<script src="../src/carto.js"></script>
 
-<script type="text/javascript">
+<script>
     function SketchRender() {
       RND_FACTOR = 2;
       rnd = function() { return RND_FACTOR*( 2*Math.random() -1) ;}
@@ -70,11 +74,11 @@
                /*
                var centerx = (xmax - xmin)/2;
                var centery = (ymax - ymin)/2;
-               var radgrad = ctx.createRadialGradient(centerx, centery,0, centerx, centery, 0.9*Math.max(xmax - xmin, ymax - ymin));  
+               var radgrad = ctx.createRadialGradient(centerx, centery,0, centerx, centery, 0.9*Math.max(xmax - xmin, ymax - ymin));
                radgrad.addColorStop(0, 'rgba(1,159,98,0.2)')
                radgrad.addColorStop(0.9, 'rgba(1,159,98,0.2)')
                radgrad.addColorStop(1, 'rgba(1,159,98,0)')
-               ctx.fillStyle = radgrad;  
+               ctx.fillStyle = radgrad;
                */
 
           },
@@ -106,24 +110,21 @@
               "#world { line-width: 2; line-color: #f00; [TYPEY='test']{ line-width: 2; } [ZOOM = 0]{ line-width: 2; } }"
               , function() {});
         });
-        var stat = new Stats();
-        
+        new Stats();
 
-        var template = '../img/pt3.png'
+        var template = 'img/pt3.png'
         var subdomains = [ '', 'a.', 'b.', 'c.' ];
         var provider = new MM.TemplatedLayer(template, subdomains);
 
-        VECNIK.settings.set({
-           ENABLE_CLIPPING: true, 
-           ENABLE_SIMPLIFY: true,
-           ENABLE_FIXING: true,
-           ENABLE_SNAPPING: true, 
-        });
         var dataSource = new VECNIK.CartoDB.API({
            user: 'viz2',
            table: 'countries_export_2',
            //columns: [''], //do not include the_geom or cartodb_id, are implicit
-           debug: true
+           debug: true,
+           ENABLE_CLIPPING: true,
+           ENABLE_SIMPLIFY: true,
+           ENABLE_FIXING: true,
+           ENABLE_SNAPPING: true
         });
 
         var shader = new VECNIK.CartoShader({
@@ -132,7 +133,7 @@
             'line-width': function(data) {
                 return '1';
             },
-            'polygon-fill': function(data) { 
+            'polygon-fill': function(data) {
                 return "rgba(200, 200, 200, 0.8)";
             }
         });
@@ -141,7 +142,7 @@
         fg = new MM.Layer(vector_layer);
 
         map = new MM.Map(document.getElementById('map'), [provider,  fg])
-        
+
         if(!location.hash) {
           map.setCenterZoom(new MM.Location(51.4942, -0.1671), 2);
         }
@@ -192,7 +193,6 @@ textarea {
 </head>
    <body onload="initMap()">
    <div id="map"></div>
-  <!--<div id="livecode" class="highlight">-->
-   </div>
+   <!--<div id="livecode" class="highlight"></div>-->
 </body>
 </html>
