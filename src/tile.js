@@ -29,7 +29,7 @@
     this._data = [];
 
     if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
-      var worker = new Worker('../src/projector.worker.js');
+      var worker = new Worker(VECNIK.baseDir +'/projector.worker.js');
       var self = this;
       worker.onmessage = function(e) {
         self._data = e.data;
