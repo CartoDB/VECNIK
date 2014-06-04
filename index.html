@@ -46,9 +46,6 @@ html, body {
 var map = new L.Map('map').setView([40.735291, -73.990731], 16);
 new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
 
-// TODO: refactor this (needed for addressing web workers)
-VECNIK.baseDir = 'src';
-
 var provider = new VECNIK.CartoDB.API({
   user: 'pluto',
   table: 'mn_mappluto_13v1',
@@ -72,6 +69,9 @@ var vlayer = new L.Vecnik({
   provider: provider,
   renderer: renderer
 });
+
+// TODO: refactor this (needed for addressing web workers)
+VECNIK.baseDir = 'src';
 
 vlayer.addTo(map);
 L.control.layers({}, { VECNIK: vlayer }).addTo(map);

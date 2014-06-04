@@ -1,5 +1,5 @@
-importScripts(VECNIK.baseDir + '/mercator.js');
-importScripts(VECNIK.baseDir + '/geometry.js');
+importScripts('../src/mercator.js');
+importScripts('../src/geometry.js');
 
 this.onmessage = function(e) {
   var
