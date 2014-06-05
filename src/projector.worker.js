@@ -1,7 +1,7 @@
 importScripts('../src/mercator.js');
 importScripts('../src/geometry.js');
 
-this.onmessage = function(e) {
+self.onmessage = function(e) {
   var
     data = [],
     tile = e.data.tile,
@@ -28,6 +28,6 @@ this.onmessage = function(e) {
   }
 
   tile.data = data;
-  this.postMessage(tile);
-  this.close();
+  self.postMessage(tile);
+  self.close();
 };

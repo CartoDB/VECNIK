@@ -22,6 +22,8 @@
     this._mapZoom = 0;
 
     this._tiles = {};
+
+    this.on('ready', this._addTile, this);
   };
 
   var proto = VECNIK.TileManager.prototype = new VECNIK.Events();
@@ -44,12 +46,18 @@
       s: bounds.max.y/tileSize <<0
     };
 
-    this._loadTilesFromCenterOut(tileBounds);
     this._removeInvisibleTiles(tileBounds);
+    this._loadTilesFromCenterOut(tileBounds);
   };
 
   proto._getTileKey = function(tile) {
     return [tile.x, tile.y, tile.zoom].join(',');
+  };
+
+  proto._addTile = function(tile) {
+    this._tiles[ this._getTileKey(tile) ] = tile;
+    this._data = this._data.concat(tile.data);
+    this.emit('change', this._data);
   };
 
   proto._removeInvisibleTiles = function(tileBounds) {
@@ -67,15 +75,9 @@
     for (key in this._tiles) {
       this._data = this._data.concat(this._tiles[key].data);
     }
-    this.emit('change', this._data);
-  };
 
-  proto._addTile = function(tile, data) {
-    this._convert(tile, data).on('ready', function(tileWithData) {
-      this._tiles[ this._getTileKey(tileWithData) ] = tileWithData;
-      this._data = this._data.concat(tileWithData.data);
-      this.emit('change', this._data);
-    }, this);
+    // NOTE: as we are adding new tiles next, we can save that rendering pass
+    //this.emit('change', this._data);
   };
 
   proto._tileShouldBeLoaded = function(x, y, zoom) {
@@ -116,7 +118,7 @@
       VECNIK.load(this._provider.getUrl(tile.x, tile.y, tile.zoom))
         .on('load', (function(tile_) {
           return function(data) {
-            this._addTile(tile_, data.features);
+            this._convert(tile_, data.features);
           };
         }(tile)), this);
     }
