@@ -6,6 +6,10 @@
     return dx*dx + dy*dy;
   }
 
+  function polyMerge(a, b) {
+    return a;
+  }
+
   VECNIK.TileManager = function(options) {
     VECNIK.Events.prototype.constructor.call(this);
 
@@ -54,9 +58,44 @@
     return [tile.x, tile.y, tile.zoom].join(',');
   };
 
+  // TODO: probably worth a worker
+  proto._mergeData = function(data) {
+    var
+      _data = this._data,
+      _d, _dl = _data.length,
+      d, dl = data.length,
+      id;
+
+    var found;
+    for (d = 0; d < dl; d++) {
+      id = data[d].properties.cartodb_id;
+      found = false;
+      for (_d = 0; _d < _dl; _d++) {
+         if (_data[_d].properties.cartodb_id === id) {
+//            _data[_d] = polyMerge(_data[_d], data[d]);
+
+_data[_d].properties.isCut = true;
+data[d].properties.isCut = true;
+
+_data.push(data[d]);
+_dl++;
+
+
+            found = true;
+            break;
+            // TODO: there can be other occurences, i.e. if a feature is spread over more than two tiles
+         }
+      }
+      if (!found) {
+        _data.push(data[d]);
+        _dl++;
+      }
+    }
+  };
+
   proto._addTile = function(tile) {
     this._tiles[ this._getTileKey(tile) ] = tile;
-    this._data = this._data.concat(tile.data);
+    this._mergeData(tile.data);
     this.emit('change', this._data);
   };
 
@@ -73,7 +112,7 @@
 
     this._data = [];
     for (key in this._tiles) {
-      this._data = this._data.concat(this._tiles[key].data);
+      this._mergeData(this._tiles[key].data);
     }
 
     // NOTE: as we are adding new tiles next, we can save that rendering pass

@@ -57,7 +57,7 @@ var provider = new VECNIK.CartoDB.API({
 var shader = new VECNIK.CartoShader({
   'point-color': '#ffffff',
   'line-color':  function(data) {
-    return data.cartodb_id % 2 ? '#cc0000' : '#00cc00';
+    return data.isCut ? '#cc0000' : '#00cc00';
   },
   'line-width': 1.5,
   'polygon-fill': function(data) {
