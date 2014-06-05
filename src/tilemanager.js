@@ -44,7 +44,7 @@
       s: bounds.max.y/tileSize <<0
     };
 
-    this._addTilesFromCenterOut(tileBounds);
+    this._loadTilesFromCenterOut(tileBounds);
     this._removeInvisibleTiles(tileBounds);
   };
 
@@ -58,25 +58,11 @@
       if (this._tiles.hasOwnProperty(key)) {
         tile = this._tiles[key];
         if (tile.zoom !== this._mapZoom || tile.x < tileBounds.w || tile.x > tileBounds.e || tile.y < tileBounds.n || tile.y > tileBounds.s) {
-          this._removeTile(key);
+          delete this._tiles[key];
         }
       }
     }
-  };
 
-  proto._addTile = function(tile, data) {
-    this._convert(data).on('ready', function(convertedData) {
-      tile.data = convertedData;
-      this._tiles[ this._getTileKey(tile) ] = tile;
-
-      this._data = this._data.concat(tile.data);
-
-      this.emit('change', this._data);
-    }, this);
-  };
-
-  proto._removeTile = function(key) {
-    delete this._tiles[key];
     this._data = [];
     for (key in this._tiles) {
       this._data = this._data.concat(this._tiles[key].data);
@@ -84,12 +70,20 @@
     this.emit('change', this._data);
   };
 
+  proto._addTile = function(tile, data) {
+    this._convert(tile, data).on('ready', function(tileWithData) {
+      this._tiles[ this._getTileKey(tileWithData) ] = tileWithData;
+      this._data = this._data.concat(tileWithData.data);
+      this.emit('change', this._data);
+    }, this);
+  };
+
   proto._tileShouldBeLoaded = function(x, y, zoom) {
     var key = this._getTileKey({ x:x, y:y, zoom:zoom });
     return !(key in this._tiles);
   };
 
-  proto._addTilesFromCenterOut = function(tileBounds) {
+  proto._loadTilesFromCenterOut = function(tileBounds) {
     var
       queue = [],
       x, y,
@@ -119,9 +113,12 @@
 
     for (var i = 0; i < numTilesToLoad; i++) {
       tile = queue[i];
-      VECNIK.load(this._provider.getUrl(tile.x, tile.y, tile.zoom)).on('load', function(data) {
-        this._addTile(tile, data);
-      }, this);
+      VECNIK.load(this._provider.getUrl(tile.x, tile.y, tile.zoom))
+        .on('load', (function(tile_) {
+          return function(data) {
+            this._addTile(tile_, data.features);
+          };
+        }(tile)), this);
     }
   };
 
@@ -129,20 +126,19 @@
     return this._data;
   };
 
-  proto._convert = function(data) {
+  proto._convert = function(tile, collection) {
     if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
       var worker = new Worker('../src/projector.worker.js');
       var self = this;
       worker.onmessage = function(e) {
         self.emit('ready', e.data);
       };
-      worker.postMessage({ collection:data.features, zoom:this._mapZoom });
+      worker.postMessage({ tile:tile, collection:collection, zoom:this._mapZoom });
       return this;
     }
 
     var
-      res = [],
-      collection = data.features,
+      data = [],
       feature, coordinates;
 
     for (var i = 0, il = collection.length; i < il; i++) {
@@ -156,32 +152,18 @@
         continue;
       }
 
-      res.push({
+      data.push({
         coordinates: coordinates,
         type: feature.geometry.type,
         properties: feature.properties
       });
     }
 
-    this.emit('ready', res);
+    tile.data = data;
+    this.emit('ready', tile);
 
     return this;
   };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 })(VECNIK);
 

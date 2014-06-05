@@ -3,7 +3,8 @@ importScripts('../src/geometry.js');
 
 this.onmessage = function(e) {
   var
-    res = [],
+    data = [],
+    tile = e.data.tile,
     collection = e.data.collection,
     zoom = e.data.zoom;
 
@@ -19,12 +20,14 @@ this.onmessage = function(e) {
       continue;
     }
 
-    res.push({
+    data.push({
       coordinates: coordinates,
       type: feature.geometry.type,
       properties: feature.properties
     });
   }
 
-  this.postMessage(res);
+  tile.data = data;
+  this.postMessage(tile);
+  this.close();
 };
