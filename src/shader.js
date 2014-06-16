@@ -56,7 +56,7 @@
       val = shader[prop];
       if (typeof val === 'function') {
         // TODO: inject map zoom
-        val = val(featureProperties, zoom);
+        val = val(featureProperties, { zoom: zoom });
       }
       if (val === null) {
         val = defaults[prop];
