@@ -40,10 +40,6 @@
 
   var proto = VECNIK.CartoShader.prototype = new VECNIK.Events();
 
-  proto.setContext = function(context) {
-    this._context = context;
-  },
-
   proto.compile = function(shader) {
     this._shaderSrc = shader;
     if (typeof shader === 'string') {
@@ -59,7 +55,7 @@
     this.emit('change');
   };
 
-  proto.apply = function(featureProperties, zoom) {
+  proto.apply = function(context, featureProperties, zoom) {
     var
       shader = this._compiled,
       val;
@@ -74,8 +70,8 @@
       }
       // TODO: careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
       // maybe store current values or ideally pre-expand them
-      if (this._context[prop] !== val) {
-        this._context[prop] = val;
+      if (context[prop] !== val) {
+        context[prop] = val;
       }
     }
   };

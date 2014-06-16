@@ -27,14 +27,14 @@ html, body {
 <script src="../src/mercator.js"></script>
 <script src="../src/geometry.js"></script>
 <script src="../src/models.js"></script>
-<script src="../src/tilemanager.js"></script>
 <script src="../src/renderer.js"></script>
 <script src="../src/shader.js"></script>
 
 <script src="../src/provider/cartodb.sql.js"></script>
 <script src="../src/provider/cartodb.js"></script>
 
-<script src="../src/vecnik.js"></script>
+<script src="../src/tile.js"></script>
+<script src="../src/layer.js"></script>
 
 <script src="lib/underscore.js"></script>
 <script src="lib/carto.js"></script>
@@ -72,7 +72,7 @@ var layers = VECNIK.CartoShader.create([
 
 var renderer = new VECNIK.Renderer({ shader: layers });
 
-var vlayer = new VECNIK.Layer({
+var vlayer = new VECNIK.Layer('fake://url.for/now', {
   provider: provider,
   renderer: renderer
 });
