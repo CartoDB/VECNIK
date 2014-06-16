@@ -8,7 +8,10 @@
 
   VECNIK.Renderer = function(options) {
     options = options || {};
-    this._shader = options.shader;
+    if (!options.shader) {
+      throw new Error("shader instance is needed to create a renderer");
+    }
+    this._shader = options.shader.length ? options.shader: [options.shader];
   };
 
   VECNIK.Renderer.POINT_RADIUS = 2;
@@ -16,13 +19,16 @@
   var proto = VECNIK.Renderer.prototype;
 
   proto.setCanvas = function(canvas) {
+    var s, sl;
     var context = this._context = canvas.getContext('2d');
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.mozImageSmoothingEnabled = false;
     context.webkitImageSmoothingEnabled = false;
 
-    this._shader.setContext(context);
+    for (s = 0, sl = this._shader.length; s < sl; ++s) {
+      this._shader[s].setContext(context);
+    }
   };
 
   proto._drawPolyline = function(coordinates) {
@@ -51,53 +57,58 @@
     var
       context = this._context,
       shader = this._shader,
-      i, il, j, jl,
+      i, il, j, jl, s, sl,
       feature, coordinates;
 
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-    for (i = 0, il = queue.length; i < il; i++) {
-      feature = queue[i];
+    for (s = 0, sl = shader.length; s < sl; ++s) {
+      var shaderPass = shader[s];
 
-      if (shader) {
-        shader.apply(feature.properties);
+      for (i = 0, il = queue.length; i < il; i++) {
+        feature = queue[i];
+
+        if (shaderPass) {
+          //TODO: return here if the style has changed to close previos polygons or not
+          shaderPass.apply(feature.properties);
+        }
+
+        context.beginPath();
+
+        coordinates = feature.coordinates;
+
+        // TODO: missing a few geometry types
+        switch (feature.type) {
+          case 'Point':
+            this._drawCircle(coordinates, VECNIK.Renderer.POINT_RADIUS);
+          break;
+
+          case 'MultiPoint':
+            for (j = 0, jl = coordinates.length; j < jl; j++) {
+              this._drawCircle(coordinates[j], VECNIK.Renderer.POINT_RADIUS);
+            }
+          break;
+
+          case 'Polygon':
+            this._drawPolygon(coordinates);
+            context.closePath();
+          break;
+
+          case 'MultiPolygon':
+            for (j = 0, jl = coordinates.length; j < jl; j++) {
+              this._drawPolygon(coordinates[j]);
+            }
+            context.closePath();
+          break;
+
+          case 'LineString':
+            this._drawPolyline(coordinates);
+          break;
+        }
+
+        context.stroke();
+        context.fill(); // TODO: skip fill for LineString
       }
-
-      context.beginPath();
-
-      coordinates = feature.coordinates;
-
-      // TODO: missing a few geometry types
-      switch (feature.type) {
-        case 'Point':
-          this._drawCircle(coordinates, VECNIK.Renderer.POINT_RADIUS);
-        break;
-
-        case 'MultiPoint':
-          for (j = 0, jl = coordinates.length; j < jl; j++) {
-            this._drawCircle(coordinates[j], VECNIK.Renderer.POINT_RADIUS);
-          }
-        break;
-
-        case 'Polygon':
-          this._drawPolygon(coordinates);
-          context.closePath();
-        break;
-
-        case 'MultiPolygon':
-          for (j = 0, jl = coordinates.length; j < jl; j++) {
-            this._drawPolygon(coordinates[j]);
-          }
-          context.closePath();
-        break;
-
-        case 'LineString':
-          this._drawPolyline(coordinates);
-        break;
-      }
-
-      context.stroke();
-      context.fill(); // TODO: skip fill for LineString
     }
   };
 
