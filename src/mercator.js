@@ -29,9 +29,9 @@ var VECNIK = VECNIK || {};
     return this.longitude;
   };
 
-  function bound(value, opt_min, opt_max) {
-    if (opt_min !== null) value = Math.max(value, opt_min);
-    if (opt_max !== null) value = Math.min(value, opt_max);
+  function bound(value, optMin, optMax) {
+    if (optMin !== null) value = Math.max(value, optMin);
+    if (optMax !== null) value = Math.min(value, optMax);
     return value;
   }
 

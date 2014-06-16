@@ -3,8 +3,6 @@
 // geometry conversion
 //========================================
 
-// TODO: go for array buffers!
-
 var VECNIK = VECNIK || {};
 
 (function(VECNIK) {

@@ -34,8 +34,7 @@ html, body {
 <script src="../src/provider/cartodb.sql.js"></script>
 <script src="../src/provider/cartodb.js"></script>
 
-<!--script src="../src/map/leaflet.js"></script-->
-<script src="../src/l.vecnik.js"></script>
+<script src="../src/vecnik.js"></script>
 
 <script src="lib/underscore.js"></script>
 <script src="lib/carto.js"></script>
@@ -55,7 +54,7 @@ var provider = new VECNIK.CartoDB.API({
   debug: false
 });
 
-var style = [
+var layers = VECNIK.CartoShader.create([
   '#layer {',
   ' polygon-fill: rgba(0, 0, 0, 0.1);',
   ' line-color: white;',
@@ -69,32 +68,11 @@ var style = [
   ' line-width: 1;',
   ' line-color: black;',
   '}'
-].join('\n');
+].join('\n'));
 
-var shader = new carto.RendererJS().render(style);
-var layerShader = [
-  new VECNIK.CartoShader(shader.getLayers()[0].getShader()),
-  new VECNIK.CartoShader(shader.getLayers()[1].getShader()),
-]
+var renderer = new VECNIK.Renderer({ shader: layers });
 
-//var shader = new VECNIK.CartoShader(layerShader);
-/*
-{
-
-  'point-color': '#ffffff',
-  'line-color':  function(data) {
-    return data.isCut ? '#cc0000' : '#00cc00';
-  },
-  'line-width': 2.5,
-  'polygon-fill': function(data) {
-    return 'rgba(00, 00, 200, 0.8)';
-  }
-});
-*/
-
-var renderer = new VECNIK.Renderer({ shader: layerShader});
-
-var vlayer = new L.Vecnik({
+var vlayer = new VECNIK.Layer({
   provider: provider,
   renderer: renderer
 });

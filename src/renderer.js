@@ -9,9 +9,9 @@
   VECNIK.Renderer = function(options) {
     options = options || {};
     if (!options.shader) {
-      throw new Error("shader instance is needed to create a renderer");
+      throw new Error('Shader instance is needed to create a renderer');
     }
-    this._shader = options.shader.length ? options.shader: [options.shader];
+    this._shaders = options.shader.length ? options.shader : [options.shader];
   };
 
   VECNIK.Renderer.POINT_RADIUS = 2;
@@ -19,15 +19,14 @@
   var proto = VECNIK.Renderer.prototype;
 
   proto.setCanvas = function(canvas) {
-    var s, sl;
     var context = this._context = canvas.getContext('2d');
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.mozImageSmoothingEnabled = false;
     context.webkitImageSmoothingEnabled = false;
 
-    for (s = 0, sl = this._shader.length; s < sl; ++s) {
-      this._shader[s].setContext(context);
+    for (var i = 0, il = this._shaders.length; i < il; i++) {
+      this._shaders[i].setContext(context);
     }
   };
 
@@ -51,25 +50,26 @@
     this._context.arc(c.x-origin.x, c.y-origin.y, radius, 0, Math.PI*2);
   };
 
-  proto.render = function(queue, origin, shader) {
+  proto.render = function(queue, origin) {
     this._origin = origin;
 
     var
       context = this._context,
-      shader = this._shader,
+      shaders = this._shaders,
+      shaderPass,
       i, il, j, jl, s, sl,
       feature, coordinates;
 
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-    for (s = 0, sl = shader.length; s < sl; ++s) {
-      var shaderPass = shader[s];
+    for (s = 0, sl = shaders.length; s < sl; s++) {
+      shaderPass = shaders[s];
 
       for (i = 0, il = queue.length; i < il; i++) {
         feature = queue[i];
 
         if (shaderPass) {
-          //TODO: return here if the style has changed to close previos polygons or not
+          // TODO: return here if the style has changed to close previous polygons or not
           shaderPass.apply(feature.properties);
         }
 

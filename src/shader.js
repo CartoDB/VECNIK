@@ -27,6 +27,17 @@
     this.compile(shader);
   };
 
+  // TODO: enable the class to handle layers
+  VECNIK.CartoShader.create = function(style) {
+    var
+      shader = new carto.RendererJS().render(style),
+      layers = [];
+    for (var i = 0, il = shader.layers.length; i < il; i++) {
+      layers[i] = new VECNIK.CartoShader(shader.getLayers()[i].getShader());
+    }
+    return layers;
+  };
+
   var proto = VECNIK.CartoShader.prototype = new VECNIK.Events();
 
   proto.setContext = function(context) {
@@ -62,7 +73,7 @@
         val = defaults[prop];
       }
       // TODO: careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-      // mybe store current values or ideally pre-expand them
+      // maybe store current values or ideally pre-expand them
       if (this._context[prop] !== val) {
         this._context[prop] = val;
       }

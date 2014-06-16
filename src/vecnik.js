@@ -1,7 +1,9 @@
 
 // TODO: there should be updates during move as well
 
-L.Vecnik = L.Canvas.extend({
+if (!VECNIK) VECNIK = {};
+
+VECNIK.Layer = L.Canvas.extend({
 
   initialize: function(options) {
     L.Canvas.prototype.initialize.call(this, options);
