@@ -51,35 +51,37 @@ canvas.height = 256;
       collection = data.features,
       feature, coordinates;
 
-//    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
-//      var worker = new Worker('../src/projector.worker.js');
-//      var self = this;
-//      worker.onmessage = function(e) {
-//        self.emit('ready', e.data);
-//      };
-//      worker.postMessage({ collection:collection, zoom:this._zoom });
-//    } else {
+    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
+      var worker = new Worker('../src/projector.worker.js');
 
-      this._data = [];
-      for (var i = 0, il = collection.length; i < il; i++) {
-        feature = collection[i];
-        if (!feature.geometry) {
-          continue;
-        }
+      var self = this;
+      worker.onmessage = function(e) {
+        self._data = e.data;
+        self.render();
+      };
 
-        coordinates = VECNIK.projectGeometry(feature.geometry, this._x, this._y, this._zoom);
-        if (!coordinates || !coordinates.length) {
-          continue;
-        }
+      worker.postMessage({ collection: collection, x: this._x, y: this._y, zoom: this._zoom });
+      return;
+    }
 
-        this._data.push({
-          coordinates: coordinates,
-          type: feature.geometry.type,
-          properties: feature.properties
-        });
+    this._data = [];
+    for (var i = 0, il = collection.length; i < il; i++) {
+      feature = collection[i];
+      if (!feature.geometry) {
+        continue;
       }
-//    }
 
+      coordinates = VECNIK.projectGeometry(feature.geometry, this._x, this._y, this._zoom);
+      if (!coordinates || !coordinates.length) {
+        continue;
+      }
+
+      this._data.push({
+        coordinates: coordinates,
+        type: feature.geometry.type,
+        properties: feature.properties
+      });
+    }
     this.render();
   };
 

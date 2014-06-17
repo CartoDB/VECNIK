@@ -3,19 +3,21 @@ importScripts('../src/geometry.js');
 
 self.onmessage = function(e) {
   var
+    options = e.data,
+    collection = options.collection,
+    x = options.x,
+    y = options.y,
+    zoom = options.zoom,
     data = [],
-    tile = e.data.tile,
-    collection = e.data.collection,
-    zoom = e.data.zoom;
+    feature, coordinates;
 
-  var feature, coordinates;
   for (var i = 0, il = collection.length; i < il; i++) {
     feature = collection[i];
     if (!feature.geometry) {
       continue;
     }
 
-    coordinates = VECNIK.projectGeometry(feature.geometry, zoom);
+    coordinates = VECNIK.projectGeometry(feature.geometry, x, y, zoom);
     if (!coordinates || !coordinates.length) {
       continue;
     }
@@ -27,7 +29,6 @@ self.onmessage = function(e) {
     });
   }
 
-  tile.data = data;
-  self.postMessage(tile);
+  self.postMessage(data);
   self.close();
 };
