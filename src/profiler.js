@@ -8,12 +8,14 @@ var VECNIK = VECNIK || {};
     this.unit = '';
   };
 
-  Profiler.prototype.start = function(unit) {
+  var proto = VECNIK.Profiler.prototype;
+
+  proto.start = function(unit) {
     this.t0 = new Date().getTime();
     this.unit =  unit || '';
   };
 
-  Profiler.prototype.end = function() {
+  proto.end = function() {
      var t = new Date().getTime() - this.t0;
      //console.log("PROFILE - " + this.unit + ":" + t);
      return t;
