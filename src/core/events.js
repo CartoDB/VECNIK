@@ -3,6 +3,8 @@
 // Event handling
 //========================================
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
   VECNIK.Events = function() {

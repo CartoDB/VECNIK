@@ -3,6 +3,8 @@
 // CartoDB data provider
 //========================================
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
   VECNIK.CartoDB = VECNIK.CartoDB || {};

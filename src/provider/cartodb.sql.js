@@ -6,7 +6,8 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
-  var sql = function(projection, table, x, y, zoom, opts) {
+  VECNIK.CartoDB = VECNIK.CartoDB || {};
+  VECNIK.CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
 
     opts = opts || {
       ENABLE_SIMPLIFY: true,
@@ -98,9 +99,6 @@ var VECNIK = VECNIK || {};
 
     return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env; // +' LIMIT 100';
   };
-
-  VECNIK.CartoDB = VECNIK.CartoDB || {};
-  VECNIK.CartoDB.SQL = sql;
 
 })(VECNIK);
 
