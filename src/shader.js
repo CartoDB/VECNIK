@@ -61,21 +61,34 @@ var VECNIK = VECNIK || {};
     var
       shader = this._compiled,
       val;
+    var changed = false;
     for (var prop in shader) {
       val = shader[prop];
       if (typeof val === 'function') {
-        // TODO: inject map zoom
         val = val(featureProperties, { zoom: zoom });
       }
       if (val === null) {
         val = defaults[prop];
       }
-      // TODO: careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-      // maybe store current values or ideally pre-expand them
-      if (context[prop] !== val) {
-        context[prop] = val;
+      // careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+      //
+      // color parse (and probably other props) depends on canvas implementation so direct
+      // comparasions with context contents can't be done.
+      // use an extra object to store current state
+      // * chrome 35.0.1916.153:
+      // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+      // ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+      // * ff 29.0.1
+      // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+      // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+
+      var prevStyle = context._vecnik_style = context._vecnik_style || {};
+      if (prevStyle[prop] !== val) {
+        context[prop] = prevStyle[prop] = val;
+        changed = true;
       }
     }
+    return changed;
   };
 
 })(VECNIK);
