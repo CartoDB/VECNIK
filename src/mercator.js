@@ -97,7 +97,7 @@ var VECNIK = VECNIK || {};
     var worldCoordinate = this.fromLatLngToPoint(latLng);
     var pixelCoordinate = new Point(worldCoordinate.x*numTiles, worldCoordinate.y*numTiles);
     var tilePixelPos    = this.tilePixelPos(tileX, tileY);
-    return new Point(pixelCoordinate.x-tilePixelPos.x <<0, pixelCoordinate.y-tilePixelPos.y <<0);
+    return new Point(Math.round(pixelCoordinate.x-tilePixelPos.x), Math.round(pixelCoordinate.y-tilePixelPos.y));
   };
 
   MercatorProjection.prototype.latLngToWorldPoint = function(latLng, zoom) {
