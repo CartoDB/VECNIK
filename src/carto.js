@@ -5,6 +5,8 @@
 // repository: Compiles carto to javascript shader
 //========================================
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
   // monkey patch less classes

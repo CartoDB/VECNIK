@@ -3,6 +3,8 @@
 // GeoJSON data provider
 //========================================
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
   VECNIK.GeoJSON = function(opts) {

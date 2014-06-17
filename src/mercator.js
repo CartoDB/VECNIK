@@ -8,7 +8,8 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
-  var TILE_SIZE = 256;
+  // TODO: somehow VECNIK.Tile.SIZE gets lost on tile creation
+  var tileSize = VECNIK.Tile ? VECNIK.Tile.SIZE : 256;
 
   // todo: move outside
   function Point(x, y) {
@@ -44,9 +45,9 @@ var VECNIK = VECNIK || {};
   }
 
   function MercatorProjection() {
-    this.pixelOrigin_ = new Point(TILE_SIZE / 2, TILE_SIZE / 2);
-    this.pixelsPerLonDegree_ = TILE_SIZE / 360;
-    this.pixelsPerLonRadian_ = TILE_SIZE / (2 * Math.PI);
+    this.pixelOrigin_ = new Point(tileSize / 2, tileSize / 2);
+    this.pixelsPerLonDegree_ = tileSize / 360;
+    this.pixelsPerLonRadian_ = tileSize / (2 * Math.PI);
   }
 
   MercatorProjection.prototype.fromLatLngToPoint = function(latLng, opt_point) {
@@ -75,9 +76,9 @@ var VECNIK = VECNIK || {};
 
   MercatorProjection.prototype.tileBBox = function(x, y, zoom) {
     var numTiles = 1 <<zoom;
-    var inc = TILE_SIZE/numTiles;
-    var px = x*TILE_SIZE/numTiles;
-    var py = y*TILE_SIZE/numTiles;
+    var inc = tileSize/numTiles;
+    var px = x*tileSize/numTiles;
+    var py = y*tileSize/numTiles;
     return [
       this.fromPointToLatLng(new Point(px, py + inc)),
       this.fromPointToLatLng(new Point(px + inc, py))
@@ -86,8 +87,8 @@ var VECNIK = VECNIK || {};
 
   MercatorProjection.prototype.tilePixelPos = function(tileX, tileY) {
     return {
-      x: tileX*TILE_SIZE,
-      y: tileY*TILE_SIZE
+      x: tileX*tileSize,
+      y: tileY*tileSize
     };
   };
 
@@ -110,7 +111,7 @@ var VECNIK = VECNIK || {};
     var projection = this;
     var worldCoordinate = projection.fromLatLngToPoint(latLng);
     var pixelCoordinate = new Point(worldCoordinate.x * numTiles, worldCoordinate.y * numTiles);
-    return new Point(Math.floor(pixelCoordinate.x / TILE_SIZE), Math.floor(pixelCoordinate.y / TILE_SIZE));
+    return new Point(Math.floor(pixelCoordinate.x / tileSize), Math.floor(pixelCoordinate.y / tileSize));
   };
 
   VECNIK.LatLng = LatLng;

@@ -4,6 +4,8 @@
 // pretty basic model funcionallity
 //========================================
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
     VECNIK.Model = function() {

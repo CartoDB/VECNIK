@@ -4,6 +4,8 @@
 
 // TODO: do we want a render loop, or rendering on demand, or loop+throttling
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
   VECNIK.Tile = function(options) {
@@ -20,14 +22,14 @@
     this._zoom = options.coords.z;
 
     var
-      canvas = this._canvas = document.createElement('CANVAS'),
+      canvas  = this._canvas  = document.createElement('CANVAS'),
       context = this._context = canvas.getContext('2d');
 
-// TODO: do this properly
-canvas.style.width = '256px';
-canvas.style.height = '256px';
-canvas.width = 256;
-canvas.height = 256;
+    canvas.width  = VECNIK.Tile.SIZE;
+    canvas.height = VECNIK.Tile.SIZE;
+
+    canvas.style.width  = canvas.width  +'px';
+    canvas.style.height = canvas.height +'px';
 
     context.mozImageSmoothingEnabled = false;
     context.webkitImageSmoothingEnabled = false;
@@ -35,6 +37,8 @@ canvas.height = 256;
     this._data = [];
     this._load(options.url);
   };
+
+  VECNIK.Tile.SIZE = 256;
 
   var proto = VECNIK.Tile.prototype;
 

@@ -1,11 +1,12 @@
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
-  // utility
-  function Profiler() {
+  VECNIK.Profiler = function() {
     this.t0 = 0;
     this.unit = '';
-  }
+  };
 
   Profiler.prototype.start = function(unit) {
     this.t0 = new Date().getTime();
@@ -17,7 +18,5 @@
      //console.log("PROFILE - " + this.unit + ":" + t);
      return t;
   };
-
-  VECNIK.Profiler = Profiler;
 
 })(VECNIK);

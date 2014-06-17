@@ -1,3 +1,6 @@
+
+var VECNIK = VECNIK || {};
+
 (function(VECNIK, L) {
 
   VECNIK.Layer = L.TileLayer.extend({

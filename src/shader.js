@@ -3,6 +3,8 @@
 // shader
 //========================================
 
+var VECNIK = VECNIK || {};
+
 (function(VECNIK) {
 
   var propertyMapping = {
