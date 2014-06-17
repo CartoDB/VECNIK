@@ -23,6 +23,12 @@
       canvas = this._canvas = document.createElement('CANVAS'),
       context = this._context = canvas.getContext('2d');
 
+// TODO: do this properly
+canvas.style.width = '256px';
+canvas.style.height = '256px';
+canvas.width = 256;
+canvas.height = 256;
+
     context.mozImageSmoothingEnabled = false;
     context.webkitImageSmoothingEnabled = false;
 
