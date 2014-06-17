@@ -1,7 +1,7 @@
 
-describe('CartoShader', function() {
+module("cartoshader");
 
-  it('should compile to canvas properties', function() {
+  test('should compile to canvas properties', function() {
     var c = new VECNIK.CartoShader({
       'point-color': '#FFF',
       'line-color': function(data) {
@@ -10,20 +10,22 @@ describe('CartoShader', function() {
       'line-width': '1',
       'polygon-fill': '#00F'
     });
-    expect(typeof c.compiled['fillStyle']).toEqual('string');
-    expect(typeof c.compiled['strokeStyle']).toEqual('function');
+
+    equal(typeof c._compiled['fillStyle'], 'string');
+    equal(typeof c._compiled['strokeStyle'], 'function');
   });
 
-  it('should tell when line should be rendered', function() {
+/*
+  test('should tell when line should be rendered', function() {
     var c = new VECNIK.CartoShader({
       'line-color': '#fff'
     });
-    expect(c.needs_render({}, {}, 'LineString')).toBeTruthy();
+    equals(c.needs_render({}, {}, 'LineString'), true);
 
     var c = new VECNIK.CartoShader({
       'polygon-fill': '#fff'
     });
-    expect(c.needs_render({}, {}, 'LineString')).toBeFalsy();
+    equals(c.needs_render({}, {}, 'LineString'), false);
 
     var c = new VECNIK.CartoShader({
       'line-color': function(data) {
@@ -34,15 +36,5 @@ describe('CartoShader', function() {
     });
     expect(c.needs_render({lovely: 0}, {}, 'LineString')).toBeFalsy();
   });
+  */
 
-  it('should reset line attributes', function() {
-    var c = new VECNIK.CartoShader({
-      'line-color': '#fff'
-    });
-    var ctx = {};
-    c.reset(ctx, 'LineString');
-    expect(ctx['strokeStyle']).toBeDefined();
-    expect(ctx['lineWidth']).toBeDefined();
-    expect(ctx['globalAlpha']).toBeDefined();
-  })
-});
