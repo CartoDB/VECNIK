@@ -15,6 +15,9 @@
     }
 
     this._renderer = options.renderer;
+    this._x = options.coords.x;
+    this._y = options.coords.y;
+    this._zoom = options.coords.z;
 
     var
       canvas = this._canvas = document.createElement('CANVAS'),
@@ -23,6 +26,7 @@
     context.mozImageSmoothingEnabled = false;
     context.webkitImageSmoothingEnabled = false;
 
+    this._data = [];
     this._load(options.url);
   };
 
@@ -37,33 +41,32 @@
   };
 
   proto._project = function(data) {
-    var collection = data.features;
-console.log(data)
+    var
+      collection = data.features,
+      feature, coordinates;
+
 //    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
 //      var worker = new Worker('../src/projector.worker.js');
 //      var self = this;
 //      worker.onmessage = function(e) {
 //        self.emit('ready', e.data);
 //      };
-//      worker.postMessage({ collection:collection, zoom:this._mapZoom });
+//      worker.postMessage({ collection:collection, zoom:this._zoom });
 //    } else {
 
-      var
-        res = [],
-        feature, coordinates;
-
+      this._data = [];
       for (var i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
         if (!feature.geometry) {
           continue;
         }
 
-        coordinates = VECNIK.projectGeometry(feature.geometry, this._mapZoom);
+        coordinates = VECNIK.projectGeometry(feature.geometry, this._x, this._y, this._zoom);
         if (!coordinates || !coordinates.length) {
           continue;
         }
 
-        res.push({
+        this._data.push({
           coordinates: coordinates,
           type: feature.geometry.type,
           properties: feature.properties
@@ -71,7 +74,6 @@ console.log(data)
       }
 //    }
 
-    this._data = res;
     this.render();
   };
 

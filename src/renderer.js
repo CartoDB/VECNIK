@@ -19,10 +19,9 @@
   var proto = VECNIK.Renderer.prototype;
 
   proto._drawPolyline = function(context, coordinates) {
-    var origin = this._origin;
-    context.moveTo(coordinates[0].x-origin.x, coordinates[0].y-origin.y);
+    context.moveTo(coordinates[0].x, coordinates[0].y);
     for (var i = 1, il = coordinates.length; i < il; i++) {
-      context.lineTo(coordinates[i].x-origin.x, coordinates[i].y-origin.y);
+      context.lineTo(coordinates[i].x, coordinates[i].y);
     }
   };
 
@@ -32,14 +31,11 @@
     }
   };
 
-  proto._drawCircle = function(context, c, radius) {
-    var origin = this._origin;
-    context.arc(c.x-origin.x, c.y-origin.y, radius, 0, Math.PI*2);
+  proto._drawCircle = function(context, center, radius) {
+    context.arc(center.x, center.y, radius, 0, Math.PI*2);
   };
 
-  proto.render = function(context, collection, origin) {
-    this._origin = origin;
-
+  proto.render = function(context, collection) {
     var
       shaders = this._shaders,
       shaderPass,
@@ -48,9 +44,6 @@
 
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-context.fillStyle = 'rgba(240,220,200,0.5)';
-context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-
     for (s = 0, sl = shaders.length; s < sl; s++) {
       shaderPass = shaders[s];
 
@@ -58,13 +51,13 @@ context.fillRect(0, 0, context.canvas.width, context.canvas.height);
         feature = collection[i];
 
         if (shaderPass) {
-          // TODO: return here if the style has changed to close previous polygons or not
+          // TODO: stroke/fill here if the style has changed to close previous polygons
           shaderPass.apply(context, feature.properties);
         }
 
-        context.beginPath();
-
         coordinates = feature.coordinates;
+
+        context.beginPath();
 
         // TODO: missing a few geometry types
         switch (feature.type) {

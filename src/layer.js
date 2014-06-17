@@ -11,6 +11,7 @@
     createTile: function(coords) {
       var tile = new VECNIK.Tile({
         url: this.getTileUrl(coords),
+        coords: coords,
         renderer: this._renderer
       });
 
@@ -18,10 +19,7 @@
     },
 
     getTileUrl: function(coords) {
-//    x: coords.x,
-//    y: coords.y,
-//    z: this._getZoomForUrl()
-      return this._provider.getUrl(coords);
+      return this._provider.getUrl(coords.x, coords.y, coords.z);
     }
   });
 

@@ -34,14 +34,10 @@
     }
   };
 
-  proto._getSqlUrl = function(sql) {
-    this._debug(sql);
-    return this.base_url +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
-  };
-
   proto.getUrl = function(x, y, zoom) {
     var sql = VECNIK.CartoDB.SQL(this.projection, this.options.table, x, y, zoom, this.options);
-    return this._getSqlUrl(sql);
+    this._debug(sql);
+    return this.base_url +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
   };
 
 })(VECNIK);
