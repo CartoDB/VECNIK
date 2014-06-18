@@ -35,13 +35,6 @@ var VECNIK = VECNIK || {};
     'polygon-opacity': 'globalAlpha'
   };
 
-  var defaults = {
-    strokeStyle: '#000000',
-    lineWidth: 1,
-    globalAlpha: 1.0,
-    lineCap: 'round'
-  };
-
   VECNIK.CartoShader = function(shader) {
     VECNIK.Events.prototype.constructor.call(this);
     this._compiled = {};
@@ -90,9 +83,6 @@ var VECNIK = VECNIK || {};
       val = shader[prop];
       if (typeof val === 'function') {
         val = val(featureProperties, mapContext);
-      }
-      if (val === null) {
-        val = defaults[prop];
       }
       style[prop] = val;
     }
