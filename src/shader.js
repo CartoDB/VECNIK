@@ -7,6 +7,10 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
+  // last context style applied, this is a shared variable
+  // for all the shaders
+  var lastContextStyle = {}
+
   var propertyMapping = {
     'point-color': 'fillStyle',
     'line-color': 'strokeStyle',
@@ -85,7 +89,7 @@ var VECNIK = VECNIK || {};
       // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
       // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
 
-      var prevStyle = context._vecnik_style = context._vecnik_style || {};
+      var prevStyle = lastContextStyle[context] = lastContextStyle[context] || {};
       if (prevStyle[prop] !== val) {
         context[prop] = prevStyle[prop] = val;
         changed = true;
