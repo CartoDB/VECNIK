@@ -21,30 +21,32 @@ var shader, canvas, ctx;
   });
 
   test('apply should return true when style was changed',  function() {
-    equal(shader.apply(ctx, { color: '#ff0000' }), true);
-    equal(shader.apply(ctx, { color: 'rgba(0, 0, 0, 0.1)' }), true);
-    equal(shader.apply(ctx, { color: 'rgba(0, 0, 0, 0.1)' }), false);
-    equal(shader.apply(ctx, { color: '#ff0000' }), true);
-    equal(shader.apply(ctx, { color: '#ff0000' }), false);
-    equal(shader.apply(ctx, { color: '#fff000' }), true);
+    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), true);
+    equal(shader.apply(ctx, shader.evalStyle({ color: 'rgba(0, 0, 0, 0.1)' })), true);
+    equal(shader.apply(ctx, shader.evalStyle({ color: 'rgba(0, 0, 0, 0.1)' })), false);
+    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), true);
+    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), false);
+    equal(shader.apply(ctx, shader.evalStyle({ color: '#fff000' })), true);
   });
 
   test('should tell when line should be rendered', function() {
     var c = new VECNIK.CartoShader({
       'line-color': '#fff'
     });
-    equal(c.needsRender('LineString', {}, 0), true);
-    equal(c.needsRender('LineString', {}, 10), true);
-    equal(c.needsRender('LineString', {}, 20), true);
-    equal(c.needsRender('Polygon', {}, 0), true);
-    equal(c.needsRender('Point', {}, 0), false);
+    var st = c.evalStyle({})
+    equal(c.needsRender('LineString', st), true);
+    equal(c.needsRender('LineString', st), true);
+    equal(c.needsRender('LineString', st), true);
+    equal(c.needsRender('Polygon', st), true);
+    equal(c.needsRender('Point', st), false);
 
     c = new VECNIK.CartoShader({
       'polygon-fill': '#fff'
-    })
-    equal(c.needsRender('LineString', {}, 0), false);
-    equal(c.needsRender('Point', {}, 0), false);
-    equal(c.needsRender('Polygon', {}, 0), true);
+    });
+    var st = c.evalStyle({})
+    equal(c.needsRender('LineString', st), false);
+    equal(c.needsRender('Point', st), false);
+    equal(c.needsRender('Polygon', st), true);
 
     c = new VECNIK.CartoShader({
       'line-color': function(data) {
@@ -53,8 +55,8 @@ var shader, canvas, ctx;
         }
       }
     });
-    equal(c.needsRender('LineString', { value: 0 }, 0), false);
-    equal(c.needsRender('LineString', { value: 0 }, 1), false);
+    equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
+    equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
 
     c = new VECNIK.CartoShader({
       'line-color': function(data, ctx) {
@@ -63,7 +65,8 @@ var shader, canvas, ctx;
         }
       }
     });
-    equal(c.needsRender('LineString', { }, 0), false);
-    equal(c.needsRender('LineString', { }, 2), true);
+    equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
+    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, {zoom: 1})), false);
+    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, {zoom: 2})), true);
   });
 

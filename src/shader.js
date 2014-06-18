@@ -20,6 +20,7 @@ var VECNIK = VECNIK || {};
       'line-color', 
     ]
   };
+  rendererNeededProperties['multipolygon'] = rendererNeededProperties['polygon'];
 
   // last context style applied, this is a shared variable
   // for all the shaders
@@ -79,7 +80,8 @@ var VECNIK = VECNIK || {};
   // the style to apply to canvas context
   // TODO: optimize this to not evaluate when featureProperties does not
   // contain values involved in the shader
-  proto.evalStyle = function(featureProperties, zoom) {
+  proto.evalStyle = function(featureProperties, mapContext) {
+    mapContext = mapContext || {};
     var style = {}, shader = this._compiled;
     // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
     var props = Object.keys(shader);
@@ -87,7 +89,7 @@ var VECNIK = VECNIK || {};
       var prop = props[i];
       val = shader[prop];
       if (typeof val === 'function') {
-        val = val(featureProperties, { zoom: zoom });
+        val = val(featureProperties, mapContext);
       }
       if (val === null) {
         val = defaults[prop];
@@ -97,12 +99,11 @@ var VECNIK = VECNIK || {};
     return style;
   },
 
-  proto.apply = function(context, featureProperties, zoom) {
+  proto.apply = function(context, style) {
     var
       shader = this._compiled,
       val, prevStyle;
     var changed = false;
-    var style = this.evalStyle(featureProperties, zoom);
     var props = Object.keys(style);
     for (var i = 0, len = props.length; i < len; ++i) {
       var prop = props[i];
@@ -129,15 +130,18 @@ var VECNIK = VECNIK || {};
 
 
   // return true if the feature need to be rendered
-  proto.needsRender = function(geometryType, featureProperties, zoom) {
-    var style = null;
+  proto.needsRender = function(geometryType, style) {
     // check properties in the shader first
     var props = rendererNeededProperties[geometryType.toLowerCase()];
+
+    // ¿?
+    if (!props) {
+      return false;
+    }
+
     for (var i = 0; i < props.length; ++i) {
       var prop = props[i];
       if (this._shaderSrc[prop]) {
-        // eval it to know if the property is active for the feature properties
-        style = style || this.evalStyle(featureProperties, zoom);
         if (style[propertyMapping[prop]]) {
           return true;
         }
