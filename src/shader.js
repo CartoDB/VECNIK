@@ -45,12 +45,12 @@ var VECNIK = VECNIK || {};
   proto.compile = function(shader) {
     this._shaderSrc = shader;
     if (typeof shader === 'string') {
-      shader = eval("(function() { return " + shader +"; })()");
+      shader = function() { return shader; };
     }
     var property;
     for (var attr in shader) {
       if (property = propertyMapping[attr]) {
-        this._compiled[property] = eval("(function() { return shader[attr]; })();");
+        this._compiled[property] = shader[attr];
       }
     }
 
@@ -62,7 +62,10 @@ var VECNIK = VECNIK || {};
       shader = this._compiled,
       val;
     var changed = false;
-    for (var prop in shader) {
+    // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
+    var props = Object.keys(shader);
+    for (var i = 0, len = props.length; i < len; ++i) {
+      var prop = props[i];
       val = shader[prop];
       if (typeof val === 'function') {
         val = val(featureProperties, { zoom: zoom });
