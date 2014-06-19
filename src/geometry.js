@@ -30,6 +30,15 @@ var VECNIK = VECNIK || {};
         return primitiveProjectors.MultiPoint(coordinates, tileX, tileY, zoom);
       },
 
+      MultiLineString: function(coordinates, tileX, tileY, zoom) {
+        var converted = [];
+        var projector = primitiveProjectors.LineString;
+        for (var i = 0, il = coordinates.length; i < il; i++) {
+          converted.push(projector(coordinates[i], tileX, tileY, zoom));
+        }
+        return converted;
+      },
+
       Polygon: function(coordinates, tileX, tileY, zoom) {
         var converted = [];
         var projector = primitiveProjectors.LineString;

@@ -9,22 +9,22 @@ var VECNIK = VECNIK || {};
 
   // properties needed for each geometry type to be renderered
   var rendererNeededProperties = {
-    'point': [
+    point: [
       'marker-width'
     ],
-    'linestring': [
+    linestring: [
       'line-color',
     ],
-    'polygon': [
+    polygon: [
       'polygon-fill',
       'line-color',
     ]
   };
-  rendererNeededProperties['multipolygon'] = rendererNeededProperties['polygon'];
+  rendererNeededProperties.multipolygon = rendererNeededProperties.polygon;
 
   // last context style applied, this is a shared variable
   // for all the shaders
-  var lastContextStyle = {};
+  var currentContextStyle = {};
 
   var propertyMapping = {
     'point-color': 'fillStyle',
@@ -95,7 +95,7 @@ var VECNIK = VECNIK || {};
 
   proto.apply = function(context, style) {
     var
-      prevStyle,
+      currentStyle,
       changed = false,
       props = Object.keys(style),
       prop, val;
@@ -114,9 +114,9 @@ var VECNIK = VECNIK || {};
       // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
       // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
       val = style[prop];
-      lastContextStyle[context] = prevStyle = lastContextStyle[context] || {};
-      if (prevStyle[prop] !== val) {
-        context[prop] = prevStyle[prop] = val;
+      currentContextStyle[context] = currentStyle = currentContextStyle[context] || {};
+      if (currentStyle[prop] !== val) {
+        context[prop] = currentStyle[prop] = val;
         changed = true;
       }
     }
