@@ -71,7 +71,7 @@ var layers = VECNIK.CartoShader.create([
 
 var renderer = new VECNIK.Renderer({ shader: layers });
 
-var vlayer = new VECNIK.Layer('fake://url.for/now', {
+var vlayer = new VECNIK.Layer({
   provider: provider,
   renderer: renderer
 });

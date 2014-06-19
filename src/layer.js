@@ -5,10 +5,14 @@ var VECNIK = VECNIK || {};
 
   VECNIK.Layer = L.TileLayer.extend({
 
-    initialize: function(url, options) {
+    options: {
+      maxZoom: 20
+    },
+
+    initialize: function(options) {
       this._renderer = options.renderer;
       this._provider = options.provider;
-      L.TileLayer.prototype.initialize.call(this, url, options);
+      L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
     createTile: function(coords) {
