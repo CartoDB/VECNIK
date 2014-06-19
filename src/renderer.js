@@ -70,40 +70,21 @@ var VECNIK = VECNIK || {};
         if (shaderPass.needsRender(feature.type, style)) {
           context.beginPath();
 
-          // TODO: consider expanding the Multi geometries
           switch (feature.type) {
             case 'Point':
               this._drawCircle(context, coordinates, VECNIK.Renderer.POINT_RADIUS);
-              context.fill();
-            break;
-
-            case 'MultiPoint':
-              for (j = 0, jl = coordinates.length; j < jl; j++) {
-                this._drawCircle(context, coordinates[j], VECNIK.Renderer.POINT_RADIUS);
-              }
+              // closes automatically
               context.fill();
             break;
 
             case 'LineString':
               this._drawPolyline(context, coordinates);
-            break;
-
-            case 'MultiLineString':
-              for (j = 0, jl = coordinates.length; j < jl; j++) {
-                this._drawPolyline(context, coordinates[j]);
-              }
+              // no need to close
+              // no need to fill
             break;
 
             case 'Polygon':
               this._drawPolygon(context, coordinates);
-              context.closePath();
-              context.fill();
-            break;
-
-            case 'MultiPolygon':
-              for (j = 0, jl = coordinates.length; j < jl; j++) {
-                this._drawPolygon(context, coordinates[j]);
-              }
               context.closePath();
               context.fill();
             break;

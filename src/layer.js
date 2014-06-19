@@ -10,23 +10,30 @@ var VECNIK = VECNIK || {};
     },
 
     initialize: function(options) {
-      this._renderer = options.renderer;
+      // applies to a single tile but we don'T want to check on per tile basis
+      if (!options.provider) {
+        throw new Error('VECNIK.Tile requires a data provider');
+      }
       this._provider = options.provider;
+
+      // TODO: use internal renderer as default
+      // applies to a single tile but we don'T want to check on per tile basis
+      if (!options.renderer) {
+        throw new Error('VECNIK.Tile requires a renderer');
+      }
+      this._renderer = options.renderer;
+
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
     createTile: function(coords) {
       var tile = new VECNIK.Tile({
-        url: this.getTileUrl(coords),
         coords: coords,
+        provider: this._provider,
         renderer: this._renderer
       });
 
       return tile.getDomElement();
-    },
-
-    getTileUrl: function(coords) {
-      return this._provider.getUrl(coords.x, coords.y, coords.z);
     }
   });
 

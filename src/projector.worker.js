@@ -1,5 +1,4 @@
 importScripts('../src/mercator.js');
-importScripts('../src/geometry.js');
 
 self.onmessage = function(e) {
   var

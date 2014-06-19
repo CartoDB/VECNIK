@@ -17,18 +17,22 @@ var VECNIK = VECNIK || {};
     this.y = y || 0;
   }
 
-  function LatLng(lat, lon) {
+
+  VECNIK.LatLng = function(lat, lon) {
     this.latitude = lat || 0;
     this.longitude = lon || 0;
-  }
+  };
 
-  LatLng.prototype.lat = function() {
+  var proto = VECNIK.LatLng.prototype;
+
+  proto.lat = function() {
     return this.latitude;
   };
 
-  LatLng.prototype.lng = function() {
+  proto.lng = function() {
     return this.longitude;
   };
+
 
   function bound(value, optMin, optMax) {
     if (optMin !== null) value = Math.max(value, optMin);
@@ -71,7 +75,7 @@ var VECNIK = VECNIK || {};
     var lng = (point.x - origin.x) / me.pixelsPerLonDegree_;
     var latRadians = (point.y - origin.y) / -me.pixelsPerLonRadian_;
     var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI / 2);
-    return new LatLng(lat, lng);
+    return new VECNIK.LatLng(lat, lng);
   };
 
   MercatorProjection.prototype.tileBBox = function(x, y, zoom) {
@@ -114,7 +118,6 @@ var VECNIK = VECNIK || {};
     return new Point(Math.floor(pixelCoordinate.x / tileSize), Math.floor(pixelCoordinate.y / tileSize));
   };
 
-  VECNIK.LatLng = LatLng;
   VECNIK.Point = Point;
   VECNIK.MercatorProjection = MercatorProjection;
 

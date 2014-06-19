@@ -15,9 +15,7 @@ var VECNIK = VECNIK || {};
   VECNIK.Settings.prototype = new VECNIK.Model();
 
   // default settings
-  VECNIK.settings = new VECNIK.Settings({
-    WEBWORKERS: true
-  });
+  VECNIK.settings = new VECNIK.Settings({});
 
 })(VECNIK);
 

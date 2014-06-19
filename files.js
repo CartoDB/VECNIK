@@ -8,7 +8,6 @@ var files = [
   'src/tile.js',
   'src/layer.js',
   'src/mercator.js',
-  'src/geometry.js',
   'src/profiler.js',
   'src/renderer.js',
   'src/shader.js',
