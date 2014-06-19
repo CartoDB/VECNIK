@@ -89,8 +89,10 @@ var VECNIK = VECNIK || {};
     this.render();
   };
 
-  proto.render = function(origin) {
-    this._renderer.render(this._context, this._data, origin);
+  proto.render = function() {
+    this._renderer.render(this._context, this._data, {
+      zoom: this._zoom
+    });
   };
 
 })(VECNIK);

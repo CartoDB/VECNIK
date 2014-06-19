@@ -7,6 +7,25 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
+  // properties needed for each geometry type to be renderered
+  var rendererNeededProperties = {
+    'point': [ 
+      'marker-width'
+    ],
+    'linestring': [ 
+      'line-color', 
+    ],
+    'polygon': [ 
+      'polygon-fill',
+      'line-color', 
+    ]
+  };
+  rendererNeededProperties['multipolygon'] = rendererNeededProperties['polygon'];
+
+  // last context style applied, this is a shared variable
+  // for all the shaders
+  var lastContextStyle = {};
+
   var propertyMapping = {
     'point-color': 'fillStyle',
     'line-color': 'strokeStyle',
@@ -14,13 +33,6 @@ var VECNIK = VECNIK || {};
     'line-opacity': 'globalAlpha',
     'polygon-fill': 'fillStyle',
     'polygon-opacity': 'globalAlpha'
-  };
-
-  var defaults = {
-    strokeStyle: '#000000',
-    lineWidth: 1,
-    globalAlpha: 1.0,
-    lineCap: 'round'
   };
 
   VECNIK.CartoShader = function(shader) {
@@ -45,37 +57,87 @@ var VECNIK = VECNIK || {};
   proto.compile = function(shader) {
     this._shaderSrc = shader;
     if (typeof shader === 'string') {
-      shader = eval("(function() { return " + shader +"; })()");
+      shader = function() { return shader; };
     }
     var property;
     for (var attr in shader) {
       if (property = propertyMapping[attr]) {
-        this._compiled[property] = eval("(function() { return shader[attr]; })();");
+        this._compiled[property] = shader[attr];
       }
     }
 
     this.emit('change');
   };
 
-  proto.apply = function(context, featureProperties, zoom) {
-    var
-      shader = this._compiled,
-      val;
-    for (var prop in shader) {
+  // given feature properties and map rendering content returns
+  // the style to apply to canvas context
+  // TODO: optimize this to not evaluate when featureProperties does not
+  // contain values involved in the shader
+  proto.evalStyle = function(featureProperties, mapContext) {
+    mapContext = mapContext || {};
+    var style = {}, shader = this._compiled;
+    // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
+    var props = Object.keys(shader);
+    for (var i = 0, len = props.length; i < len; ++i) {
+      var prop = props[i];
       val = shader[prop];
       if (typeof val === 'function') {
-        // TODO: inject map zoom
-        val = val(featureProperties, { zoom: zoom });
+        val = val(featureProperties, mapContext);
       }
-      if (val === null) {
-        val = defaults[prop];
-      }
-      // TODO: careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-      // maybe store current values or ideally pre-expand them
-      if (context[prop] !== val) {
-        context[prop] = val;
+      style[prop] = val;
+    }
+    return style;
+  },
+
+  proto.apply = function(context, style) {
+    var
+      shader = this._compiled,
+      val, prevStyle;
+    var changed = false;
+    var props = Object.keys(style);
+    for (var i = 0, len = props.length; i < len; ++i) {
+      var prop = props[i];
+      // careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+      //
+      // color parse (and probably other props) depends on canvas implementation so direct
+      // comparasions with context contents can't be done.
+      // use an extra object to store current state
+      // * chrome 35.0.1916.153:
+      // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+      // ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+      // * ff 29.0.1
+      // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+      // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+      val = style[prop];
+      prevStyle = lastContextStyle[context] = lastContextStyle[context] || {};
+      if (prevStyle[prop] !== val) {
+        context[prop] = prevStyle[prop] = val;
+        changed = true;
       }
     }
+    return changed;
+  };
+
+
+  // return true if the feature need to be rendered
+  proto.needsRender = function(geometryType, style) {
+    // check properties in the shader first
+    var props = rendererNeededProperties[geometryType.toLowerCase()];
+
+    // ¿?
+    if (!props) {
+      return false;
+    }
+
+    for (var i = 0; i < props.length; ++i) {
+      var prop = props[i];
+      if (this._shaderSrc[prop]) {
+        if (style[propertyMapping[prop]]) {
+          return true;
+        }
+      }
+    }
+    return false;
   };
 
 })(VECNIK);
