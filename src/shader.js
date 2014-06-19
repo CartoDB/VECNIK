@@ -9,15 +9,15 @@ var VECNIK = VECNIK || {};
 
   // properties needed for each geometry type to be renderered
   var rendererNeededProperties = {
-    'point': [ 
+    'point': [
       'marker-width'
     ],
-    'linestring': [ 
-      'line-color', 
+    'linestring': [
+      'line-color',
     ],
-    'polygon': [ 
+    'polygon': [
       'polygon-fill',
-      'line-color', 
+      'line-color',
     ]
   };
   rendererNeededProperties['multipolygon'] = rendererNeededProperties['polygon'];
@@ -75,11 +75,15 @@ var VECNIK = VECNIK || {};
   // contain values involved in the shader
   proto.evalStyle = function(featureProperties, mapContext) {
     mapContext = mapContext || {};
-    var style = {}, shader = this._compiled;
-    // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
-    var props = Object.keys(shader);
+    var
+      style = {},
+      shader = this._compiled,
+      // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
+      props = Object.keys(shader),
+      prop, val;
+
     for (var i = 0, len = props.length; i < len; ++i) {
-      var prop = props[i];
+      prop = props[i];
       val = shader[prop];
       if (typeof val === 'function') {
         val = val(featureProperties, mapContext);
@@ -91,12 +95,13 @@ var VECNIK = VECNIK || {};
 
   proto.apply = function(context, style) {
     var
-      shader = this._compiled,
-      val, prevStyle;
-    var changed = false;
-    var props = Object.keys(style);
+      prevStyle,
+      changed = false,
+      props = Object.keys(style),
+      prop, val;
+
     for (var i = 0, len = props.length; i < len; ++i) {
-      var prop = props[i];
+      prop = props[i];
       // careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
       //
       // color parse (and probably other props) depends on canvas implementation so direct
@@ -109,7 +114,7 @@ var VECNIK = VECNIK || {};
       // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
       // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
       val = style[prop];
-      prevStyle = lastContextStyle[context] = lastContextStyle[context] || {};
+      lastContextStyle[context] = prevStyle = lastContextStyle[context] || {};
       if (prevStyle[prop] !== val) {
         context[prop] = prevStyle[prop] = val;
         changed = true;
@@ -117,7 +122,6 @@ var VECNIK = VECNIK || {};
     }
     return changed;
   };
-
 
   // return true if the feature need to be rendered
   proto.needsRender = function(geometryType, style) {
