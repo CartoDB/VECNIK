@@ -20,26 +20,11 @@ var VECNIK = VECNIK || {};
 
   var proto = VECNIK.Renderer.prototype;
 
-  proto._drawPolyline = function(context, coordinates) {
-  context.moveTo(coordinates[0].x, coordinates[0].y);
-    for (var i = 1, il = coordinates.length; i < il; i++) {
-      context.lineTo(coordinates[i].x, coordinates[i].y);
+  proto._drawLineString = function(context, coordinates) {
+    context.moveTo(coordinates[0], coordinates[1]);
+    for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
+      context.lineTo(coordinates[i], coordinates[i+1]);
     }
-//    context.moveTo(coordinates[0], coordinates[1]);
-//    for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
-//      context.lineTo(coordinates[i], coordinates[i+1]);
-//    }
-  };
-
-  proto._drawPolygon = function(context, coordinates) {
-    for (var i = 0, il = coordinates.length; i < il; i++) {
-      this._drawPolyline(context, coordinates[i]);
-    }
-  };
-
-  proto._drawCircle = function(context, center, radius) {
-    context.arc(center.x, center.y, radius, 0, Math.PI*2);
-//    context.arc(center[0], center[1], radius, 0, Math.PI*2);
   };
 
   // render the specified collection in the contenxt
@@ -69,27 +54,27 @@ var VECNIK = VECNIK || {};
 
         if (shaderPass.needsRender(feature.type, style)) {
           context.beginPath();
-
-          switch (feature.type) {
+          switch(feature.type) {
             case 'Point':
-              this._drawCircle(context, coordinates, VECNIK.Renderer.POINT_RADIUS);
+              context.arc(coordinates[0], coordinates[1], VECNIK.Renderer.POINT_RADIUS, 0, Math.PI*2);
               // closes automatically
               context.fill();
             break;
 
             case 'LineString':
-              this._drawPolyline(context, coordinates);
+              this._drawLineString(context, coordinates);
               // no need to close
               // no need to fill
             break;
 
             case 'Polygon':
-              this._drawPolygon(context, coordinates);
+              for (j = 0, jl = coordinates.length; j < jl; j++) {
+                this._drawLineString(context, coordinates[j]);
+              }
               context.closePath();
               context.fill();
             break;
           }
-
           context.stroke();
         }
       }

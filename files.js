@@ -8,6 +8,7 @@ var files = [
   'src/tile.js',
   'src/layer.js',
   'src/mercator.js',
+  'src/reader/geojson.js',
   'src/profiler.js',
   'src/renderer.js',
   'src/shader.js',
