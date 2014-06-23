@@ -21,20 +21,10 @@ var VECNIK = VECNIK || {};
       .replace('{y}', y.toFixed(0));
   };
 
-  proto.load = function(coords) {
+  proto.load = function(coords, callback) {
     VECNIK.load(this._getUrl(coords.x, coords.y, coords.z))
-      .on('load', (function() {
-        return function(data) {
-          //this._reader.convertAsync(data, c).on('success', this.onLoad);
-          // TODO: implement conversion and projection
-          this.onLoad(data);
-        };
-      }(coords)), this);
+      .on('load', callback); // TODO: implement async conversion and projection
     return this;
-  };
-
-  proto.onLoad = function() {
-    throw new Error('VECNIK.GeoJSON.onLoad() has to be used');
   };
 
 })(VECNIK);

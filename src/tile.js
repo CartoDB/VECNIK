@@ -27,11 +27,11 @@ var VECNIK = VECNIK || {};
     this._renderer = options.renderer;
     this._data = [];
 
-    options.provider.load(options.coords)
-      .on('success', function(data) {
-        this._data = data;
-        this.render();
-      }, this);
+    var self = this;
+    options.provider.load(options.coords, function(data) {
+      self._data = data;
+      self.render();
+    });
   };
 
   VECNIK.Tile.SIZE = 256;

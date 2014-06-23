@@ -10,8 +10,6 @@ var VECNIK = VECNIK || {};
   VECNIK.CartoDB = VECNIK.CartoDB || {};
 
   VECNIK.CartoDB.API = function(options) {
-    VECNIK.Events.prototype.constructor.call(this);
-
     this._options = options;
     // TODO: maybe define the reader in options
     this._projection = new VECNIK.MercatorProjection();
@@ -32,7 +30,7 @@ var VECNIK = VECNIK || {};
     }
   };
 
-  var proto = VECNIK.CartoDB.API.prototype = new VECNIK.Events();
+  var proto = VECNIK.CartoDB.API.prototype;
 
   proto._debug = function(msg) {
     if (this._options.debug) {
@@ -46,19 +44,15 @@ var VECNIK = VECNIK || {};
     return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
   };
 
-  proto.load = function(coords) {
+  proto.load = function(coords, callback) {
     VECNIK.load(this._getUrl(coords.x, coords.y, coords.z))
       .on('load', (function(c) {
         return function(data) {
-          this._reader.convertAsync(data, c).on('success', this.onLoad);
+          this._reader.convertAsync(data, c).on('success', callback);
         };
       }(coords)), this);
 
     return this;
-  };
-
-  proto.onLoad = function() {
-    throw new Error('VECNIK.CartoDB.SQL.onLoad() has to be used');
   };
 
 })(VECNIK);

@@ -22,26 +22,23 @@ new VECNIK.Layer({
 
 ### Interface
 
-Vecnik triggers Provider.load() with a map tile coordinate object:
+Vecnik triggers Provider.load() with a map tile coordinate object.
+You have to accept a callback method as second parameter in order to return results asynchronously.
 
 ```javascript
-Provider.load({ x:tileX{float}, y:tileY{float}, z:zoom{int} });
+Provider.load({ x:tileX{float}, y:tileY{float}, z:zoom{int} }, callback{function});
 ```
 
-Vecnik sets a custom Provider.onLoad() method in order to receive results.
+Callback function expects an array of feature objects:
 
 ```javascript
-Provider.onLoad({array});
-```
-
-Expected data structure is an array of feature objects:
-
-```javascript
-{
+[{
   type: geometryType{string}, // 'Point', 'LineString', 'Polygon' as defined in GeoJSON, Multi-Elements have to be resolved to individual items
   coordinates: coordinates{Int16Array}, // geometry coordinates as array buffer
   properties: feature.properties // additional properties as data object
-}
+},
+...
+]
 ```
 
 Coordinates have to be provided as pixel coordinates, relative to tile position.
