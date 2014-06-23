@@ -7,12 +7,12 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
-  VECNIK.GeoJSON = function(options) {
+  VECNIK.GeoJsonProvider = function(options) {
     this.options = options;
     this._template = options.template;
   };
 
-  var proto = VECNIK.GeoJSON.prototype;
+  var proto = VECNIK.GeoJsonProvider.prototype;
 
   proto._getUrl = function(x, y, zoom) {
     return this._template

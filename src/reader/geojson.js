@@ -11,13 +11,12 @@ var VECNIK = VECNIK || {};
 //  VECNIK.projectGeometry = function(feature, tileX, tileY, zoom) {
 //  VECNIK.Settings.WEBWORKERS
 
-  VECNIK.GeoJsonReader = function(options) {
-    VECNIK.Events.prototype.constructor.call(this);
+  VECNIK.GeoJson = function(options) {
     this._options = options || {};
     this._projection = options.projection;
   };
 
-  var proto = VECNIK.GeoJsonReader.prototype = new VECNIK.Events();
+  var proto = VECNIK.GeoJson.prototype;
 
   proto._toBuffer = function(coordinates, coords) {
     var
@@ -74,7 +73,7 @@ var VECNIK = VECNIK || {};
     return res;
   };
 
-  proto.convertAsync = function(collection, coords) {
+  proto.convertAsync = function(collection, coords, callback) {
     var
       m, ml,
       dataByRef = [],
@@ -125,7 +124,7 @@ var VECNIK = VECNIK || {};
       }
     }
 
-    this.emit('success', dataByRef);
+    callback(dataByRef);
     return this;
   };
 
