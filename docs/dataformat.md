@@ -22,7 +22,7 @@ new VECNIK.Layer({
 
 ### Interface
 
-Vecnik triggers Provider.load() with a Map Tile coordinate object:
+Vecnik triggers Provider.load() with a map tile coordinate object:
 
 ```javascript
 Provider.load({ x:tileX{float}, y:tileY{float}, z:zoom{int} });
@@ -34,7 +34,7 @@ Vecnik sets a custom Provider.onLoad() method in order to receive results.
 Provider.onLoad({array});
 ```
 
-Expected data structure is an array of objects:
+Expected data structure is an array of feature objects:
 
 ```javascript
 {
@@ -46,3 +46,10 @@ Expected data structure is an array of objects:
 
 Coordinates have to be provided as pixel coordinates, relative to tile position.
 Required projection is EPSG:3587 (web mercator).
+
+### Perspective
+
+We are planning to make even more use of buffers by:
+- using binary indentifiers instead of feature geometry types as string
+- using {UintXArray} as index for coordinates
+- using a {Uint32Array} as common coordinates buffer for all features, per tile
