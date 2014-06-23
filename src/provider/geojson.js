@@ -23,9 +23,7 @@ var VECNIK = VECNIK || {};
 
   // TODO: refactor this
   proto.load = function(coords, callback) {
-    VECNIK.load(this._getUrl(coords.x, coords.y, coords.z))
-      .on('load', callback); // TODO: implement async conversion and projection
-    return this;
+    VECNIK.load(this._getUrl(coords.x, coords.y, coords.z), callback); // TODO: implement async conversion and projection
   };
 
 })(VECNIK);

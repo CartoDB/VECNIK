@@ -117,10 +117,9 @@ var VECNIK = VECNIK || {};
   VECNIK.GeoJSON.load = function(url, tileCoords, projection, callback) {
 //  if (!VECNIK.GeoJSON.WEBWORKERS || typeof Worker === undefined) {
     if (typeof Worker === undefined) {
-      VECNIK.load(url)
-        .on('load', function(collection) {
-          callback(_convertAndReproject(collection, projection, tileCoords));
-        });
+      VECNIK.load(url, function(collection) {
+        callback(_convertAndReproject(collection, projection, tileCoords));
+      });
     } else {
       var worker = new Worker('../src/reader/geojson.worker.js');
       worker.onmessage = function(e) {

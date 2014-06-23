@@ -11,21 +11,19 @@ var VECNIK = VECNIK || {};
 (function(VECNIK) {
 
   // TODO: http get - should be improved
-  VECNIK.load = function(url) {
+  VECNIK.load = function(url, callback) {
     var req = new XMLHttpRequest();
-    var events = new VECNIK.Events();
     req.onreadystatechange = function() {
       if (req.readyState === 4) {
         if (req.status === 200) {
-          events.emit('load', JSON.parse(req.responseText))
+          callback(JSON.parse(req.responseText));
         }
       }
     };
 
     req.open('GET', url, true);
     req.send(null);
-
-    return events;
-  }
+    return req;
+  };
 
 })(VECNIK);
