@@ -114,17 +114,20 @@ var VECNIK = VECNIK || {};
 
   VECNIK.GeoJSON = {};
 
-  VECNIK.GeoJSON.convertAsync = function(collection, projection, tileCoords, callback) {
+  VECNIK.GeoJSON.load = function(url, tileCoords, projection, callback) {
 //  if (!VECNIK.GeoJSON.WEBWORKERS || typeof Worker === undefined) {
     if (typeof Worker === undefined) {
-      callback(_convertAndReproject(collection, projection, tileCoords));
+      VECNIK.load(url)
+        .on('load', function(collection) {
+          callback(_convertAndReproject(collection, projection, tileCoords));
+        });
     } else {
-      var worker = new Worker('../src/projector.worker.js');
+      var worker = new Worker('../src/reader/geojson.worker.js');
       worker.onmessage = function(e) {
         callback(e.data);
       };
 
-      worker.postMessage({ collection:collection, projection:projection, tileCoords:tileCoords });
+      worker.postMessage({ url:url, tileCoords:tileCoords });
     }
   };
 

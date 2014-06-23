@@ -42,14 +42,8 @@ var VECNIK = VECNIK || {};
     return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
   };
 
-  proto.load = function(coords, callback) {
-    VECNIK.load(this._getUrl(coords.x, coords.y, coords.z))
-      .on('load', (function(coords_) {
-        return function(data) {
-          VECNIK.GeoJSON.convertAsync(data, this._projection, coords_, callback);
-        };
-      }(coords)), this);
-    return this;
+  proto.load = function(tileCoords, callback) {
+    VECNIK.GeoJSON.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), tileCoords, this._projection, callback);
   };
 
 })(VECNIK);
