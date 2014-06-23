@@ -11,7 +11,6 @@ var VECNIK = VECNIK || {};
 
   VECNIK.CartoDB.API = function(options) {
     this._options = options;
-    // TODO: maybe define the reader in options
     this._projection = new VECNIK.MercatorProjection();
     this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
 

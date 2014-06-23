@@ -31,9 +31,10 @@ var VECNIK = VECNIK || {};
     });
   }
 
-  function _convertAndReproject(collection, projection, tileCoords, dataByRef) {
+  function _convertAndReproject(collection, projection, tileCoords) {
     var
       m, ml,
+      dataByRef = [],
       feature,
       type, geoCoords, properties;
 
@@ -80,6 +81,8 @@ var VECNIK = VECNIK || {};
         break;
       }
     }
+
+    return dataByRef;
   }
 
   function _toBuffer(geoCoords, projection, tileCoords) {
@@ -112,44 +115,23 @@ var VECNIK = VECNIK || {};
   VECNIK.GeoJSON = {};
 
   VECNIK.GeoJSON.convertAsync = function(collection, projection, tileCoords, callback) {
-    var dataByRef = [];
+//  if (!VECNIK.GeoJSON.WEBWORKERS || typeof Worker === undefined) {
+    if (typeof Worker === undefined) {
+      callback(_convertAndReproject(collection, projection, tileCoords));
+    } else {
+      var worker = new Worker('../src/projector.worker.js');
+      worker.onmessage = function(e) {
+        callback(e.data);
+      };
 
-    _convertAndReproject(collection, projection, tileCoords, dataByRef);
-    callback(dataByRef);
+      worker.postMessage({ collection:collection, projection:projection, tileCoords:tileCoords });
+    }
+  };
 
-//    if (VECNIK.GeoJSON.WEBWORKERS && typeof Worker !== undefined) {
-//      var worker = new Worker('../src/projector.worker.js');
-//
-//      var self = this;
-//      worker.onmessage = function(e) {
-//        self._data = e.data;
-//      };
-//
-//      worker.postMessage({ collection: collection, x: this._x, y: this._y, zoom: this._zoom });
-//      return;
-//    }
-//
-//    this._data = [];
-//    for (var i = 0, il = collection.length; i < il; i++) {
-//      feature = collection[i];
-//      if (!feature.geometry) {
-//        continue;
-//      }
-//
-//      coordinates = VECNIK.projectGeometry(feature.geometry, this._x, this._y, this._zoom);
-//      if (!coordinates || !coordinates.length) {
-//        continue;
-//      }
-//
-//      this._data.push({
-//        coordinates: coordinates,
-//        type: feature.geometry.type,
-//        properties: feature.properties
-//      });
-//    }
-
-//    _convertAndReproject(collection, projection, tileCoords, dataByRef);
-//    callback(dataByRef);
+  VECNIK.GeoJSON.convertForWorker = function(collection, tileCoords) {
+    // TODO: projection has to be passed from outside (but worker doesn't accept that)
+    var projection = new VECNIK.MercatorProjection();
+    return _convertAndReproject(collection, projection, tileCoords);
   };
 
 })(VECNIK);
