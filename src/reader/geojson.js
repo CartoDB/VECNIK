@@ -1,84 +1,41 @@
 
-//========================================
-// geometry conversion
-//========================================
-
 var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
-//  var latlng = new VECNIK.LatLng(0, 0);
-//  VECNIK.projectGeometry = function(feature, tileX, tileY, zoom) {
-//  VECNIK.Settings.WEBWORKERS
-
-  VECNIK.GeoJson = function(options) {
-    this._options = options || {};
-    this._projection = options.projection;
-  };
-
-  var proto = VECNIK.GeoJson.prototype;
-
-  proto._toBuffer = function(coordinates, coords) {
-    var
-      len = coordinates.length,
-      latlng = new VECNIK.LatLng(0, 0),
-      point,
-      buffer = new Int16Array(len*2);
-
-    for (var i = 0; i < len; i++) {
-      latlng.latitude  = coordinates[i][1];
-      latlng.longitude = coordinates[i][0];
-      point = this._projection.latLngToTilePoint(latlng, coords.x, coords.y, coords.z);
-      buffer[i*2  ] = point.x;
-      buffer[i*2+1] = point.y;
-    }
-    return buffer;
-  };
-
-  proto._addPoint = function(coordinates, properties, coords, dataByRef) {
+  function _addPoint(geoCoords, projection, properties, tileCoords, dataByRef) {
     dataByRef.push({
       type: 'Point',
-      coordinates: this._toBuffer([coordinates], coords),
+      coordinates: _toBuffer([geoCoords], projection, tileCoords),
       properties: properties
     });
-  };
+  }
 
-  proto._addLineString = function(coordinates, properties, coords, dataByRef) {
+  function _addLineString(geoCoords, projection, properties, tileCoords, dataByRef) {
     dataByRef.push({
       type: 'LineString',
-      coordinates: this._toBuffer(coordinates, coords),
+      coordinates: _toBuffer(geoCoords, projection, tileCoords),
       properties: properties
     });
-  };
+  }
 
-  proto._addPolygon = function(coordinates, properties, coords, dataByRef) {
+  function _addPolygon(geoCoords, projection, properties, tileCoords, dataByRef) {
     var rings = [];
-    for (var i = 0, il = coordinates.length; i < il; i++) {
-      rings.push(this._toBuffer(coordinates[i], coords));
+    for (var i = 0, il = geoCoords.length; i < il; i++) {
+      rings.push(_toBuffer(geoCoords[i], projection, tileCoords));
     }
     dataByRef.push({
       type: 'Polygon',
       coordinates: rings,
       properties: properties
     });
-  };
+  }
 
-  proto._copy = function(obj) {
-    var
-      keys = Object.keys(obj),
-      res = {};
-    for (var i = 0, il = keys.length; i < il; i++) {
-      res[keys[i]] = obj[keys[i]];
-    }
-    return res;
-  };
-
-  proto.convertAsync = function(collection, coords, callback) {
+  function _convertAndReproject(collection, projection, tileCoords, dataByRef) {
     var
       m, ml,
-      dataByRef = [],
       feature,
-      type, coordinates, properties;
+      type, geoCoords, properties;
 
     for (var i = 0, il = collection.features.length; i < il; i++) {
       feature = collection.features[i];
@@ -88,52 +45,79 @@ var VECNIK = VECNIK || {};
       }
 
       type = feature.geometry.type;
-      coordinates = feature.geometry.coordinates;
+      geoCoords = feature.geometry.coordinates;
       properties = feature.properties;
 
       switch (type) {
         case 'Point':
-          this._addPoint(coordinates, properties, coords, dataByRef);
+          _addPoint(geoCoords, projection, properties, tileCoords, dataByRef);
         break;
 
         case 'MultiPoint':
-          for (m = 0, ml = coordinates.length; m < ml; m++) {
-            this._addPoint(coordinates[m], this._copy(properties), coords, dataByRef);
+          for (m = 0, ml = geoCoords.length; m < ml; m++) {
+            _addPoint(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
           }
         break;
 
         case 'LineString':
-          this._addLineString(coordinates, properties, coords, dataByRef);
+          _addLineString(geoCoords, projection, properties, tileCoords, dataByRef);
         break;
 
         case 'MultiLineString':
-          for (m = 0, ml = coordinates.length; m < ml; m++) {
-            this._addLineString(coordinates[m], this._copy(properties), coords, dataByRef);
+          for (m = 0, ml = geoCoords.length; m < ml; m++) {
+            _addLineString(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
           }
         break;
 
         case 'Polygon':
-          this._addPolygon(coordinates, properties, coords, dataByRef);
+          _addPolygon(geoCoords, projection, properties, tileCoords, dataByRef);
         break;
 
         case 'MultiPolygon':
-          for (m = 0, ml = coordinates.length; m < ml; m++) {
-            this._addPolygon(coordinates[m], this._copy(properties), coords, dataByRef);
+          for (m = 0, ml = geoCoords.length; m < ml; m++) {
+            _addPolygon(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
           }
         break;
       }
     }
+  }
 
+  function _toBuffer(geoCoords, projection, tileCoords) {
+    var
+      len = geoCoords.length,
+      latlng = new VECNIK.LatLng(0, 0),
+      point,
+      buffer = new Int16Array(len*2);
+
+    for (var i = 0; i < len; i++) {
+      latlng.latitude  = geoCoords[i][1];
+      latlng.longitude = geoCoords[i][0];
+      point = projection.latLngToTilePoint(latlng, tileCoords.x, tileCoords.y, tileCoords.z);
+      buffer[i*2  ] = point.x;
+      buffer[i*2+1] = point.y;
+    }
+    return buffer;
+  }
+
+  function _copy(obj) {
+    var
+      keys = Object.keys(obj),
+      res = {};
+    for (var i = 0, il = keys.length; i < il; i++) {
+      res[keys[i]] = obj[keys[i]];
+    }
+    return res;
+  }
+
+  VECNIK.GeoJSON = {};
+
+  VECNIK.GeoJSON.convertAsync = function(collection, projection, tileCoords, callback) {
+    var dataByRef = [];
+
+    _convertAndReproject(collection, projection, tileCoords, dataByRef);
     callback(dataByRef);
-    return this;
-  };
 
-//  proto._project = function(data) {
-//    var
-//      collection = data.features,
-//      feature, coordinates;
-//
-//    if (VECNIK.settings.get('WEBWORKERS') && typeof Worker !== undefined) {
+//    if (VECNIK.GeoJSON.WEBWORKERS && typeof Worker !== undefined) {
 //      var worker = new Worker('../src/projector.worker.js');
 //
 //      var self = this;
@@ -163,6 +147,9 @@ var VECNIK = VECNIK || {};
 //        properties: feature.properties
 //      });
 //    }
-//  };
+
+//    _convertAndReproject(collection, projection, tileCoords, dataByRef);
+//    callback(dataByRef);
+  };
 
 })(VECNIK);

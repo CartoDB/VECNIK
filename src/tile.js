@@ -29,7 +29,6 @@ var VECNIK = VECNIK || {};
 
     var self = this;
     options.provider.load(options.coords, function(data) {
-console.log('DONE', options.coords.x, options.coords.y, data.length);
       self._data = data;
       self.render();
     });

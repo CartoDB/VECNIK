@@ -13,7 +13,6 @@ var VECNIK = VECNIK || {};
     this._options = options;
     // TODO: maybe define the reader in options
     this._projection = new VECNIK.MercatorProjection();
-    this._reader = new VECNIK.GeoJson({ projection: this._projection });
     this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
 
     if (this._options.ENABLE_SIMPLIFY === undefined) {
@@ -45,19 +44,12 @@ var VECNIK = VECNIK || {};
   };
 
   proto.load = function(coords, callback) {
-console.log('LOAD...', coords.x, coords.y);
     VECNIK.load(this._getUrl(coords.x, coords.y, coords.z))
       .on('load', (function(coords_) {
-
-console.log('ON LOAD', coords_.x, coords_.y);
         return function(data) {
-
-console.log('ON CONVERT', coords_.x, coords_.y);
-          this._reader.convertAsync(data, coords_, callback);
+          VECNIK.GeoJSON.convertAsync(data, this._projection, coords_, callback);
         };
-
       }(coords)), this);
-
     return this;
   };
 
