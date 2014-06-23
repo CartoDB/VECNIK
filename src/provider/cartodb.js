@@ -40,23 +40,25 @@ var VECNIK = VECNIK || {};
     }
   };
 
-  proto.getUrl = function(x, y, zoom) {
+  proto._getUrl = function(x, y, zoom) {
     var sql = VECNIK.CartoDB.SQL(this._projection, this._options.table, x, y, zoom, this._options);
     this._debug(sql);
     return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
   };
 
   proto.load = function(coords) {
-    VECNIK.load(this.getUrl(coords.x, coords.y, coords.z))
+    VECNIK.load(this._getUrl(coords.x, coords.y, coords.z))
       .on('load', (function(c) {
         return function(data) {
-          this._reader.convertAsync(data, c).on('success', function(res) {
-            this.emit('success', res);
-          }, this);
+          this._reader.convertAsync(data, c).on('success', this.onLoad);
         };
       }(coords)), this);
 
     return this;
+  };
+
+  proto.onLoad = function() {
+    throw new Error('VECNIK.CartoDB.SQL.onLoad() has to be used');
   };
 
 })(VECNIK);
