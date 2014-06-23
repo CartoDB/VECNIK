@@ -12,37 +12,37 @@ It's recommended to implement this by using web workers.
 
 ### Example
 
-'''
+```javascript
 var provider = new Provider({ ... });
 new VECNIK.Layer({
   provider: provider,
   ...
 });
-'''
+```
 
 ### Interface
 
 Vecnik triggers Provider.load() with a Map Tile coordinate object:
 
-'''
+```javascript
 Provider.load({ x:tileX{float}, y:tileY{float}, z:zoom{int} });
-'''
+```
 
 Vecnik sets a custom Provider.onLoad() method in order to receive results.
 
-'''
+```javascript
 Provider.onLoad({array});
-'''
+```
 
 Expected data structure is an array of objects:
 
-'''
+```javascript
 {
   type: geometryType{string}, // 'Point', 'LineString', 'Polygon' as defined in GeoJSON, Multi-Elements have to be resolved to individual items
-  coordinates: coordinates{Int16Array, // geometry coordinates as array buffer
+  coordinates: coordinates{Int16Array}, // geometry coordinates as array buffer
   properties: feature.properties // additional properties as data object
 }
-'''
+```
 
 Coordinates have to be provided as pixel coordinates, relative to tile position.
 Required projection is EPSG:3587 (web mercator).
