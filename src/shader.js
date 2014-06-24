@@ -10,7 +10,8 @@ var VECNIK = VECNIK || {};
   // properties needed for each geometry type to be renderered
   var rendererNeededProperties = {
     point: [
-      'marker-width'
+      'marker-width',
+      'line-color'
     ],
     linestring: [
       'line-color',
@@ -27,6 +28,11 @@ var VECNIK = VECNIK || {};
   var currentContextStyle = {};
 
   var propertyMapping = {
+    'marker-width': 'marker-width',
+    'marker-fill': 'fillStyle',
+    'marker-line-color': 'strokeStyle',
+    'marker-line-width': 'lineWidth',
+    'marker-color': 'fillStyle',
     'point-color': 'fillStyle',
     'line-color': 'strokeStyle',
     'line-width': 'lineWidth',
@@ -35,9 +41,14 @@ var VECNIK = VECNIK || {};
     'polygon-opacity': 'globalAlpha'
   };
 
-  VECNIK.CartoShader = function(shader) {
+  VECNIK.CartoShader = function(shader, renderOrder) {
     VECNIK.Events.prototype.constructor.call(this);
     this._compiled = {};
+    this._renderOrder = renderOrder || [
+      VECNIK.Geometry.POINT,
+      VECNIK.Geometry.POLYGON,
+      VECNIK.Geometry.LINE
+    ];
     this.compile(shader);
   };
 
@@ -47,7 +58,26 @@ var VECNIK = VECNIK || {};
       shader = new carto.RendererJS().render(style),
       layers = [];
     for (var i = 0, il = shader.layers.length; i < il; i++) {
-      layers[i] = new VECNIK.CartoShader(shader.getLayers()[i].getShader());
+      var layer = shader.getLayers()[i];
+
+      // order from cartocss
+      var order = layer.getSymbolizers().map(function(s) {
+        return {
+          'line': VECNIK.Geometry.LINE,
+          'polygon': VECNIK.Geometry.POLYGON,
+          'markers': VECNIK.Geometry.POINT
+        }[s];
+      });
+
+      // get shader from cartocss shader
+      var layerShader = layer.getShader();
+      var sh = {};
+      for(var p in layerShader) {
+        if (layerShader[p].style) {
+          sh[p] = layerShader[p].style;
+        }
+      }
+      layers[i] = new VECNIK.CartoShader(sh, order);
     }
     return layers;
   };
@@ -114,7 +144,13 @@ var VECNIK = VECNIK || {};
       // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
       // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
       val = style[prop];
-      currentContextStyle[context] = currentStyle = currentContextStyle[context] || {};
+
+      var id = context._shId;
+      if (!id) {
+        id = context._shId = Object.keys(currentContextStyle).length + 1;
+        currentContextStyle[id] = {}
+      }
+      currentStyle = currentContextStyle[id];
       if (currentStyle[prop] !== val) {
         context[prop] = currentStyle[prop] = val;
         changed = true;
@@ -122,6 +158,10 @@ var VECNIK = VECNIK || {};
     }
     return changed;
   };
+
+  proto.renderOrder = function() {
+    return this._renderOrder;
+  },
 
   // return true if the feature need to be rendered
   proto.needsRender = function(geometryType, style) {
