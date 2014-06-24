@@ -8,6 +8,10 @@ var VECNIK = VECNIK || {};
 
 (function(VECNIK) {
 
+  var orderMethods = {};
+  orderMethods[VECNIK.Geometry.POLYGON] = 'fill';
+  orderMethods[VECNIK.Geometry.LINE] = 'stroke';
+
   VECNIK.Renderer = function(options) {
     options = options || {};
     if (!options.shader) {
@@ -25,6 +29,12 @@ var VECNIK = VECNIK || {};
     for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
       context.lineTo(coordinates[i], coordinates[i+1]);
     }
+  };
+
+  proto._drawMarker = function (context, coordinates, size) {
+    //TODO: manage image sprites
+    //TODO: precache render to a canvas
+    context.arc(coordinates[0], coordinates[1], size, 0, Math.PI*2);
   };
 
   // render the specified collection in the contenxt
@@ -46,25 +56,19 @@ var VECNIK = VECNIK || {};
         feature = collection[i];
 
         var style = shaderPass.evalStyle(feature.properties, mapContext);
-        if (shaderPass.apply(context, style)) {
-          // TODO: stroke/fill here if the style has changed to close previous polygons
-        }
 
         coordinates = feature.coordinates;
 
         if (shaderPass.needsRender(feature.type, style)) {
           context.beginPath();
+
           switch(feature.type) {
             case VECNIK.Geometry.POINT:
-              context.arc(coordinates[0], coordinates[1], VECNIK.Renderer.POINT_RADIUS, 0, Math.PI*2);
-              // closes automatically
-              context.fill();
+              this._drawMarker(context, coordinates, style['marker-width']);
             break;
 
             case VECNIK.Geometry.LINE:
               this._drawLineString(context, coordinates);
-              // no need to close
-              // no need to fill
             break;
 
             case VECNIK.Geometry.POLYGON:
@@ -72,10 +76,23 @@ var VECNIK = VECNIK || {};
                 this._drawLineString(context, coordinates[j]);
               }
               context.closePath();
-              context.fill();
             break;
           }
-          context.stroke();
+
+          if (shaderPass.apply(context, style)) {
+            // TODO: stroke/fill here if the style has changed to close previous polygons
+          }
+
+          var order = shaderPass.renderOrder();
+          if (feature.type === VECNIK.Geometry.POLYGON ||
+              feature.type === VECNIK.Geometry.LINE) {
+            context[orderMethods[order[0]]]();
+            order.length >=1 && context[orderMethods[order[1]]]();
+          } else if (feature.type === VECNIK.Geometry.POINT) {
+            // if case it's a point there is no render order, fill and stroke
+            context.fill();
+            context.stroke();
+          }
         }
       }
     }
