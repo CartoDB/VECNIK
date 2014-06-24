@@ -3206,23 +3206,33 @@ tree.Definition.prototype.toJS = function() {
   _.each(this.rules, function(rule) {
       if(rule instanceof tree.Rule) {
         shaderAttrs[rule.name] = shaderAttrs[rule.name] || [];
+
+        var r = {
+          index: rule.index,
+          symbolizer: rule.symbolizer
+        };
+
         if (_if) {
-        shaderAttrs[rule.name].push(
-          "if(" + _if + "){" + rule.value.toJS() + "}"
-        );
+          r.js = "if(" + _if + "){" + rule.value.toJS() + "}"
         } else {
-          shaderAttrs[rule.name].push(rule.value.toJS());
+          r.js = rule.value.toJS();
         }
+
+        r.constant = rule.value.ev().is !== 'field';
+        r.filtered = !!_if;
+
+        shaderAttrs[rule.name].push(r);
       } else {
-        if (rule instanceof tree.Ruleset) {
-          var sh = rule.toJS();
-          for(var v in sh) {
-            shaderAttrs[v] = shaderAttrs[v] || [];
-            for(var attr in sh[v]) {
-              shaderAttrs[v].push(sh[v][attr]);
-            }
-          }
-        }
+        throw new Error("Ruleset not supported");
+        //if (rule instanceof tree.Ruleset) {
+          //var sh = rule.toJS();
+          //for(var v in sh) {
+            //shaderAttrs[v] = shaderAttrs[v] || [];
+            //for(var attr in sh[v]) {
+              //shaderAttrs[v].push(sh[v][attr]);
+            //}
+          //}
+        //}
       }
   });
   return shaderAttrs;
@@ -5159,11 +5169,35 @@ CartoCSS.Layer.prototype = {
   getStyle: function(props, context) {
     var style = {};
     for(var i in this.shader) {
-      if(i !== 'attachment' && i !== 'zoom' && i !== 'frames') {
-        style[i] = this.shader[i](props, context);
+      if(i !== 'attachment' && i !== 'zoom' && i !== 'frames' && i !== 'symbolizers') {
+        style[i] = this.shader[i].style(props, context);
       }
     }
     return style;
+  },
+
+  /**
+   * return the symbolizers that need to be rendered with 
+   * this style. The order is the rendering order.
+   * @returns a list with 3 possible values 'line', 'marker', 'polygon'
+   */
+  getSymbolizers: function() {
+    return this.shader.symbolizers;
+  },
+
+  /**
+   * returns if the style varies with some feature property.
+   * Useful to optimize rendering
+   */
+  isVariable: function() {
+    for(var i in this.shader) {
+      if(i !== 'attachment' && i !== 'zoom' && i !== 'frames' && i !== 'symbolizers') {
+        if (!this.shader[i].constant) {
+          return true;
+        }
+      }
+    }
+    return false;
   },
 
   getShader: function() {
@@ -5271,33 +5305,57 @@ CartoCSS.prototype = {
       return;
     }
     if(ruleset) {
+
+      function defKey(def) {
+        return def.elements[0] + "::" + def.attachment;
+      }
       var defs = ruleset.toList(parse_env);
       defs.reverse();
       // group by elements[0].value::attachment
       var layers = {};
       for(var i = 0; i < defs.length; ++i) {
         var def = defs[i];
-        var key = def.elements[0] + "::" + def.attachment;
-        var layer = layers[key] = (layers[key] || {});
+        var key = defKey(def);
+        var layer = layers[key] = (layers[key] || {
+          symbolizers: []
+        });
         layer.frames = [];
         layer.zoom = tree.Zoom.all;
         var props = def.toJS();
+        console.log("props", props);
         for(var v in props) {
-          (layer[v] = (layer[v] || [])).push(props[v].join('\n'))
+          var lyr = layer[v] = layer[v] || {
+            constant: false,
+            symbolizer: null,
+            js: [],
+            index: 0
+          };
+          // build javascript statements
+          lyr.js.push(props[v].map(function(a) { return a.js; }).join('\n'));
+          // get symbolizer for prop
+          lyr.symbolizer = _.first(props[v].map(function(a) { return a.symbolizer; }));
+          // serach the max index to know rendering order
+          lyr.index = _.max(props[v].map(function(a) { return a.index; }).concat(lyr.index));
+          lyr.constant = !_.any(props[v].map(function(a) { return !a.constant; }));
         }
       }
 
       var ordered_layers = [];
+      console.log(layers);
 
       var done = {};
       for(var i = 0; i < defs.length; ++i) {
         var def = defs[i];
-        var k = def.elements[0] + "::" + def.attachment;
+        var k = defKey(def);
         var layer = layers[k];
         if(!done[k]) {
+          if(this.options.debug) console.log("**", k);
           for(var prop in layer) {
-            if (prop !== 'zoom' && prop !== 'frames') {
-              layer[prop] = this._createFn(layer[prop]);
+            if (prop !== 'zoom' && prop !== 'frames' && prop !== 'symbolizers') {
+              if(this.options.debug) console.log("*", prop);
+              layer[prop].style = this._createFn(layer[prop].js);
+              layer.symbolizers.push(layer[prop].symbolizer);
+              layer.symbolizers = _.uniq(layer.symbolizers);
             }
           }
           layer.attachment = k;
