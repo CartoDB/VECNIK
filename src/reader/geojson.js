@@ -5,7 +5,7 @@ var VECNIK = VECNIK || {};
 
   function _addPoint(geoCoords, projection, properties, tileCoords, dataByRef) {
     dataByRef.push({
-      type: 'Point',
+      type: VECNIK.Geometry.POINT,
       coordinates: _toBuffer([geoCoords], projection, tileCoords),
       properties: properties
     });
@@ -13,7 +13,7 @@ var VECNIK = VECNIK || {};
 
   function _addLineString(geoCoords, projection, properties, tileCoords, dataByRef) {
     dataByRef.push({
-      type: 'LineString',
+      type: VECNIK.Geometry.LINE,
       coordinates: _toBuffer(geoCoords, projection, tileCoords),
       properties: properties
     });
@@ -25,7 +25,7 @@ var VECNIK = VECNIK || {};
       rings.push(_toBuffer(geoCoords[i], projection, tileCoords));
     }
     dataByRef.push({
-      type: 'Polygon',
+      type: VECNIK.Geometry.POLYGON,
       coordinates: rings,
       properties: properties
     });
@@ -50,31 +50,31 @@ var VECNIK = VECNIK || {};
       properties = feature.properties;
 
       switch (type) {
-        case 'Point':
+        case VECNIK.Geometry.POINT:
           _addPoint(geoCoords, projection, properties, tileCoords, dataByRef);
         break;
 
-        case 'MultiPoint':
+        case 'Multi'+ VECNIK.Geometry.POINT:
           for (m = 0, ml = geoCoords.length; m < ml; m++) {
             _addPoint(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
           }
         break;
 
-        case 'LineString':
+        case VECNIK.Geometry.LINE:
           _addLineString(geoCoords, projection, properties, tileCoords, dataByRef);
         break;
 
-        case 'MultiLineString':
+        case 'Multi'+ VECNIK.Geometry.LINE:
           for (m = 0, ml = geoCoords.length; m < ml; m++) {
             _addLineString(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
           }
         break;
 
-        case 'Polygon':
+        case VECNIK.Geometry.POLYGON:
           _addPolygon(geoCoords, projection, properties, tileCoords, dataByRef);
         break;
 
-        case 'MultiPolygon':
+        case 'Multi'+ VECNIK.Geometry.POLYGON:
           for (m = 0, ml = geoCoords.length; m < ml; m++) {
             _addPolygon(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
           }

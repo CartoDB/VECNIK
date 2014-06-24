@@ -55,19 +55,19 @@ var VECNIK = VECNIK || {};
         if (shaderPass.needsRender(feature.type, style)) {
           context.beginPath();
           switch(feature.type) {
-            case 'Point':
+            case VECNIK.Geometry.POINT:
               context.arc(coordinates[0], coordinates[1], VECNIK.Renderer.POINT_RADIUS, 0, Math.PI*2);
               // closes automatically
               context.fill();
             break;
 
-            case 'LineString':
+            case VECNIK.Geometry.LINE:
               this._drawLineString(context, coordinates);
               // no need to close
               // no need to fill
             break;
 
-            case 'Polygon':
+            case VECNIK.Geometry.POLYGON:
               for (j = 0, jl = coordinates.length; j < jl; j++) {
                 this._drawLineString(context, coordinates[j]);
               }

@@ -26,4 +26,10 @@ var VECNIK = VECNIK || {};
     return req;
   };
 
+  VECNIK.Geometry = VECNIK.Geometry  || {};
+
+  VECNIK.Geometry.POINT   = 'Point';
+  VECNIK.Geometry.LINE    = 'LineString';
+  VECNIK.Geometry.POLYGON = 'Polygon';
+
 })(VECNIK);
