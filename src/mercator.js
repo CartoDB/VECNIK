@@ -78,11 +78,12 @@ var VECNIK = VECNIK || {};
     return new VECNIK.LatLng(lat, lng);
   };
 
-  MercatorProjection.prototype.tileBBox = function(x, y, zoom) {
+  MercatorProjection.prototype.tileBBox = function(x, y, zoom, bufferSize) {
     var numTiles = 1 <<zoom;
-    var inc = tileSize/numTiles;
-    var px = x*tileSize/numTiles;
-    var py = y*tileSize/numTiles;
+    bufferSize = bufferSize || 0;
+    var inc = (tileSize + bufferSize*2)/numTiles;
+    var px = (x*tileSize - bufferSize)/numTiles;
+    var py = (y*tileSize - bufferSize)/numTiles;
     return [
       this.fromPointToLatLng(new Point(px, py + inc)),
       this.fromPointToLatLng(new Point(px + inc, py))

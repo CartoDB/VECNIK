@@ -10,7 +10,8 @@ var VECNIK = VECNIK || {};
   // properties needed for each geometry type to be renderered
   var requiredProperties = {
     point: [
-      'marker-width'
+      'marker-width',
+      'line-color'
     ],
     linestring: [
       'line-color'
@@ -27,6 +28,11 @@ var VECNIK = VECNIK || {};
   var currentContextStyle = {};
 
   var propertyMapping = {
+    'marker-width': 'marker-width',
+    'marker-fill': 'fillStyle',
+    'marker-line-color': 'strokeStyle',
+    'marker-line-width': 'lineWidth',
+    'marker-color': 'fillStyle',
     'point-color': 'fillStyle',
     'line-color': 'strokeStyle',
     'line-width': 'lineWidth',
@@ -43,11 +49,34 @@ var VECNIK = VECNIK || {};
 
   proto.update = function(style) {
     this._layers = [];
-    var shader = new carto.RendererJS().render(style);
+    var
+      shader = new carto.RendererJS().render(style),
+      layer, order, layerShader, sh, p,
+      geometryTypeMapping = {
+        line: VECNIK.Geometry.LINE,
+        polygon: VECNIK.Geometry.POLYGON,
+        markers: VECNIK.Geometry.POINT
+      };
 
     if (shader && shader.layers) {
       for (var i = 0, il = shader.layers.length; i < il; i++) {
-        this._layers[i] = new VECNIK.CartoShader.Layer(shader.getLayers()[i].getShader());
+        layer = shader.layers[i];
+
+        // order from cartocss
+        order = layer.getSymbolizers().map(function(s) {
+          return geometryTypeMapping[s];
+        });
+
+        // get shader from cartocss shader
+        layerShader = layer.getShader();
+        sh = {};
+        for (p in layerShader) {
+          if (layerShader[p].style) {
+            sh[p] = layerShader[p].style;
+          }
+        }
+
+        this._layers[i] = new VECNIK.CartoShader(sh, order);
       }
     }
   };
@@ -58,9 +87,14 @@ var VECNIK = VECNIK || {};
 
   //***************************************************************************
 
-  VECNIK.CartoShader.Layer = function(shader) {
+  VECNIK.CartoShader.Layer = function(shader, renderOrder) {
     VECNIK.Events.prototype.constructor.call(this);
     this._compiled = {};
+    this._renderOrder = renderOrder || [
+      VECNIK.Geometry.POINT,
+      VECNIK.Geometry.POLYGON,
+      VECNIK.Geometry.LINE
+    ];
     this.compile(shader);
   };
 
@@ -125,7 +159,13 @@ var VECNIK = VECNIK || {};
       // ctx.strokeStyle = 'rgba(0,0,0,0.1)'
       // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
       val = style[prop];
-      currentContextStyle[context] = currentStyle = currentContextStyle[context] || {};
+
+      var id = context._shId;
+      if (!id) {
+        id = context._shId = Object.keys(currentContextStyle).length + 1;
+        currentContextStyle[id] = {}
+      }
+      currentStyle = currentContextStyle[id];
       if (currentStyle[prop] !== val) {
         context[prop] = currentStyle[prop] = val;
         changed = true;
@@ -133,6 +173,10 @@ var VECNIK = VECNIK || {};
     }
     return changed;
   };
+
+  proto.renderOrder = function() {
+    return this._renderOrder;
+  },
 
   // return true if the feature need to be rendered
   proto.needsRender = function(geometryType, style) {

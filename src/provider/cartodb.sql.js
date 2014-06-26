@@ -15,7 +15,8 @@ var VECNIK = VECNIK || {};
       ENABLE_SNAPPING: true,
       ENABLE_FIXING:   true
     };
-    var bbox = projection.tileBBox(x, y, zoom);
+
+    var bbox = projection.tileBBox(x, y, zoom, opts.bufferSize);
     var geom_column = '"the_geom"';
     var geom_column_orig = '"the_geom"';
     var id_column = 'cartodb_id';
@@ -58,12 +59,13 @@ var VECNIK = VECNIK || {};
     var sql_env = 'ST_MakeEnvelope('+
       bbox[0].lng() +','+ bbox[0].lat() +','+
       bbox[1].lng() +','+ bbox[1].lat() +', 4326)';
+
     // clip
     if (opts.ENABLE_CLIPPING) {
       // This is a slightly enlarged version of the query bounding box
 
       // var sql_env_exp = '('+ sql_env +')';
-      var sql_env_exp = 'ST_Expand('+ sql_env +', '+ (pixel_geo_maxsize*2) +')';
+      var sql_env_exp = 'ST_Expand('+ sql_env +', '+ (pixel_geo_maxsize*120) +')';
 
       // Also must be snapped to the grid ...
       sql_env_exp = 'ST_SnapToGrid('+ sql_env_exp +','+ pixel_geo_maxsize +')';

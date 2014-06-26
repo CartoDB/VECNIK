@@ -38,15 +38,22 @@ var shader, canvas, ctx;
     equal(c.needsRender('LineString', st), true);
     equal(c.needsRender('LineString', st), true);
     equal(c.needsRender('Polygon', st), true);
-    equal(c.needsRender('Point', st), false);
+    equal(c.needsRender('Point', st), true);
 
     c = new VECNIK.CartoShader({
       'polygon-fill': '#fff'
     });
-    var st = c.evalStyle({})
+    var st = c.evalStyle({});
     equal(c.needsRender('LineString', st), false);
     equal(c.needsRender('Point', st), false);
     equal(c.needsRender('Polygon', st), true);
+    equal(c.needsRender('Point', st), false);
+
+    c = new VECNIK.CartoShader({
+      'marker-width': 10
+    });
+    st = c.evalStyle({});
+    equal(c.needsRender('Point', st), true);
 
     c = new VECNIK.CartoShader({
       'line-color': function(data) {

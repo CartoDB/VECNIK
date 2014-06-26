@@ -26,6 +26,7 @@ var VECNIK = VECNIK || {};
 
     this._renderer = options.renderer;
     this._data = [];
+    this._coords = options.coords;
 
     var self = this;
     options.provider.load(options.coords, function(data) {
@@ -44,7 +45,7 @@ var VECNIK = VECNIK || {};
 
   proto.render = function() {
     this._renderer.render(this._context, this._data, {
-      zoom: this._zoom
+      zoom: this._coords.z
     });
   };
 
