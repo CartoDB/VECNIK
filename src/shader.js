@@ -76,7 +76,7 @@ var VECNIK = VECNIK || {};
           }
         }
 
-        this._layers[i] = new VECNIK.CartoShader(sh, order);
+        this._layers[i] = new VECNIK.CartoShader.Layer(sh, order);
       }
     }
   };
