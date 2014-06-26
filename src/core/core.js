@@ -1,10 +1,3 @@
-//========================================
-// Core
-//
-// base classes
-//========================================
-
-// create root scope if not exists
 
 var VECNIK = VECNIK || {};
 

@@ -1,5 +1,5 @@
 
-module("cartoshader");
+module('cartoshader');
 var shader, canvas, ctx;
 
   QUnit.testStart(function( details ) {
@@ -66,7 +66,6 @@ var shader, canvas, ctx;
       }
     });
     equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
-    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, {zoom: 1})), false);
-    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, {zoom: 2})), true);
+    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, { zoom: 1 })), false);
+    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, { zoom: 2 })), true);
   });
-

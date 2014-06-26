@@ -10,7 +10,7 @@ var VECNIK = VECNIK || {};
   VECNIK.Settings = function(defaults) {
     VECNIK.Model.prototype.constructor.call(this);
     this.set(defaults);
-  }
+  };
 
   VECNIK.Settings.prototype = new VECNIK.Model();
 

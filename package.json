@@ -19,7 +19,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "jshint": "~1.1.0",
+    "jshint": "~2.5.1",
     "closure-compiler": "~0.2.6",
     "grunt": "~0.4.4",
     "grunt-contrib-concat": "~0.4.0",
