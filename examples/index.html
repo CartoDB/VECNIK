@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Vecnik - Leaflet 0.8</title>
+<title>Vecnik</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <link rel="stylesheet" href="lib/leaflet08/leaflet.css">
 <style type="text/css">
@@ -13,10 +13,34 @@ html, body {
   height: 100%;
   overflow: hidden;
 }
+
 #map {
   height: 100%;
 }
+
+#code {
+  color: #000;
+  background-color: rgba(255, 255, 255, 0.85);
+  position: absolute;
+  left: 10px;
+  top: 75px;
+  bottom: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  font-family: monospace;
+  font-size: 12px;
+  width: 350px;
+  outline: none;
+  z-index: 10;
+}
+
+/* code */
+#code .highlight {
+  font-family: monospace;
+  font-size: 19px;
+}
 </style>
+
 <script src="lib/leaflet08/leaflet-src.js"></script>
 
 <script src="../src/polyfills.js"></script>
@@ -32,53 +56,75 @@ html, body {
 <script src="../src/profiler.js"></script>
 <script src="../src/renderer.js"></script>
 <script src="../src/shader.js"></script>
-<a href="../package.json"></a>
+
 <script src="../src/provider/cartodb.sql.js"></script>
 <script src="../src/provider/cartodb.js"></script>
 
 <script src="lib/underscore.js"></script>
 <script src="lib/carto.js"></script>
+<script>
+var map, code;
+
+function compileShader(shaderData) {
+//  VECNIK.CartoShader.create(shaderData);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  map = new L.Map('map').setView([40.735291, -73.990731], 16);
+  new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
+
+  var provider = new VECNIK.CartoDB.API({
+    user: 'pluto',
+    table: 'mn_mappluto_13v1',
+    columns: ['numfloors'],
+    debug: false
+  });
+
+  var renderer = new VECNIK.Renderer({ shader: VECNIK.CartoShader.create() });
+
+  var vlayer = new VECNIK.Layer({
+    provider: provider,
+    renderer: renderer
+  });
+
+  vlayer.addTo(map);
+  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+
+  code = document.getElementById('code');
+
+  var timer, oldCode = '';
+  code.addEventListener('keyup', function() {
+    if (oldCode !== code.value) {
+      return;
+    }
+    clearTimeout(timer);
+    timer = setTimeout(function() {
+      compileShader(oldCode = code.value);
+    }, 300);
+  });
+
+  compileShader(oldCode = code.value);
+});
+</script>
 </head>
 
 <body>
 <div id="map"></div>
 
-<script>
-var map = new L.Map('map').setView([40.735291, -73.990731], 16);
-new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
-
-var provider = new VECNIK.CartoDB.API({
-  user: 'pluto',
-  table: 'mn_mappluto_13v1',
-  columns: ['numfloors'],
-  debug: false
-});
-
-var layers = VECNIK.CartoShader.create([
-  '#layer {',
-  ' polygon-fill: rgba(0, 0, 0, 0.1);',
-  ' line-color: white;',
-  ' line-width: 4;',
-  ' [numfloors > 10] {',
-  '    polygon-fill: rgba(255, 0, 0,0.88);',
-  ' }',
-  '}',
-  '#layer::pass2 {',
-  ' polygon-fill: rgba(0, 0, 0, 0.0);',
-  ' line-width: 1;',
-  ' line-color: black;',
-  '}'
-].join('\n'));
-
-var renderer = new VECNIK.Renderer({ shader: layers });
-
-var vlayer = new VECNIK.Layer({
-  provider: provider,
-  renderer: renderer
-});
-
-vlayer.addTo(map);
-L.control.layers({}, { VECNIK: vlayer }).addTo(map);
-</script>
+<textarea id="code">
+#layer {
+  polygon-fill: rgba(0, 0, 0, 0.1);
+  line-color: white;
+  line-width: 4;
+  [numfloors > 10] {
+    polygon-fill: rgba(255, 0, 0, 0.88);
+  }
+}
+#layer::pass2 {
+  polygon-fill: rgba(0, 0, 0, 0.0);
+  line-width: 1;
+  line-color: black;
+}
+</textarea>
 </body>
 </html>
