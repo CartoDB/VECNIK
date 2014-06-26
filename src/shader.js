@@ -8,19 +8,19 @@ var VECNIK = VECNIK || {};
 (function(VECNIK) {
 
   // properties needed for each geometry type to be renderered
-  var rendererNeededProperties = {
+  var requiredProperties = {
     point: [
       'marker-width'
     ],
     linestring: [
-      'line-color',
+      'line-color'
     ],
     polygon: [
       'polygon-fill',
-      'line-color',
+      'line-color'
     ]
   };
-  rendererNeededProperties.multipolygon = rendererNeededProperties.polygon;
+  requiredProperties.multipolygon = requiredProperties.polygon;
 
   // last context style applied, this is a shared variable
   // for all the shaders
@@ -35,24 +35,36 @@ var VECNIK = VECNIK || {};
     'polygon-opacity': 'globalAlpha'
   };
 
-  VECNIK.CartoShader = function(shader) {
+  VECNIK.CartoShader = function(style) {
+    this.update(style);
+  };
+
+  var proto = VECNIK.CartoShader.prototype;
+
+  proto.update = function(style) {
+    this._layers = [];
+    var shader = new carto.RendererJS().render(style);
+
+    if (shader && shader.layers) {
+      for (var i = 0, il = shader.layers.length; i < il; i++) {
+        this._layers[i] = new VECNIK.CartoShader.Layer(shader.getLayers()[i].getShader());
+      }
+    }
+  };
+
+  proto.getLayers = function() {
+    return this._layers;
+  };
+
+  //***************************************************************************
+
+  VECNIK.CartoShader.Layer = function(shader) {
     VECNIK.Events.prototype.constructor.call(this);
     this._compiled = {};
     this.compile(shader);
   };
 
-  // TODO: enable the class to handle layers
-  VECNIK.CartoShader.create = function(style) {
-    var
-      shader = new carto.RendererJS().render(style),
-      layers = [];
-    for (var i = 0, il = shader.layers.length; i < il; i++) {
-      layers[i] = new VECNIK.CartoShader(shader.getLayers()[i].getShader());
-    }
-    return layers;
-  };
-
-  var proto = VECNIK.CartoShader.prototype = new VECNIK.Events();
+  var proto = VECNIK.CartoShader.Layer.prototype = new VECNIK.Events();
 
   proto.compile = function(shader) {
     this._shaderSrc = shader;
@@ -65,13 +77,12 @@ var VECNIK = VECNIK || {};
         this._compiled[property] = shader[attr];
       }
     }
-
     this.emit('change');
   };
 
   // given feature properties and map rendering content returns
   // the style to apply to canvas context
-  // TODO: optimize this to not evaluate when featureProperties does not
+  // TODO: optimize this to not evaluate when featureProperties do not
   // contain values involved in the shader
   proto.evalStyle = function(featureProperties, mapContext) {
     mapContext = mapContext || {};
@@ -126,7 +137,9 @@ var VECNIK = VECNIK || {};
   // return true if the feature need to be rendered
   proto.needsRender = function(geometryType, style) {
     // check properties in the shader first
-    var props = rendererNeededProperties[geometryType.toLowerCase()];
+    var
+      props = requiredProperties[geometryType.toLowerCase()],
+      p;
 
     // ¿?
     if (!props) {
@@ -134,9 +147,9 @@ var VECNIK = VECNIK || {};
     }
 
     for (var i = 0; i < props.length; ++i) {
-      var prop = props[i];
-      if (this._shaderSrc[prop]) {
-        if (style[propertyMapping[prop]]) {
+      p = props[i];
+      if (this._shaderSrc[p]) {
+        if (style[propertyMapping[p]]) {
           return true;
         }
       }

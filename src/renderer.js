@@ -8,7 +8,8 @@ var VECNIK = VECNIK || {};
     if (!options.shader) {
       throw new Error('VECNIK.Renderer requires a shader');
     }
-    this._shaders = options.shader.length ? options.shader : [options.shader];
+
+    this._shader = options.shader;
   };
 
   VECNIK.Renderer.POINT_RADIUS = 2;
@@ -27,8 +28,8 @@ var VECNIK = VECNIK || {};
   // map state, for the moment only zoom
   proto.render = function(context, collection, mapContext) {
     var
-      shaders = this._shaders,
-      shaderPass,
+      shaders = this._shader.getLayers(),
+      shaderPass, style,
       i, il, j, jl, s, sl,
       feature, coordinates;
 
@@ -40,7 +41,7 @@ var VECNIK = VECNIK || {};
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
 
-        var style = shaderPass.evalStyle(feature.properties, mapContext);
+        style = shaderPass.evalStyle(feature.properties, mapContext);
         if (shaderPass.apply(context, style)) {
           // TODO: stroke/fill here if the style has changed to close previous polygons
         }

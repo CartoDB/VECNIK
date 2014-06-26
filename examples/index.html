@@ -65,10 +65,6 @@ html, body {
 <script>
 var map, code;
 
-function compileShader(shaderData) {
-//  VECNIK.CartoShader.create(shaderData);
-}
-
 document.addEventListener('DOMContentLoaded', function() {
   map = new L.Map('map').setView([40.735291, -73.990731], 16);
   new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
@@ -80,7 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
     debug: false
   });
 
-  var renderer = new VECNIK.Renderer({ shader: VECNIK.CartoShader.create() });
+  var shader = new VECNIK.CartoShader();
+
+  var renderer = new VECNIK.Renderer({ shader: shader });
 
   var vlayer = new VECNIK.Layer({
     provider: provider,
@@ -94,16 +92,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var timer, oldCode = '';
   code.addEventListener('keyup', function() {
-    if (oldCode !== code.value) {
+    if (oldCode === code.value) {
       return;
     }
     clearTimeout(timer);
     timer = setTimeout(function() {
-      compileShader(oldCode = code.value);
+      shader.update(oldCode = code.value);
     }, 300);
   });
 
-  compileShader(oldCode = code.value);
+  shader.update(oldCode = code.value);
 });
 </script>
 </head>
