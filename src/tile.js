@@ -1,8 +1,3 @@
-//========================================
-// vecnik views
-//========================================
-
-// TODO: do we want a render loop, or rendering on demand, or loop+throttling
 
 var VECNIK = VECNIK || {};
 

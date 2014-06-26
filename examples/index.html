@@ -98,10 +98,14 @@ document.addEventListener('DOMContentLoaded', function() {
     clearTimeout(timer);
     timer = setTimeout(function() {
       shader.update(oldCode = code.value);
+      // TODO: redraw may not go through the whole load/parse process
+      vlayer.redraw();
     }, 300);
   });
 
   shader.update(oldCode = code.value);
+  // TODO: redraw may not go through the whole load/parse process
+  vlayer.redraw();
 });
 </script>
 </head>
