@@ -1,3 +1,4 @@
+
 (function(global) {
   global.requestAnimationFrame = global.requestAnimationFrame ||
     global.mozRequestAnimationFrame ||
@@ -16,11 +17,12 @@
 
 }(self || window || global));
 
-module.exports = {
-  CartoDB: {
-    API: require('./provider/cartodb')
-  },
-  CartoShader: require('./shader'),
-  Renderer: require('./renderer'),
-  Layer: require('./layer')
-};
+var VECNIK = require('./core/core');
+VECNIK.CartoDB     = { API: require('./provider/cartodb') };
+VECNIK.CartoShader = require('./shader');
+VECNIK.Renderer    = require('./renderer');
+VECNIK.Layer       = require('./layer');
+VECNIK.GeoJSON     = require('./reader/geojson'); // exposed for web worker
+// TODO: worker should use whatever reader the user defined
+
+module.exports = VECNIK;
