@@ -5177,7 +5177,7 @@ CartoCSS.Layer.prototype = {
   },
 
   /**
-   * return the symbolizers that need to be rendered with 
+   * return the symbolizers that need to be rendered with
    * this style. The order is the rendering order.
    * @returns a list with 3 possible values 'line', 'marker', 'polygon'
    */
@@ -5219,7 +5219,7 @@ CartoCSS.Layer.prototype = {
 
   //
   // given a geoemtry type returns the transformed one acording the CartoCSS
-  // For points there are two kind of types: point and sprite, the first one 
+  // For points there are two kind of types: point and sprite, the first one
   // is a circle, second one is an image sprite
   //
   // the other geometry types are the same than geojson (polygon, linestring...)
@@ -5274,15 +5274,15 @@ CartoCSS.prototype = {
   },
 
   _compile: function(shader) {
-    if(typeof shader === 'string') {
-        shader = eval("(function() { return " + shader +"; })()");
+    if (typeof shader === 'string') {
+      shader = eval("(function() { return " + shader +"; })()");
     }
     this.shader_src = shader;
-    for(var attr in shader) {
-        var c = mapper[attr];
-        if(c) {
-            this.compiled[c] = eval("(function() { return shader[attr]; })();");
-        }
+    for (var attr in shader) {
+      var c = mapper[attr];
+      if(c) {
+          this.compiled[c] = eval("(function() { return shader[attr]; })();");
+      }
     }
   },
 
@@ -5322,7 +5322,7 @@ CartoCSS.prototype = {
         layer.frames = [];
         layer.zoom = tree.Zoom.all;
         var props = def.toJS();
-        console.log("props", props);
+if (this.options.debug) console.log("props", props);
         for(var v in props) {
           var lyr = layer[v] = layer[v] || {
             constant: false,
@@ -5341,18 +5341,18 @@ CartoCSS.prototype = {
       }
 
       var ordered_layers = [];
-      console.log(layers);
+if (this.options.debug) console.log(layers);
 
       var done = {};
       for(var i = 0; i < defs.length; ++i) {
         var def = defs[i];
         var k = defKey(def);
         var layer = layers[k];
-        if(!done[k]) {
-          if(this.options.debug) console.log("**", k);
+        if (!done[k]) {
+if (this.options.debug) console.log("**", k);
           for(var prop in layer) {
             if (prop !== 'zoom' && prop !== 'frames' && prop !== 'symbolizers') {
-              if(this.options.debug) console.log("*", prop);
+              if (this.options.debug) console.log("*", prop);
               layer[prop].style = this._createFn(layer[prop].js);
               layer.symbolizers.push(layer[prop].symbolizer);
               layer.symbolizers = _.uniq(layer.symbolizers);
@@ -5380,19 +5380,18 @@ CartoCSS.prototype = {
 
 
 carto.RendererJS = function (options) {
-    this.options = options || {};
-    this.options.mapnik_version = this.options.mapnik_version || 'latest';
+  this.options = options || {};
+  this.options.mapnik_version = this.options.mapnik_version || 'latest';
 };
 
 // Prepare a javascript object which contains the layers
 carto.RendererJS.prototype.render = function render(cartocss, callback) {
-    tree.Reference.setVersion(this.options.mapnik_version);
-    return new CartoCSS(cartocss, this.options);
-}
+  tree.Reference.setVersion(this.options.mapnik_version);
+  return new CartoCSS(cartocss, this.options);
+};
 
-if(typeof(module) !== 'undefined') {
+if (typeof(module) !== 'undefined') {
   module.exports = carto.RendererJS;
 }
-
 
 })(require('../carto'));

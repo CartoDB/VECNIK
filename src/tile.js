@@ -1,47 +1,41 @@
 
-var VECNIK = VECNIK || {};
+var Tile = module.exports = function(options) {
+  options = options || {};
 
-(function(VECNIK) {
+  var
+    canvas  = this._canvas  = document.createElement('CANVAS'),
+    context = this._context = canvas.getContext('2d');
 
-  VECNIK.Tile = function(options) {
-    options = options || {};
+  canvas.width  = Tile.SIZE;
+  canvas.height = Tile.SIZE;
 
-    var
-      canvas  = this._canvas  = document.createElement('CANVAS'),
-      context = this._context = canvas.getContext('2d');
+  canvas.style.width  = canvas.width  +'px';
+  canvas.style.height = canvas.height +'px';
 
-    canvas.width  = VECNIK.Tile.SIZE;
-    canvas.height = VECNIK.Tile.SIZE;
+  context.mozImageSmoothingEnabled = false;
+  context.webkitImageSmoothingEnabled = false;
 
-    canvas.style.width  = canvas.width  +'px';
-    canvas.style.height = canvas.height +'px';
+  this._renderer = options.renderer;
+  this._data = [];
+  this._coords = options.coords;
 
-    context.mozImageSmoothingEnabled = false;
-    context.webkitImageSmoothingEnabled = false;
+  var self = this;
+  options.provider.load(options.coords, function(data) {
+    self._data = data;
+    self.render();
+  });
+};
 
-    this._renderer = options.renderer;
-    this._data = [];
-    this._coords = options.coords;
+Tile.SIZE = 256;
 
-    var self = this;
-    options.provider.load(options.coords, function(data) {
-      self._data = data;
-      self.render();
-    });
-  };
+var proto = Tile.prototype;
 
-  VECNIK.Tile.SIZE = 256;
+proto.getDomElement = function() {
+  return this._canvas;
+};
 
-  var proto = VECNIK.Tile.prototype;
-
-  proto.getDomElement = function() {
-    return this._canvas;
-  };
-
-  proto.render = function() {
-    this._renderer.render(this._context, this._data, {
-      zoom: this._coords.z
-    });
-  };
-
-})(VECNIK);
+proto.render = function() {
+  this._renderer.render(this._context, this._data, {
+    zoom: this._coords.z
+  });
+};

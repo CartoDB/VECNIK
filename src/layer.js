@@ -1,40 +1,36 @@
 
-var VECNIK = VECNIK || {};
+var Tile = require('./tile');
 
-(function(VECNIK, L) {
+var Layer = module.exports = L.TileLayer.extend({
 
-  VECNIK.Layer = L.TileLayer.extend({
+  options: {
+    maxZoom: 20
+  },
 
-    options: {
-      maxZoom: 20
-    },
-
-    initialize: function(options) {
-      // applies to a single tile but we don'T want to check on per tile basis
-      if (!options.provider) {
-        throw new Error('VECNIK.Tile requires a data provider');
-      }
-      this._provider = options.provider;
-
-      // TODO: use internal renderer as default
-      // applies to a single tile but we don'T want to check on per tile basis
-      if (!options.renderer) {
-        throw new Error('VECNIK.Tile requires a renderer');
-      }
-      this._renderer = options.renderer;
-
-      L.TileLayer.prototype.initialize.call(this, '', options);
-    },
-
-    createTile: function(coords) {
-      var tile = new VECNIK.Tile({
-        coords: coords,
-        provider: this._provider,
-        renderer: this._renderer
-      });
-
-      return tile.getDomElement();
+  initialize: function(options) {
+    // applies to a single tile but we don't want to check on per tile basis
+    if (!options.provider) {
+      throw new Error('VECNIK.Tile requires a data provider');
     }
-  });
+    this._provider = options.provider;
 
-})(VECNIK, L);
+    // TODO: use internal renderer as default
+    // applies to a single tile but we don'T want to check on per tile basis
+    if (!options.renderer) {
+      throw new Error('VECNIK.Tile requires a renderer');
+    }
+    this._renderer = options.renderer;
+
+    L.TileLayer.prototype.initialize.call(this, '', options);
+  },
+
+  createTile: function(coords) {
+    var tile = new Tile({
+      coords: coords,
+      provider: this._provider,
+      renderer: this._renderer
+    });
+
+    return tile.getDomElement();
+  }
+});

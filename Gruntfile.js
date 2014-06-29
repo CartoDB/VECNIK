@@ -15,6 +15,10 @@ module.exports = function(grunt) {
       }
     },
 
+    dummyCombine: {
+      script: 'node node_modules/browserify/bin/cmd.js src/main.js -s VECNIK -o ./vecnik.js'
+    },
+
     uglify: {
       options: {
         banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'

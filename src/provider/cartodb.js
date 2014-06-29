@@ -1,49 +1,40 @@
+var CartoDB = require('./cartodb.sql');
+var Projection = require('../mercator');
+var Format = require('../reader/geojson');
 
-//========================================
-// CartoDB data provider
-//========================================
+var Provider = module.exports = function(options) {
+  this._options = options;
+  this._projection = new Projection();
+  this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
 
-var VECNIK = VECNIK || {};
+  if (this._options.ENABLE_SIMPLIFY === undefined) {
+    this._options.ENABLE_SIMPLIFY = true;
+  }
+  if (this._options.ENABLE_SNAPPING === undefined) {
+    this._options.ENABLE_SNAPPING = true;
+  }
+  if (this._options.ENABLE_CLIPPING === undefined) {
+    this._options.ENABLE_CLIPPING = true;
+  }
+  if (this._options.ENABLE_FIXING === undefined) {
+    this._options.ENABLE_FIXING = true;
+  }
+};
 
-(function(VECNIK) {
+var proto = Provider.prototype;
 
-  VECNIK.CartoDB = VECNIK.CartoDB || {};
+proto._debug = function(msg) {
+  if (this._options.debug) {
+    console.log(msg);
+  }
+};
 
-  VECNIK.CartoDB.API = function(options) {
-    this._options = options;
-    this._projection = new VECNIK.MercatorProjection();
-    this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
+proto._getUrl = function(x, y, zoom) {
+  var sql = CartoDB.SQL(this._projection, this._options.table, x, y, zoom, this._options);
+  this._debug(sql);
+  return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
+};
 
-    if (this._options.ENABLE_SIMPLIFY === undefined) {
-      this._options.ENABLE_SIMPLIFY = true;
-    }
-    if (this._options.ENABLE_SNAPPING === undefined) {
-      this._options.ENABLE_SNAPPING = true;
-    }
-    if (this._options.ENABLE_CLIPPING === undefined) {
-      this._options.ENABLE_CLIPPING = true;
-    }
-    if (this._options.ENABLE_FIXING === undefined) {
-      this._options.ENABLE_FIXING = true;
-    }
-  };
-
-  var proto = VECNIK.CartoDB.API.prototype;
-
-  proto._debug = function(msg) {
-    if (this._options.debug) {
-      console.log(msg);
-    }
-  };
-
-  proto._getUrl = function(x, y, zoom) {
-    var sql = VECNIK.CartoDB.SQL(this._projection, this._options.table, x, y, zoom, this._options);
-    this._debug(sql);
-    return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
-  };
-
-  proto.load = function(tileCoords, callback) {
-    VECNIK.GeoJSON.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), tileCoords, this._projection, callback);
-  };
-
-})(VECNIK);
+proto.load = function(tileCoords, callback) {
+  Format.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), tileCoords, this._projection, callback);
+};
