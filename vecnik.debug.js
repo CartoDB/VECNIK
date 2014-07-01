@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.VECNIK=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 
 var Core = module.exports = {};
 
@@ -18,7 +18,7 @@ Core.load = function(url, callback) {
   return req;
 };
 
-},{}],2:[function(require,module,exports){
+},{}],2:[function(_dereq_,module,exports){
 
 var Events = module.exports = function() {
   this._listeners = {};
@@ -44,7 +44,7 @@ proto.emit = function(type, payload) {
   }
 };
 
-},{}],3:[function(require,module,exports){
+},{}],3:[function(_dereq_,module,exports){
 
 var Geometry = module.exports = {};
 
@@ -52,12 +52,12 @@ Geometry.POINT   = 'Point';
 Geometry.LINE    = 'LineString';
 Geometry.POLYGON = 'Polygon';
 
-},{}],4:[function(require,module,exports){
+},{}],4:[function(_dereq_,module,exports){
 
 // do this only when Leaflet exists (aka don't when run in web worker)
-if (L && L.TileLayer) {
-  var Tile = require('./tile');
-  var Profiler = require('./profiler');
+if (typeof L !== 'undefined') {
+  var Tile = _dereq_('./tile');
+  var Profiler = _dereq_('./profiler');
 
   var Layer = module.exports = L.TileLayer.extend({
 
@@ -111,7 +111,7 @@ if (L && L.TileLayer) {
   });
 }
 
-},{"./profiler":7,"./tile":14}],5:[function(require,module,exports){
+},{"./profiler":7,"./tile":14}],5:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -132,22 +132,21 @@ if (L && L.TileLayer) {
 
 }(self || window || global));
 
-var VECNIK = require('./core/core');
-debugger
-VECNIK.CartoDB     = { API: require('./provider/cartodb') };
-VECNIK.CartoShader = require('./shader');
-VECNIK.Renderer    = require('./renderer');
-VECNIK.Layer       = require('./layer');
-VECNIK.GeoJSON     = require('./reader/geojson'); // exposed for web worker
+var VECNIK = _dereq_('./core/core');
+VECNIK.CartoDB     = { API: _dereq_('./provider/cartodb') };
+VECNIK.CartoShader = _dereq_('./shader');
+VECNIK.Renderer    = _dereq_('./renderer');
+VECNIK.Layer       = _dereq_('./layer');
+VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
 // TODO: worker should use whatever reader the user defined
-VECNIK.Profiler    = require('./profiler');
+VECNIK.Profiler    = _dereq_('./profiler');
 
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./core/core":1,"./layer":4,"./profiler":7,"./provider/cartodb":8,"./reader/geojson":10,"./renderer":11,"./shader":12}],6:[function(require,module,exports){
+},{"./core/core":1,"./layer":4,"./profiler":7,"./provider/cartodb":8,"./reader/geojson":10,"./renderer":11,"./shader":12}],6:[function(_dereq_,module,exports){
 
-var Tile = require('./tile');
+var Tile = _dereq_('./tile');
 
 // TODO: somehow Tile.SIZE gets lost on tile creation
 //var tileSize = Tile ? Tile.SIZE : 256;
@@ -229,7 +228,7 @@ MercatorProjection.prototype.latLonToTilePoint = function(lat, lon, tileX, tileY
   return new Point(Math.round(pixelCoordinate.x-tilePixelPos.x), Math.round(pixelCoordinate.y-tilePixelPos.y));
 };
 
-},{"./tile":14}],7:[function(require,module,exports){
+},{"./tile":14}],7:[function(_dereq_,module,exports){
 /*
 # metrics profiler
 
@@ -375,10 +374,10 @@ Profiler.metric = function(name) {
 module.exports = Profiler;
 
 
-},{}],8:[function(require,module,exports){
-var CartoDB = require('./cartodb.sql');
-var Projection = require('../mercator');
-var Format = require('../reader/geojson');
+},{}],8:[function(_dereq_,module,exports){
+var CartoDB = _dereq_('./cartodb.sql');
+var Projection = _dereq_('../mercator');
+var Format = _dereq_('../reader/geojson');
 
 var Provider = module.exports = function(options) {
   this._options = options;
@@ -417,7 +416,7 @@ proto.load = function(tileCoords, callback) {
   Format.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), tileCoords, this._projection, callback);
 };
 
-},{"../mercator":6,"../reader/geojson":10,"./cartodb.sql":9}],9:[function(require,module,exports){
+},{"../mercator":6,"../reader/geojson":10,"./cartodb.sql":9}],9:[function(_dereq_,module,exports){
 
 var CartoDB = module.exports = {};
 
@@ -516,10 +515,10 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env; // +' LIMIT 100';
 };
 
-},{}],10:[function(require,module,exports){
-var Core = require('../core/core');
-var Geometry = require('../geometry');
-var Projection = require('../mercator');
+},{}],10:[function(_dereq_,module,exports){
+var Core = _dereq_('../core/core');
+var Geometry = _dereq_('../geometry');
+var Projection = _dereq_('../mercator');
 
 function _addPoint(geoCoords, projection, properties, tileCoords, dataByRef) {
   dataByRef.push({
@@ -651,9 +650,9 @@ Reader.convertForWorker = function(collection, tileCoords) {
   return _convertAndReproject(collection, projection, tileCoords);
 };
 
-},{"../core/core":1,"../geometry":3,"../mercator":6}],11:[function(require,module,exports){
+},{"../core/core":1,"../geometry":3,"../mercator":6}],11:[function(_dereq_,module,exports){
 
-var Geometry = require('./geometry');
+var Geometry = _dereq_('./geometry');
 
 var orderMethods = {};
 orderMethods[Geometry.POLYGON] = 'fill';
@@ -746,10 +745,10 @@ proto.render = function(context, collection, mapContext) {
   }
 };
 
-},{"./geometry":3}],12:[function(require,module,exports){
+},{"./geometry":3}],12:[function(_dereq_,module,exports){
 
-var Geometry = require('./geometry');
-var ShaderLayer = require('./shader.layer');
+var Geometry = _dereq_('./geometry');
+var ShaderLayer = _dereq_('./shader.layer');
 
 var Shader = module.exports = function(style) {
   this.update(style);
@@ -795,10 +794,10 @@ proto.getLayers = function() {
   return this._layers;
 };
 
-},{"./geometry":3,"./shader.layer":13}],13:[function(require,module,exports){
+},{"./geometry":3,"./shader.layer":13}],13:[function(_dereq_,module,exports){
 
-var Geometry = require('./geometry');
-var Events = require('./core/events');
+var Geometry = _dereq_('./geometry');
+var Events = _dereq_('./core/events');
 
 
 // properties needed for each geometry type to be renderered
@@ -950,7 +949,7 @@ proto.needsRender = function(geometryType, style) {
   return false;
 };
 
-},{"./core/events":2,"./geometry":3}],14:[function(require,module,exports){
+},{"./core/events":2,"./geometry":3}],14:[function(_dereq_,module,exports){
 
 var Tile = module.exports = function(options) {
   options = options || {};
@@ -993,4 +992,6 @@ proto.render = function() {
   });
 };
 
-},{}]},{},[5]);
+},{}]},{},[5])
+(5)
+});

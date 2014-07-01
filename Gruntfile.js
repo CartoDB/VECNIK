@@ -1,12 +1,5 @@
 module.exports = function(grunt) {
 
-  var files = [
-    'examples/lib/leaflet08/leaflet-src.js',
-    'vecnik.js',
-    'examples/lib/underscore.js',
-    'examples/lib/carto.js'
-  ];
-
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
@@ -61,6 +54,9 @@ module.exports = function(grunt) {
 
     browserify: {
       js: {
+        options: {
+          browserifyOptions: { standalone: 'VECNIK' }
+        },
         src: './src/main.js',
         dest: './<%= pkg.name %>.debug.js'
       }
@@ -77,7 +73,7 @@ module.exports = function(grunt) {
 //  grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-execute');
   grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-browserify')
+  grunt.loadNpmTasks('grunt-browserify');
 
   grunt.registerTask('default', 'Create development build', function() {
     grunt.task.run('browserify');

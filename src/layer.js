@@ -1,6 +1,6 @@
 
 // do this only when Leaflet exists (aka don't when run in web worker)
-if (L && L.TileLayer) {
+if (typeof L !== 'undefined') {
   var Tile = require('./tile');
   var Profiler = require('./profiler');
 
