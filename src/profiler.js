@@ -28,7 +28,6 @@
   }
 ```
 */
-(function(exports) {
 
 var MAX_HISTORY = 1024;
 function Profiler() {}
@@ -141,6 +140,5 @@ Profiler.metric = function(name) {
   return new Metric(name);
 };
 
-exports.Profiler = Profiler;
+module.exports = Profiler;
 
-})(typeof exports === "undefined" ? this : exports);
