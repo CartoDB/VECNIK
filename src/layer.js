@@ -1,6 +1,6 @@
 
 // do this only when Leaflet exists (aka don't when run in web worker)
-if (typeof L !== 'undefined') {
+if (L && L.TileLayer) {
   var Tile = require('./tile');
 
   var Layer = module.exports = L.TileLayer.extend({
