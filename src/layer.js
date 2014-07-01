@@ -23,7 +23,7 @@ if (L && L.TileLayer) {
         throw new Error('VECNIK.Tile requires a renderer');
       }
       this._renderer = options.renderer;
-      this.tiles = {}
+      this.tiles = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
@@ -40,7 +40,7 @@ if (L && L.TileLayer) {
         renderer: this._renderer
       });
 
-      var key = this._tileCoordsToKey(coords)
+      var key = this._tileCoordsToKey(coords);
       this.tiles[key] = tile;
 
       return tile.getDomElement();
