@@ -2,6 +2,7 @@
 // do this only when Leaflet exists (aka don't when run in web worker)
 if (typeof L !== 'undefined') {
   var Tile = require('./tile');
+  var Profiler = require('./profiler');
 
   var Layer = module.exports = L.TileLayer.extend({
 
@@ -22,8 +23,14 @@ if (typeof L !== 'undefined') {
         throw new Error('VECNIK.Tile requires a renderer');
       }
       this._renderer = options.renderer;
+      this.tiles = {}
 
       L.TileLayer.prototype.initialize.call(this, '', options);
+    },
+
+    _removeTile: function(key) {
+      delete this.tiles[key];
+      L.TileLayer.prototype._removeTile.call(this, key);
     },
 
     createTile: function(coords) {
@@ -33,7 +40,18 @@ if (typeof L !== 'undefined') {
         renderer: this._renderer
       });
 
+      var key = this._tileCoordsToKey(coords)
+      this.tiles[key] = tile;
+
       return tile.getDomElement();
+    },
+
+    redraw: function() {
+      var timer = Profiler.metric('tiles.render.time').start();
+      for(var k in this.tiles) {
+        this.tiles[k].render();
+      }
+      timer.end();
     }
   });
 }
