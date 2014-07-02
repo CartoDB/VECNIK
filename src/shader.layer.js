@@ -89,6 +89,7 @@ proto.evalStyle = function(featureProperties, mapContext) {
   return style;
 },
 
+// TODO: skip text related styles
 proto.apply = function(context, style) {
   var
     currentStyle,
@@ -123,6 +124,11 @@ proto.apply = function(context, style) {
     }
   }
   return changed;
+};
+
+// TODO: only do text related styles
+proto.textApply = function(context, style) {
+  return this.apply(context, style);
 };
 
 proto.renderOrder = function() {

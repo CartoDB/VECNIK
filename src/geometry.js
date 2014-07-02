@@ -54,16 +54,16 @@ proto.getCentroid = function(featureParts) {
   }
 
   if (lenSum) {
-    return [
-      (xTmp/(3*lenSum)) + startX <<0,
-      (yTmp/(3*lenSum)) + startY <<0
-    ];
+    return {
+      x: (xTmp/(3*lenSum)) + startX <<0,
+      y: (yTmp/(3*lenSum)) + startY <<0
+    };
   }
 
-  return [
-    startX,
-    startY
-  ];
+  return {
+    x: startX,
+    y: startY
+  };
 };
 
 function getBBox(coordinates) {

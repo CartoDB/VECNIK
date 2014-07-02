@@ -40,25 +40,25 @@ proto.render = function(layer, context, collection, mapContext) {
     shaderPass, style,
     i, il, j, jl, s, sl,
     feature, coordinates,
-		labelPositions, pos;
+		labels, pos;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
   for (s = 0, sl = shaders.length; s < sl; s++) {
     shaderPass = shaders[s];
 
-		labelPositions = [];
+		labels = [];
 
     for (i = 0, il = collection.length; i < il; i++) {
       feature = collection[i];
 
-      // TODO: we need a better place to call this as labels are drawn in another pass
-      // if lable has to be drawn:
-      if (pos = this._getLabelPosition(layer, feature)) {
-        labelPositions.push(pos);
-      }
-
       style = shaderPass.evalStyle(feature.properties, mapContext);
+
+      // CartoCSS => text-name:feature.property.columnName
+      // if label has to be drawn:
+      if (pos = this._getLabelPosition(layer, feature)) {
+        labels.push({ position:pos, text:feature.groupId, style:style });
+      }
 
       coordinates = feature.coordinates;
 
@@ -99,7 +99,37 @@ proto.render = function(layer, context, collection, mapContext) {
       }
     }
 
-    // console.log(JSON.stringify(labelPositions));
+    // console.log(JSON.stringify(labels));
+    // TODO: split text rendering (and maybe render passes in general) into separate layers
+
+    var label;
+
+context.lineCap = 'round';
+context.lineJoin = 'round';
+
+    context.strokeStyle = 'rgba(255,255,255,1)';
+
+    context.lineWidth = 4; // text outline width
+    context.font = 'bold 11px sans-serif';
+    context.textAlign = 'center';
+//var metrics = context.measureText(text);
+//var width = metrics.width;
+// context.textBaseline = 'bottom';
+
+    for (i = 0, il = labels.length; i < il; i++) {
+      label = labels[i];
+      // TODO: shaderPass.needsRender() not handled yet
+//    shaderPass.textApply(context, label.style);
+      context.strokeText(label.text, label.position.x, label.position.y);
+    }
+
+
+    context.fillStyle = '#000';
+    for (i = 0, il = labels.length; i < il; i++) {
+      label = labels[i];
+      context.fillText(label.text, label.position.x, label.position.y);
+    }
+
   }
 };
 
