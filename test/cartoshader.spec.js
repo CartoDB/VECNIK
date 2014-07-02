@@ -80,9 +80,9 @@ var shader, canvas, ctx;
   test('create a interactivity shader', function() {
     var hit = shader.hitShader('id');
     var style = hit.evalStyle({ id: 0 });
-    equal(style.fillStyle, 'rgb(0,0,0)');
-    style = hit.evalStyle({ id: 1 });
     equal(style.fillStyle, 'rgb(1,0,0)');
+    style = hit.evalStyle({ id: 1 });
+    equal(style.fillStyle, 'rgb(2,0,0)');
     style = hit.evalStyle({ id: 256 });
-    equal(style.strokeStyle, 'rgb(0,1,0)');
+    equal(style.strokeStyle, 'rgb(1,1,0)');
   });

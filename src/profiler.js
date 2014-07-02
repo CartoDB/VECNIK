@@ -56,7 +56,7 @@ Profiler.new_value = function (name, value) {
 };
 
 Profiler.print_stats = function () {
-  for (k in Profiler.metrics) {
+  for (var k in Profiler.metrics) {
     var t = Profiler.metrics[k];
     console.log(" === " + k + " === ");
     console.log(" max: " + t.max);
@@ -90,7 +90,7 @@ Metric.prototype = {
 
   //
   // finish a time measurement and register it
-  // ``start`` should be called first, if not this 
+  // ``start`` should be called first, if not this
   // function does not take effect
   //
   end: function() {
@@ -101,7 +101,7 @@ Metric.prototype = {
   },
 
   //
-  // increments the value 
+  // increments the value
   // qty: how many, default = 1
   //
   inc: function(qty) {
@@ -110,7 +110,7 @@ Metric.prototype = {
   },
 
   //
-  // decrements the value 
+  // decrements the value
   // qty: how many, default = 1
   //
   dec: function(qty) {

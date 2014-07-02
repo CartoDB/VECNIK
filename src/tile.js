@@ -17,6 +17,7 @@ var Tile = module.exports = function(options) {
   context.mozImageSmoothingEnabled = false;
   context.webkitImageSmoothingEnabled = false;
 
+  this._layer = options.layer;
   this._renderer = options.renderer;
   this._data = [];
   this._coords = options.coords;
@@ -44,7 +45,7 @@ proto.getDomElement = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this._context, this._data, {
+  this._renderer.render(this._layer, this._context, this._data, {
     zoom: this._coords.z
   });
 };

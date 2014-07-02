@@ -18,14 +18,14 @@
 }(self || window || global));
 
 var VECNIK = require('./core/core');
-VECNIK.CartoDB = { API: require('./provider/cartodb') };
+VECNIK.CartoDB     = { API: require('./provider/cartodb') };
 VECNIK.CartoShader = require('./shader');
-VECNIK.Renderer = require('./renderer');
-VECNIK.Layer = require('./layer');
-VECNIK.GeoJSON = require('./reader/geojson'); // exposed for web worker
-VECNIK.Profiler = require('./profiler');
 VECNIK.CartoShaderLayer = require('./shader.layer');
-VECNIK.Geometry = require('./geometry');
+VECNIK.Renderer    = require('./renderer');
+VECNIK.Layer       = require('./layer');
 // TODO: worker should use whatever reader the user defined
+VECNIK.GeoJSON     = require('./reader/geojson'); // exposed for web worker
+VECNIK.Geometry    = require('./geometry');
+VECNIK.Profiler    = require('./profiler');
 
 module.exports = VECNIK;

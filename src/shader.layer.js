@@ -118,7 +118,7 @@ proto.apply = function(context, style) {
     var id = context._shId;
     if (!id) {
       id = context._shId = Object.keys(currentContextStyle).length + 1;
-      currentContextStyle[id] = {}
+      currentContextStyle[id] = {};
     }
     currentStyle = currentContextStyle[id];
     if (currentStyle[prop] !== val) {

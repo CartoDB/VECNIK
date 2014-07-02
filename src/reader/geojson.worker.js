@@ -1,4 +1,4 @@
-importScripts('../../vecnik.js');
+importScripts('../../vecnik.debug.js');
 
 self.onmessage = function(e) {
   VECNIK.load(e.data.url, function(collection) {
