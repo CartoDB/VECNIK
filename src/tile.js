@@ -5,14 +5,24 @@ var Tile = module.exports = function(options) {
   options = options || {};
 
   var
-    canvas  = this._canvas  = document.createElement('CANVAS'),
-    context = this._context = canvas.getContext('2d');
+    container = this._container = document.createElement('DIV'),
+    canvas    = document.createElement('CANVAS'),
+    context   = this._context = canvas.getContext('2d'),
+    overlay   = this._overlay = document.createElement('DIV');
+
+  container.appendChild(canvas);
+  container.appendChild(overlay);
 
   canvas.width  = Tile.SIZE;
   canvas.height = Tile.SIZE;
 
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
+  canvas.style.zIndex = 0;
+
+  overlay.style.width  = canvas.width  +'px';
+  overlay.style.height = canvas.height +'px';
+  overlay.style.backgroundColor = 'rgba(240,220,0,0.5)';
 
   context.mozImageSmoothingEnabled = false;
   context.webkitImageSmoothingEnabled = false;
@@ -41,11 +51,14 @@ function createCanvas() {
 var proto = Tile.prototype;
 
 proto.getDomElement = function() {
-  return this._canvas;
+  return this._container;
 };
 
 proto.render = function() {
   this._renderer.render(this._layer, this._context, this._data, {
+    zoom: this._coords.z
+  });
+  this._renderer.renderLabels(this._layer, this._overlay, this._data, {
     zoom: this._coords.z
   });
 };

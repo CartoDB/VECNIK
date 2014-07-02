@@ -19,7 +19,7 @@ Renderer.POINT_RADIUS = 2;
 var proto = Renderer.prototype;
 
 proto.shader = function(_) {
-  if (_) { 
+  if (_) {
     this._shader = _;
     return this;
   }
@@ -47,8 +47,7 @@ proto.render = function(layer, context, collection, mapContext) {
     shaders = this._shader.getLayers(),
     shaderPass, style,
     i, il, j, jl, s, sl,
-    feature, coordinates,
-		labels, pos;
+    feature, coordinates;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
@@ -61,12 +60,6 @@ proto.render = function(layer, context, collection, mapContext) {
       feature = collection[i];
 
       style = shaderPass.evalStyle(feature.properties, mapContext);
-
-      // CartoCSS => text-name:feature.property.columnName
-      // if label has to be drawn:
-      if (pos = this._getLabelPosition(layer, feature)) {
-        labels.push({ position:pos, text:feature.groupId, style:style });
-      }
 
       coordinates = feature.coordinates;
 
@@ -106,40 +99,79 @@ proto.render = function(layer, context, collection, mapContext) {
         }
       }
     }
-
-    // console.log(JSON.stringify(labels));
-    // TODO: split text rendering (and maybe render passes in general) into separate layers
-
-    var label;
-
-context.lineCap = 'round';
-context.lineJoin = 'round';
-
-    context.strokeStyle = 'rgba(255,255,255,1)';
-
-    context.lineWidth = 4; // text outline width
-    context.font = 'bold 11px sans-serif';
-    context.textAlign = 'center';
-//var metrics = context.measureText(text);
-//var width = metrics.width;
-// context.textBaseline = 'bottom';
-
-    for (i = 0, il = labels.length; i < il; i++) {
-      label = labels[i];
-      // TODO: shaderPass.needsRender() not handled yet
-//    shaderPass.textApply(context, label.style);
-      context.strokeText(label.text, label.position.x, label.position.y);
-    }
-
-
-    context.fillStyle = '#000';
-    for (i = 0, il = labels.length; i < il; i++) {
-      label = labels[i];
-      context.fillText(label.text, label.position.x, label.position.y);
-    }
-
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+// render the specified collection in the contenxt
+// mapContext contains the data needed for rendering related to the
+// map state, for the moment only zoom
+proto.renderLabels = function(layer, container, collection, mapContext) {
+  var
+    shaders = this._shader.getLayers(),
+    shaderPass, style,
+    i, il, s, sl,
+    label,
+    feature,
+		pos;
+
+  container.innerHTML = '';
+
+  // TODO: use disconnected DOM
+  for (s = 0, sl = shaders.length; s < sl; s++) {
+    shaderPass = shaders[s];
+
+    for (i = 0, il = collection.length; i < il; i++) {
+      feature = collection[i];
+
+      style = shaderPass.evalStyle(feature.properties, mapContext);
+
+      // CartoCSS => text-name:feature.property.columnName
+      // if label has to be drawn:
+      if (pos = this._getLabelPosition(layer, feature)) {
+//      shaderPass.textApply(context, label.style);
+        label = document.createElement('LABEL');
+
+label.innerText = feature.groupId;
+label.style.color = 'rgba(255,255,255,1)';
+label.style.font = 'bold 11px sans-serif';
+//label.style.textAlign = 'center';
+label.style.position = 'absolute';
+//label.style.display = 'block';
+label.style.left = pos.x +'px';
+label.style.top = pos.y +'px';
+label.style.textShadow = '0.5px  0.5px 0.5px black, 0.5px -1px 0.5px black, -1px 0.5px 0.5px black, -1px -1px 0.5px black';
+label.style.cursor = 'text';
+//label.style.pointerEvents = 'none';
+      label.addEventListener('selectstart', function(e) {
+        e.stopPropagation();
+        console.log('sel.start');
+      });
+
+
+        container.appendChild(label);
+      }
+    }
+  }
+};
+
+
+
+
+
+
+
+
+
 
 proto._getLabelPosition = function(layer, feature) {
   var featureParts = layer.getFeatureParts(feature.groupId);
