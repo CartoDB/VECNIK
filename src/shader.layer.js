@@ -51,6 +51,10 @@ var ShaderLayer = module.exports = function(shader, renderOrder) {
 
 var proto = ShaderLayer.prototype = new Events();
 
+proto.clone = function() {
+  return new ShaderLayer(this._shaderSrc, this._renderOrder);
+}
+
 proto.compile = function(shader) {
   this._shaderSrc = shader;
   if (typeof shader === 'string') {
@@ -151,3 +155,40 @@ proto.needsRender = function(geometryType, style) {
   }
   return false;
 };
+
+var RGB2Int = function(r,g,b){
+    return r | (g<<8) | (b<<16);
+};
+
+var Int2RGB = function(input){
+    var r = input & 0xff;
+    var g = (input >> 8) & 0xff;
+    var b = (input >> 16) & 0xff;
+    return [r,g,b];
+};
+
+
+/**
+ * return a shader clone ready for hit test.
+ * @keyAttribute: string with the attribute used as key (usually the feature id)
+ */
+proto.hitShader = function(keyAttribute) {
+  var hit = this.clone();
+  // replace all fillStyle and strokeStyle props to use a custom
+  // color
+  for(var k in hit._compiled) {
+    if (k === 'fillStyle' || k === 'strokeStyle') {
+      //var p = hit._compiled[k];
+      hit._compiled[k] = function(featureProperties, mapContext) {
+        return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
+      }
+    }
+  }
+  return hit;
+}
+
+ShaderLayer.RGB2Int = RGB2Int;
+ShaderLayer.Int2RGB = Int2RGB;
+
+
+

@@ -18,6 +18,14 @@ Renderer.POINT_RADIUS = 2;
 
 var proto = Renderer.prototype;
 
+proto.shader = function(_) {
+  if (_) { 
+    this._shader = _;
+    return this;
+  }
+  return this._shader;
+};
+
 proto._drawLineString = function(context, coordinates) {
   context.moveTo(coordinates[0], coordinates[1]);
   for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
