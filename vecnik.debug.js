@@ -257,16 +257,19 @@ if (typeof L !== 'undefined') {
 var VECNIK = _dereq_('./core/core');
 VECNIK.CartoDB     = { API: _dereq_('./provider/cartodb') };
 VECNIK.CartoShader = _dereq_('./shader');
+VECNIK.CartoShaderLayer = _dereq_('./shader.layer');
 VECNIK.Renderer    = _dereq_('./renderer');
 VECNIK.Layer       = _dereq_('./layer');
-VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
 // TODO: worker should use whatever reader the user defined
+VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
+VECNIK.Profiler    = _dereq_('./profiler');
+VECNIK.Geometry    = _dereq_('./geometry');
 VECNIK.Profiler    = _dereq_('./profiler');
 
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./core/core":1,"./layer":4,"./profiler":7,"./provider/cartodb":8,"./reader/geojson":10,"./renderer":11,"./shader":12}],6:[function(_dereq_,module,exports){
+},{"./core/core":1,"./geometry":3,"./layer":4,"./profiler":7,"./provider/cartodb":8,"./reader/geojson":10,"./renderer":11,"./shader":12,"./shader.layer":13}],6:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
