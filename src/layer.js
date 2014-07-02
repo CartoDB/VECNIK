@@ -41,7 +41,7 @@ if (typeof L !== 'undefined') {
         var key = self._tileCoordsToKey(tile);
         var tile_x = pos.x - 256*tile.x;
         var tile_y = pos.y - 256*tile.y;
-        console.log(self.tiles[key].featureAt(tile_x, tile_y));
+        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
       });
 
       L.TileLayer.prototype.onAdd.call(this, map);
