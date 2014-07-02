@@ -52,6 +52,108 @@ Geometry.POINT   = 'Point';
 Geometry.LINE    = 'LineString';
 Geometry.POLYGON = 'Polygon';
 
+var proto = Geometry;
+
+proto.getCentroid = function(featureParts) {
+  var feature;
+
+  if (!featureParts || !featureParts.length) {
+    return;
+  }
+
+  if (featureParts.length > 1) {
+    feature = getLargest(featureParts); //coords+type
+  } else {
+    feature = featureParts[0];
+  }
+
+  if (!feature) {
+    return;
+  }
+
+  var coordinates = feature.coordinates;
+  if (feature.type === Geometry.POINT) {
+    return [coordinates[0], coordinates[1]]; // resolving array buffer
+  }
+
+  if (feature.type === Geometry.POLYGON) {
+    coordinates = coordinates[0];
+  }
+
+  var
+    startX = coordinates[0], startY = coordinates[1],
+    xTmp = 0, yTmp = 0,
+    dx0, dy0,
+    dx1, dy1,
+    len, lenSum = 0;
+
+  for (var i = 0, il = coordinates.length-3; i < il; i+=2) {
+    dx0 = coordinates[i  ]-startX;
+    dy0 = coordinates[i+1]-startY;
+    dx1 = coordinates[i+2]-startX;
+    dy1 = coordinates[i+3]-startY;
+
+    len = dx0*dy1 - dx1*dy0;
+
+    lenSum += len;
+    xTmp += (dx1+dx0) * len;
+    yTmp += (dy1+dy0) * len;
+  }
+
+  if (lenSum) {
+    return [
+      (xTmp/(3*lenSum)) + startX <<0,
+      (yTmp/(3*lenSum)) + startY <<0
+    ];
+  }
+
+  return [
+    startX,
+    startY
+  ];
+};
+
+function getBBox(coordinates) {
+  var
+    min = Math.min,
+    max = Math.max,
+    minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity;
+
+  for (var i = 0, il = coordinates.length-1; i < il; i+=2) {
+    minX = min(minX, coordinates[i]);
+    maxX = max(maxX, coordinates[i]);
+    minY = min(minY, coordinates[i+1]);
+    maxY = max(maxY, coordinates[i+1]);
+  }
+
+  return { minX:minX, minY:minY, maxX:maxX, maxY:maxY };
+}
+
+function getArea(coordinates) {
+  var
+    bbox = getBBox(coordinates),
+    dx = bbox.maxX-bbox.minX,
+    dy = bbox.maxY-bbox.minY;
+  return dx*dy;
+}
+
+function getLargest(featureParts) {
+  var
+    featureArea, maxArea = -Infinity,
+    feature;
+  for (var i = 0, il = featureParts.length; i < il; i++) {
+    area = getArea(featureParts[i].coordinates);
+    if (maxArea < featureArea) {
+      maxArea = featureArea;
+      feature = featureParts[i];
+    }
+  }
+  return feature;
+}
+
 },{}],4:[function(_dereq_,module,exports){
 
 // do this only when Leaflet exists (aka don't when run in web worker)
@@ -78,35 +180,55 @@ if (typeof L !== 'undefined') {
         throw new Error('VECNIK.Tile requires a renderer');
       }
       this._renderer = options.renderer;
-      this.tiles = {};
+
+      this._tileObjects = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
     _removeTile: function(key) {
-      delete this.tiles[key];
+      delete this._tileObjects[key];
       L.TileLayer.prototype._removeTile.call(this, key);
     },
 
     createTile: function(coords) {
       var tile = new Tile({
         coords: coords,
+        layer: this,
         provider: this._provider,
         renderer: this._renderer
       });
 
       var key = this._tileCoordsToKey(coords);
-      this.tiles[key] = tile;
+      this._tileObjects[key] = tile;
 
       return tile.getDomElement();
     },
 
     redraw: function() {
       var timer = Profiler.metric('tiles.render.time').start();
-      for(var k in this.tiles) {
-        this.tiles[k].render();
+      for(var key in this._tileObjects) {
+        this._tileObjects[key].render();
       }
       timer.end();
+    },
+
+    getFeatureParts: function(groupId) {
+      var
+        tileObject,
+        feature, f, fl,
+        featureParts = [];
+
+      for (var key in this._tileObjects) {
+        tileObject = this._tileObjects[key];
+        for (f = 0, fl = tileObject._data.length; f < fl; f++) {
+          feature = tileObject._data[f];
+          if (feature.groupId === groupId) {
+            featureParts.push(feature);
+          }
+        }
+      }
+      return featureParts;
     }
   });
 }
@@ -520,28 +642,31 @@ var Core = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
 var Projection = _dereq_('../mercator');
 
-function _addPoint(geoCoords, projection, properties, tileCoords, dataByRef) {
+function _addPoint(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
   dataByRef.push({
+    groupId: groupId,
     type: Geometry.POINT,
     coordinates: _toBuffer([geoCoords], projection, tileCoords),
     properties: properties
   });
 }
 
-function _addLineString(geoCoords, projection, properties, tileCoords, dataByRef) {
+function _addLineString(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
   dataByRef.push({
+    groupId: groupId,
     type: Geometry.LINE,
     coordinates: _toBuffer(geoCoords, projection, tileCoords),
     properties: properties
   });
 }
 
-function _addPolygon(geoCoords, projection, properties, tileCoords, dataByRef) {
+function _addPolygon(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
   var rings = [];
   for (var i = 0, il = geoCoords.length; i < il; i++) {
     rings.push(_toBuffer(geoCoords[i], projection, tileCoords));
   }
   dataByRef.push({
+    groupId: groupId,
     type: Geometry.POLYGON,
     coordinates: rings,
     properties: properties
@@ -553,7 +678,7 @@ function _convertAndReproject(collection, projection, tileCoords) {
     m, ml,
     dataByRef = [],
     feature,
-    type, geoCoords, properties;
+    type, geoCoords, groupId, properties;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
     feature = collection.features[i];
@@ -564,21 +689,24 @@ function _convertAndReproject(collection, projection, tileCoords) {
 
     type = feature.geometry.type;
     geoCoords = feature.geometry.coordinates;
+    // TODO: cartodb_id is a custom enhancement, per definition it's feature.id
+    // it's 'groupId' instead of just 'id' as it can occur multiple times for multi-geometriees or geometries cut by tile borders!
+    groupId = feature.id || feature.properties.id || feature.cartodb_id || feature.properties.cartodb_id;
     properties = feature.properties;
 
     switch (type) {
       case Geometry.POINT:
-        _addPoint(geoCoords, projection, properties, tileCoords, dataByRef);
+        _addPoint(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
       break;
 
       case 'Multi'+ Geometry.POINT:
         for (m = 0, ml = geoCoords.length; m < ml; m++) {
-          _addPoint(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
+          _addPoint(geoCoords[m], projection, groupId, _copy(properties), tileCoords, dataByRef);
         }
       break;
 
       case Geometry.LINE:
-        _addLineString(geoCoords, projection, properties, tileCoords, dataByRef);
+        _addLineString(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
       break;
 
       case 'Multi'+ Geometry.LINE:
@@ -588,12 +716,12 @@ function _convertAndReproject(collection, projection, tileCoords) {
       break;
 
       case Geometry.POLYGON:
-        _addPolygon(geoCoords, projection, properties, tileCoords, dataByRef);
+        _addPolygon(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
       break;
 
       case 'Multi'+ Geometry.POLYGON:
         for (m = 0, ml = geoCoords.length; m < ml; m++) {
-          _addPolygon(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
+          _addPolygon(geoCoords[m], projection, groupId, _copy(properties), tileCoords, dataByRef);
         }
       break;
     }
@@ -687,20 +815,29 @@ proto._drawMarker = function (context, coordinates, size) {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(context, collection, mapContext) {
+proto.render = function(layer, context, collection, mapContext) {
   var
     shaders = this._shader.getLayers(),
     shaderPass, style,
     i, il, j, jl, s, sl,
-    feature, coordinates;
+    feature, coordinates,
+		labelPositions, pos;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
   for (s = 0, sl = shaders.length; s < sl; s++) {
     shaderPass = shaders[s];
 
+		labelPositions = [];
+
     for (i = 0, il = collection.length; i < il; i++) {
       feature = collection[i];
+
+      // TODO: we need a better place to call this as labels are drawn in another pass
+      // if lable has to be drawn:
+      if (pos = this._getLabelPosition(layer, feature)) {
+        labelPositions.push(pos);
+      }
 
       style = shaderPass.evalStyle(feature.properties, mapContext);
 
@@ -742,7 +879,14 @@ proto.render = function(context, collection, mapContext) {
         }
       }
     }
+
+    // console.log(JSON.stringify(labelPositions));
   }
+};
+
+proto._getLabelPosition = function(layer, feature) {
+  var featureParts = layer.getFeatureParts(feature.groupId);
+  return Geometry.getCentroid(featureParts);
 };
 
 },{"./geometry":3}],12:[function(_dereq_,module,exports){
@@ -967,6 +1111,7 @@ var Tile = module.exports = function(options) {
   context.mozImageSmoothingEnabled = false;
   context.webkitImageSmoothingEnabled = false;
 
+  this._layer = options.layer;
   this._renderer = options.renderer;
   this._data = [];
   this._coords = options.coords;
@@ -987,7 +1132,7 @@ proto.getDomElement = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this._context, this._data, {
+  this._renderer.render(this._layer, this._context, this._data, {
     zoom: this._coords.z
   });
 };

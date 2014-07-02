@@ -34,20 +34,29 @@ proto._drawMarker = function (context, coordinates, size) {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(context, collection, mapContext) {
+proto.render = function(layer, context, collection, mapContext) {
   var
     shaders = this._shader.getLayers(),
     shaderPass, style,
     i, il, j, jl, s, sl,
-    feature, coordinates;
+    feature, coordinates,
+		labelPositions, pos;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
   for (s = 0, sl = shaders.length; s < sl; s++) {
     shaderPass = shaders[s];
 
+		labelPositions = [];
+
     for (i = 0, il = collection.length; i < il; i++) {
       feature = collection[i];
+
+      // TODO: we need a better place to call this as labels are drawn in another pass
+      // if lable has to be drawn:
+      if (pos = this._getLabelPosition(layer, feature)) {
+        labelPositions.push(pos);
+      }
 
       style = shaderPass.evalStyle(feature.properties, mapContext);
 
@@ -89,5 +98,12 @@ proto.render = function(context, collection, mapContext) {
         }
       }
     }
+
+    // console.log(JSON.stringify(labelPositions));
   }
+};
+
+proto._getLabelPosition = function(layer, feature) {
+  var featureParts = layer.getFeatureParts(feature.groupId);
+  return Geometry.getCentroid(featureParts);
 };

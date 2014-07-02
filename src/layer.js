@@ -23,35 +23,55 @@ if (typeof L !== 'undefined') {
         throw new Error('VECNIK.Tile requires a renderer');
       }
       this._renderer = options.renderer;
-      this.tiles = {};
+
+      this._tileObjects = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
     _removeTile: function(key) {
-      delete this.tiles[key];
+      delete this._tileObjects[key];
       L.TileLayer.prototype._removeTile.call(this, key);
     },
 
     createTile: function(coords) {
       var tile = new Tile({
         coords: coords,
+        layer: this,
         provider: this._provider,
         renderer: this._renderer
       });
 
       var key = this._tileCoordsToKey(coords);
-      this.tiles[key] = tile;
+      this._tileObjects[key] = tile;
 
       return tile.getDomElement();
     },
 
     redraw: function() {
       var timer = Profiler.metric('tiles.render.time').start();
-      for(var k in this.tiles) {
-        this.tiles[k].render();
+      for(var key in this._tileObjects) {
+        this._tileObjects[key].render();
       }
       timer.end();
+    },
+
+    getFeatureParts: function(groupId) {
+      var
+        tileObject,
+        feature, f, fl,
+        featureParts = [];
+
+      for (var key in this._tileObjects) {
+        tileObject = this._tileObjects[key];
+        for (f = 0, fl = tileObject._data.length; f < fl; f++) {
+          feature = tileObject._data[f];
+          if (feature.groupId === groupId) {
+            featureParts.push(feature);
+          }
+        }
+      }
+      return featureParts;
     }
   });
 }

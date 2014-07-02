@@ -2,28 +2,31 @@ var Core = require('../core/core');
 var Geometry = require('../geometry');
 var Projection = require('../mercator');
 
-function _addPoint(geoCoords, projection, properties, tileCoords, dataByRef) {
+function _addPoint(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
   dataByRef.push({
+    groupId: groupId,
     type: Geometry.POINT,
     coordinates: _toBuffer([geoCoords], projection, tileCoords),
     properties: properties
   });
 }
 
-function _addLineString(geoCoords, projection, properties, tileCoords, dataByRef) {
+function _addLineString(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
   dataByRef.push({
+    groupId: groupId,
     type: Geometry.LINE,
     coordinates: _toBuffer(geoCoords, projection, tileCoords),
     properties: properties
   });
 }
 
-function _addPolygon(geoCoords, projection, properties, tileCoords, dataByRef) {
+function _addPolygon(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
   var rings = [];
   for (var i = 0, il = geoCoords.length; i < il; i++) {
     rings.push(_toBuffer(geoCoords[i], projection, tileCoords));
   }
   dataByRef.push({
+    groupId: groupId,
     type: Geometry.POLYGON,
     coordinates: rings,
     properties: properties
@@ -35,7 +38,7 @@ function _convertAndReproject(collection, projection, tileCoords) {
     m, ml,
     dataByRef = [],
     feature,
-    type, geoCoords, properties;
+    type, geoCoords, groupId, properties;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
     feature = collection.features[i];
@@ -46,21 +49,24 @@ function _convertAndReproject(collection, projection, tileCoords) {
 
     type = feature.geometry.type;
     geoCoords = feature.geometry.coordinates;
+    // TODO: cartodb_id is a custom enhancement, per definition it's feature.id
+    // it's 'groupId' instead of just 'id' as it can occur multiple times for multi-geometriees or geometries cut by tile borders!
+    groupId = feature.id || feature.properties.id || feature.cartodb_id || feature.properties.cartodb_id;
     properties = feature.properties;
 
     switch (type) {
       case Geometry.POINT:
-        _addPoint(geoCoords, projection, properties, tileCoords, dataByRef);
+        _addPoint(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
       break;
 
       case 'Multi'+ Geometry.POINT:
         for (m = 0, ml = geoCoords.length; m < ml; m++) {
-          _addPoint(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
+          _addPoint(geoCoords[m], projection, groupId, _copy(properties), tileCoords, dataByRef);
         }
       break;
 
       case Geometry.LINE:
-        _addLineString(geoCoords, projection, properties, tileCoords, dataByRef);
+        _addLineString(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
       break;
 
       case 'Multi'+ Geometry.LINE:
@@ -70,12 +76,12 @@ function _convertAndReproject(collection, projection, tileCoords) {
       break;
 
       case Geometry.POLYGON:
-        _addPolygon(geoCoords, projection, properties, tileCoords, dataByRef);
+        _addPolygon(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
       break;
 
       case 'Multi'+ Geometry.POLYGON:
         for (m = 0, ml = geoCoords.length; m < ml; m++) {
-          _addPolygon(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
+          _addPolygon(geoCoords[m], projection, groupId, _copy(properties), tileCoords, dataByRef);
         }
       break;
     }
