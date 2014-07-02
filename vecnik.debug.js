@@ -262,7 +262,6 @@ VECNIK.Renderer    = _dereq_('./renderer');
 VECNIK.Layer       = _dereq_('./layer');
 // TODO: worker should use whatever reader the user defined
 VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
-VECNIK.Profiler    = _dereq_('./profiler');
 VECNIK.Geometry    = _dereq_('./geometry');
 VECNIK.Profiler    = _dereq_('./profiler');
 
