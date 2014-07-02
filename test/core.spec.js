@@ -9,8 +9,8 @@ test('Geometry types need to be defined in VECNIK.Geometry.*', function() {
   equal(VECNIK.Geometry.POLYGON, 'Polygon');
 });
 
-asyncTest('XHR', 1, function() {
-  VECNIK.load('test.json', function(res) {
-    equal(res, {test:123});
-  });
-});
+//asyncTest('XHR', 1, function() {
+  //VECNIK.load('test.json', function(res) {
+    //equal(res, {test:123});
+  //});
+//});
