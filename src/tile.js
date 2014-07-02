@@ -62,7 +62,7 @@ proto._renderHitCanvas = function() {
   // save current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.shader();
   this._renderer.shader(currentShader.hitShader('cartodb_id'));
-  this._renderer.render(context, this._data, {
+  this._renderer.render(this._layer, context, this._data, {
     zoom: this._coords.z
   });
 
