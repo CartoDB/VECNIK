@@ -3,13 +3,30 @@ var Geometry = require('./geometry');
 var ShaderLayer = require('./shader.layer');
 
 var Shader = module.exports = function(style) {
-  this.update(style);
+  this._layers = [];
+  style && this.update(style);
 };
 
 var proto = Shader.prototype;
 
+// clones every layer in the shader 
+proto.clone = function() {
+  var s = new Shader();
+  for (var i = 0; i < this._layers.length; ++i) {
+    s._layers.push(this._layers[i].clone());
+  }
+  return s;
+};
+
+proto.hitShader = function(attr) {
+  var s = new Shader();
+  for (var i = 0; i < this._layers.length; ++i) {
+    s._layers.push(this._layers[i].clone().hitShader(attr));
+  }
+  return s;
+};
+
 proto.update = function(style) {
-  this._layers = [];
   var
     shader = new carto.RendererJS().render(style),
     layer, order, layerShader, sh, p,

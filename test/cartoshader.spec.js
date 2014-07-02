@@ -5,7 +5,7 @@ var shader, canvas, ctx;
   QUnit.testStart(function( details ) {
     canvas = document.createElement('canvas');
     ctx = canvas.getContext('2d')
-    shader = new VECNIK.CartoShader({
+    shader = new VECNIK.CartoShaderLayer({
       'point-color': '#ffffff',
       'line-color': function(data) {
         return data.color;
@@ -30,7 +30,7 @@ var shader, canvas, ctx;
   });
 
   test('should tell when line should be rendered', function() {
-    var c = new VECNIK.CartoShader({
+    var c = new VECNIK.CartoShaderLayer({
       'line-color': '#fff'
     });
     var st = c.evalStyle({})
@@ -40,7 +40,7 @@ var shader, canvas, ctx;
     equal(c.needsRender('Polygon', st), true);
     equal(c.needsRender('Point', st), true);
 
-    c = new VECNIK.CartoShader({
+    c = new VECNIK.CartoShaderLayer({
       'polygon-fill': '#fff'
     });
     var st = c.evalStyle({});
@@ -49,13 +49,13 @@ var shader, canvas, ctx;
     equal(c.needsRender('Polygon', st), true);
     equal(c.needsRender('Point', st), false);
 
-    c = new VECNIK.CartoShader({
+    c = new VECNIK.CartoShaderLayer({
       'marker-width': 10
     });
     st = c.evalStyle({});
     equal(c.needsRender('Point', st), true);
 
-    c = new VECNIK.CartoShader({
+    c = new VECNIK.CartoShaderLayer({
       'line-color': function(data) {
         if (data.value > 1) {
           return '#fff';
@@ -65,7 +65,7 @@ var shader, canvas, ctx;
     equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
     equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
 
-    c = new VECNIK.CartoShader({
+    c = new VECNIK.CartoShaderLayer({
       'line-color': function(data, ctx) {
         if (ctx.zoom > 1) {
           return '#fff';
@@ -75,4 +75,14 @@ var shader, canvas, ctx;
     equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
     equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, { zoom: 1 })), false);
     equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, { zoom: 2 })), true);
+  });
+
+  test('create a interactivity shader', function() {
+    var hit = shader.hitShader('id');
+    var style = hit.evalStyle({ id: 0 });
+    equal(style.fillStyle, 'rgb(1,0,0)');
+    style = hit.evalStyle({ id: 1 });
+    equal(style.fillStyle, 'rgb(2,0,0)');
+    style = hit.evalStyle({ id: 256 });
+    equal(style.strokeStyle, 'rgb(1,1,0)');
   });

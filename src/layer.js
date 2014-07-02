@@ -29,6 +29,24 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
+    onAdd: function(map) {
+      var self = this;
+      //var proj = VECNIK.MercatorProjection()
+      map.on('mousemove', function (e) {
+        var pos = map.project(e.latlng);
+        var tile = {
+          x: (pos.x/256)|0,
+          y: (pos.y/256)|0
+        };
+        var key = self._tileCoordsToKey(tile);
+        var tile_x = pos.x - 256*tile.x;
+        var tile_y = pos.y - 256*tile.y;
+        console.log(self.tiles[key].featureAt(tile_x, tile_y));
+      });
+
+      L.TileLayer.prototype.onAdd.call(this, map);
+    },
+
     _removeTile: function(key) {
       delete this._tileObjects[key];
       L.TileLayer.prototype._removeTile.call(this, key);
