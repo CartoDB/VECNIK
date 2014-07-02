@@ -52,6 +52,9 @@ module.exports = function(grunt) {
       }
     },
 
+
+    // TODO: broken!
+    // meanwhile exec this: node node_modules/browserify/bin/cmd.js src/main.js -s VECNIK -o ./vecnik.debug.js
     browserify: {
       js: {
         options: {
