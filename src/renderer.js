@@ -1,9 +1,9 @@
 
 var Geometry = require('./geometry');
 
-var orderMethods = {};
-orderMethods[Geometry.POLYGON] = 'fill';
-orderMethods[Geometry.LINE] = 'stroke';
+var strokeFillOrder = {};
+strokeFillOrder[Geometry.POLYGON] = 'fill';
+strokeFillOrder[Geometry.LINE] = 'stroke';
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -19,7 +19,7 @@ Renderer.POINT_RADIUS = 2;
 var proto = Renderer.prototype;
 
 proto.shader = function(_) {
-  if (_) { 
+  if (_) {
     this._shader = _;
     return this;
   }
@@ -44,33 +44,26 @@ proto._drawMarker = function (context, coordinates, size) {
 // map state, for the moment only zoom
 proto.render = function(layer, context, collection, mapContext) {
   var
-    shaders = this._shader.getLayers(),
-    shaderPass, style,
+    shaderLayers = this._shader.getLayers(),
+    shader, style,
     i, il, j, jl, s, sl,
     feature, coordinates,
-		labels, pos;
+		pos, labelText;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-  for (s = 0, sl = shaders.length; s < sl; s++) {
-    shaderPass = shaders[s];
+  for (s = 0, sl = shaderLayers.length; s < sl; s++) {
+    shader = shaderLayers[s];
 
-		labels = [];
-
+    // TODO: according to processing principles, features should be sorted accorting to their type first
+    // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (i = 0, il = collection.length; i < il; i++) {
       feature = collection[i];
-
-      style = shaderPass.evalStyle(feature.properties, mapContext);
-
-      // CartoCSS => text-name:feature.property.columnName
-      // if label has to be drawn:
-      if (pos = this._getLabelPosition(layer, feature)) {
-        labels.push({ position:pos, text:feature.groupId, style:style });
-      }
+      style = shader.evalStyle(feature.properties, mapContext);
 
       coordinates = feature.coordinates;
 
-      if (shaderPass.needsRender(feature.type, style)) {
+      if (shader.needsRender(feature.type, style)) {
         context.beginPath();
 
         switch(feature.type) {
@@ -94,54 +87,48 @@ proto.render = function(layer, context, collection, mapContext) {
           // TODO: stroke/fill here if the style has changed to close previous polygons
         }
 
-        var order = shaderPass.renderOrder();
-        if (feature.type === Geometry.POLYGON ||
-            feature.type === Geometry.LINE) {
-          context[orderMethods[order[0]]]();
-          order.length >=1 && context[orderMethods[order[1]]]();
+        var order = shader.renderOrder();
+
+        if (feature.type === Geometry.POLYGON || feature.type === Geometry.LINE) {
+          context[ strokeFillOrder[order[0]] ]();
+          if (order.length >= 1) {
+            context[ strokeFillOrder[ order[1] ]]();
+          }
         } else if (feature.type === Geometry.POINT) {
           // if case it's a point there is no render order, fill and stroke
           context.fill();
           context.stroke();
         }
+
+        if ('needs label') { // TODO: proper check
+          if (pos = this._getLabelPosition(layer, feature)) {
+            labelText = feature.groupId;
+// TODO: align state changes with shader.apply()
+context.save();
+            // TODO: use CartoCSS for text
+            context.lineCap = 'round';
+            context.lineJoin = 'round';
+            context.strokeStyle = 'rgba(255,255,255,1)';
+            context.lineWidth = 4; // text outline width
+            context.font = 'bold 11px sans-serif';
+            context.textAlign = 'center';
+            context.strokeText(labelText, pos.x, pos.y);
+
+            context.fillStyle = '#000';
+            context.fillText(labelText, pos.x, pos.y);
+context.restore();
+          }
+        }
       }
     }
-
-    // console.log(JSON.stringify(labels));
-    // TODO: split text rendering (and maybe render passes in general) into separate layers
-
-    var label;
-
-context.lineCap = 'round';
-context.lineJoin = 'round';
-
-    context.strokeStyle = 'rgba(255,255,255,1)';
-
-    context.lineWidth = 4; // text outline width
-    context.font = 'bold 11px sans-serif';
-    context.textAlign = 'center';
-//var metrics = context.measureText(text);
-//var width = metrics.width;
-// context.textBaseline = 'bottom';
-
-    for (i = 0, il = labels.length; i < il; i++) {
-      label = labels[i];
-      // TODO: shaderPass.needsRender() not handled yet
-//    shaderPass.textApply(context, label.style);
-      context.strokeText(label.text, label.position.x, label.position.y);
-    }
-
-
-    context.fillStyle = '#000';
-    for (i = 0, il = labels.length; i < il; i++) {
-      label = labels[i];
-      context.fillText(label.text, label.position.x, label.position.y);
-    }
-
   }
 };
 
 proto._getLabelPosition = function(layer, feature) {
+  if (feature.type === Geometry.POINT) {
+    return { x:feature.coordinates[0], y:feature.coordinates[1] };
+  }
+
   var featureParts = layer.getFeatureParts(feature.groupId);
   return Geometry.getCentroid(featureParts);
 };

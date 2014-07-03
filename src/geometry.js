@@ -8,29 +8,20 @@ Geometry.POLYGON = 'Polygon';
 var proto = Geometry;
 
 proto.getCentroid = function(featureParts) {
-  var feature;
+  var coordinates;
 
   if (!featureParts || !featureParts.length) {
     return;
   }
 
   if (featureParts.length > 1) {
-    feature = getLargest(featureParts); //coords+type
+    coordinates = getLargestGeometry(featureParts); //coords+type
   } else {
-    feature = featureParts[0];
+    coordinates = featureParts[0];
   }
 
-  if (!feature) {
+  if (!coordinates) {
     return;
-  }
-
-  var coordinates = feature.coordinates;
-  if (feature.type === Geometry.POINT) {
-    return [coordinates[0], coordinates[1]]; // resolving array buffer
-  }
-
-  if (feature.type === Geometry.POLYGON) {
-    coordinates = coordinates[0];
   }
 
   var
@@ -93,16 +84,27 @@ function getArea(coordinates) {
   return dx*dy;
 }
 
-function getLargest(featureParts) {
+function getLargestGeometry(featureParts) {
   var
-    featureArea, maxArea = -Infinity,
-    feature;
+    area, maxArea = -Infinity,
+    feature,
+    coordinates, maxCoordinates;
+
   for (var i = 0, il = featureParts.length; i < il; i++) {
-    area = getArea(featureParts[i].coordinates);
-    if (maxArea < featureArea) {
-      maxArea = featureArea;
-      feature = featureParts[i];
+    feature = featureParts[i];
+    coordinates = feature.coordinates;
+
+    if (feature.type === Geometry.POLYGON) {
+      coordinates = coordinates[0];
+    }
+
+    area = getArea(coordinates);
+
+    if (area > maxArea) {
+      maxArea = area;
+      maxCoordinates = coordinates;
     }
   }
-  return feature;
+
+  return maxCoordinates;
 }

@@ -53,7 +53,7 @@ var proto = ShaderLayer.prototype = new Events();
 
 proto.clone = function() {
   return new ShaderLayer(this._shaderSrc, this._renderOrder);
-}
+};
 
 proto.compile = function(shader) {
   this._shaderSrc = shader;
@@ -137,7 +137,7 @@ proto.textApply = function(context, style) {
 
 proto.renderOrder = function() {
   return this._renderOrder;
-},
+};
 
 // return true if the feature need to be rendered
 proto.needsRender = function(geometryType, style) {

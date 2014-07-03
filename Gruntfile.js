@@ -80,11 +80,15 @@ module.exports = function(grunt) {
     grunt.task.run('jshint');
   });
 
-  grunt.registerTask('default', 'Development build', function() {
+  grunt.registerTask('release', 'Release build', function() {
     grunt.task.run('browserify');
     // grunt.task.run('lint');
     grunt.task.run('uglify');
     // grunt.task.run('test');
+  });
+
+  grunt.registerTask('default', 'Development build', function() {
+    grunt.task.run('browserify');
   });
 
 //  grunt.registerTask('compress', ['uglify', 'closure-compiler:frontend']);
