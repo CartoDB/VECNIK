@@ -7,7 +7,7 @@ if (typeof L !== 'undefined') {
   var Layer = module.exports = L.TileLayer.extend({
 
     options: {
-      maxZoom: 20
+      maxZoom: 22
     },
 
     initialize: function(options) {

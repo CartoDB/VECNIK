@@ -8,20 +8,25 @@ Geometry.POLYGON = 'Polygon';
 var proto = Geometry;
 
 proto.getCentroid = function(featureParts) {
-  var coordinates;
+  var feature, coordinates;
 
   if (!featureParts || !featureParts.length) {
     return;
   }
 
   if (featureParts.length > 1) {
-    coordinates = getLargestGeometry(featureParts); //coords+type
+    feature = getLargestPart(featureParts); //coords+type
   } else {
-    coordinates = featureParts[0];
+    feature = featureParts[0];
   }
 
-  if (!coordinates) {
+  if (!feature) {
     return;
+  }
+
+  coordinates = feature.coordinates;
+  if (feature.type === Geometry.POLYGON) {
+    coordinates = coordinates[0];
   }
 
   var
@@ -84,11 +89,11 @@ function getArea(coordinates) {
   return dx*dy;
 }
 
-function getLargestGeometry(featureParts) {
+function getLargestPart(featureParts) {
   var
     area, maxArea = -Infinity,
-    feature,
-    coordinates, maxCoordinates;
+    feature, maxFeature,
+    coordinates;
 
   for (var i = 0, il = featureParts.length; i < il; i++) {
     feature = featureParts[i];
@@ -102,9 +107,9 @@ function getLargestGeometry(featureParts) {
 
     if (area > maxArea) {
       maxArea = area;
-      maxCoordinates = coordinates;
+      maxFeature = feature;
     }
   }
 
-  return maxCoordinates;
+  return maxFeature;
 }

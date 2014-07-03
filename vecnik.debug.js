@@ -55,14 +55,14 @@ Geometry.POLYGON = 'Polygon';
 var proto = Geometry;
 
 proto.getCentroid = function(featureParts) {
-  var feature;
+  var feature, coordinates;
 
   if (!featureParts || !featureParts.length) {
     return;
   }
 
   if (featureParts.length > 1) {
-    feature = getLargest(featureParts); //coords+type
+    feature = getLargestPart(featureParts); //coords+type
   } else {
     feature = featureParts[0];
   }
@@ -71,11 +71,7 @@ proto.getCentroid = function(featureParts) {
     return;
   }
 
-  var coordinates = feature.coordinates;
-  if (feature.type === Geometry.POINT) {
-    return [coordinates[0], coordinates[1]]; // resolving array buffer
-  }
-
+  coordinates = feature.coordinates;
   if (feature.type === Geometry.POLYGON) {
     coordinates = coordinates[0];
   }
@@ -140,18 +136,29 @@ function getArea(coordinates) {
   return dx*dy;
 }
 
-function getLargest(featureParts) {
+function getLargestPart(featureParts) {
   var
-    featureArea, maxArea = -Infinity,
-    feature;
+    area, maxArea = -Infinity,
+    feature, maxFeature,
+    coordinates;
+
   for (var i = 0, il = featureParts.length; i < il; i++) {
-    area = getArea(featureParts[i].coordinates);
-    if (maxArea < featureArea) {
-      maxArea = featureArea;
-      feature = featureParts[i];
+    feature = featureParts[i];
+    coordinates = feature.coordinates;
+
+    if (feature.type === Geometry.POLYGON) {
+      coordinates = coordinates[0];
+    }
+
+    area = getArea(coordinates);
+
+    if (area > maxArea) {
+      maxArea = area;
+      maxFeature = feature;
     }
   }
-  return feature;
+
+  return maxFeature;
 }
 
 },{}],4:[function(_dereq_,module,exports){
@@ -164,7 +171,7 @@ if (typeof L !== 'undefined') {
   var Layer = module.exports = L.TileLayer.extend({
 
     options: {
-      maxZoom: 20
+      maxZoom: 22
     },
 
     initialize: function(options) {
@@ -184,6 +191,24 @@ if (typeof L !== 'undefined') {
       this._tileObjects = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
+    },
+
+    onAdd: function(map) {
+      var self = this;
+      //var proj = VECNIK.MercatorProjection()
+      map.on('mousemove', function (e) {
+//        var pos = map.project(e.latlng);
+//        var tile = {
+//          x: (pos.x/256)|0,
+//          y: (pos.y/256)|0
+//        };
+//        var key = self._tileCoordsToKey(tile);
+//        var tile_x = pos.x - 256*tile.x;
+//        var tile_y = pos.y - 256*tile.y;
+//        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
+      });
+
+      L.TileLayer.prototype.onAdd.call(this, map);
     },
 
     _removeTile: function(key) {
@@ -784,9 +809,9 @@ Reader.convertForWorker = function(collection, tileCoords) {
 
 var Geometry = _dereq_('./geometry');
 
-var orderMethods = {};
-orderMethods[Geometry.POLYGON] = 'fill';
-orderMethods[Geometry.LINE] = 'stroke';
+var strokeFillOrder = {};
+strokeFillOrder[Geometry.POLYGON] = 'fill';
+strokeFillOrder[Geometry.LINE] = 'stroke';
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -800,6 +825,14 @@ var Renderer = module.exports = function(options) {
 Renderer.POINT_RADIUS = 2;
 
 var proto = Renderer.prototype;
+
+proto.shader = function(_) {
+  if (_) {
+    this._shader = _;
+    return this;
+  }
+  return this._shader;
+};
 
 proto._drawLineString = function(context, coordinates) {
   context.moveTo(coordinates[0], coordinates[1]);
@@ -819,33 +852,26 @@ proto._drawMarker = function (context, coordinates, size) {
 // map state, for the moment only zoom
 proto.render = function(layer, context, collection, mapContext) {
   var
-    shaders = this._shader.getLayers(),
-    shaderPass, style,
+    shaderLayers = this._shader.getLayers(),
+    shader, style,
     i, il, j, jl, s, sl,
     feature, coordinates,
-		labels, pos;
+		pos, labelText;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-  for (s = 0, sl = shaders.length; s < sl; s++) {
-    shaderPass = shaders[s];
+  for (s = 0, sl = shaderLayers.length; s < sl; s++) {
+    shader = shaderLayers[s];
 
-		labels = [];
-
+    // TODO: according to processing principles, features should be sorted accorting to their type first
+    // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (i = 0, il = collection.length; i < il; i++) {
       feature = collection[i];
-
-      style = shaderPass.evalStyle(feature.properties, mapContext);
-
-      // CartoCSS => text-name:feature.property.columnName
-      // if label has to be drawn:
-      if (pos = this._getLabelPosition(layer, feature)) {
-        labels.push({ position:pos, text:feature.groupId, style:style });
-      }
+      style = shader.evalStyle(feature.properties, mapContext);
 
       coordinates = feature.coordinates;
 
-      if (shaderPass.needsRender(feature.type, style)) {
+      if (shader.needsRender(feature.type, style)) {
         context.beginPath();
 
         switch(feature.type) {
@@ -865,58 +891,58 @@ proto.render = function(layer, context, collection, mapContext) {
           break;
         }
 
-        if (shaderPass.apply(context, style)) {
+        if (shader.apply(context, style)) {
           // TODO: stroke/fill here if the style has changed to close previous polygons
         }
 
-        var order = shaderPass.renderOrder();
-        if (feature.type === Geometry.POLYGON ||
-            feature.type === Geometry.LINE) {
-          context[orderMethods[order[0]]]();
-          order.length >=1 && context[orderMethods[order[1]]]();
+        var order = shader.renderOrder();
+
+        if (feature.type === Geometry.POLYGON || feature.type === Geometry.LINE) {
+          context[ strokeFillOrder[order[0]] ]();
+          if (order.length >= 1) {
+            context[ strokeFillOrder[ order[1] ]]();
+          }
         } else if (feature.type === Geometry.POINT) {
           // if case it's a point there is no render order, fill and stroke
           context.fill();
           context.stroke();
         }
+
+        if ('needs label') { // TODO: proper check
+          if (pos = this._getLabelPosition(layer, feature)) {
+            labelText = feature.groupId;
+// TODO: align state changes with shader.apply()
+context.save();
+            // TODO: use CartoCSS for text
+            context.lineCap = 'round';
+            context.lineJoin = 'round';
+            context.strokeStyle = 'rgba(255,255,255,1)';
+            context.lineWidth = 4; // text outline width
+            context.font = 'bold 11px sans-serif';
+            context.textAlign = 'center';
+            context.strokeText(labelText, pos.x, pos.y);
+
+            context.fillStyle = '#000';
+            context.fillText(labelText, pos.x, pos.y);
+context.restore();
+          }
+        }
       }
     }
-
-    // console.log(JSON.stringify(labels));
-    // TODO: split text rendering (and maybe render passes in general) into separate layers
-
-    var label;
-
-context.lineCap = 'round';
-context.lineJoin = 'round';
-
-    context.strokeStyle = 'rgba(255,255,255,1)';
-
-    context.lineWidth = 4; // text outline width
-    context.font = 'bold 11px sans-serif';
-    context.textAlign = 'center';
-//var metrics = context.measureText(text);
-//var width = metrics.width;
-// context.textBaseline = 'bottom';
-
-    for (i = 0, il = labels.length; i < il; i++) {
-      label = labels[i];
-      // TODO: shaderPass.needsRender() not handled yet
-//    shaderPass.textApply(context, label.style);
-      context.strokeText(label.text, label.position.x, label.position.y);
-    }
-
-
-    context.fillStyle = '#000';
-    for (i = 0, il = labels.length; i < il; i++) {
-      label = labels[i];
-      context.fillText(label.text, label.position.x, label.position.y);
-    }
-
   }
 };
 
+// TODO: make sure, label has not yet been rendered somewhere else
+// on render -> check other tiles, whether it has been drawn already
+
+// TODO: avoid overlapping
+// TODO: solve labels close outside tile border
+
 proto._getLabelPosition = function(layer, feature) {
+  if (feature.type === Geometry.POINT) {
+    return { x:feature.coordinates[0], y:feature.coordinates[1] };
+  }
+
   var featureParts = layer.getFeatureParts(feature.groupId);
   return Geometry.getCentroid(featureParts);
 };
@@ -927,13 +953,30 @@ var Geometry = _dereq_('./geometry');
 var ShaderLayer = _dereq_('./shader.layer');
 
 var Shader = module.exports = function(style) {
-  this.update(style);
+  this._layers = [];
+  style && this.update(style);
 };
 
 var proto = Shader.prototype;
 
+// clones every layer in the shader 
+proto.clone = function() {
+  var s = new Shader();
+  for (var i = 0; i < this._layers.length; ++i) {
+    s._layers.push(this._layers[i].clone());
+  }
+  return s;
+};
+
+proto.hitShader = function(attr) {
+  var s = new Shader();
+  for (var i = 0; i < this._layers.length; ++i) {
+    s._layers.push(this._layers[i].clone().hitShader(attr));
+  }
+  return s;
+};
+
 proto.update = function(style) {
-  this._layers = [];
   var
     shader = new carto.RendererJS().render(style),
     layer, order, layerShader, sh, p,
@@ -988,9 +1031,6 @@ var requiredProperties = {
   polygon: [
     'polygon-fill',
     'line-color'
-  ],
-  text: [
-    'text-name',
   ]
 };
 requiredProperties.multipolygon = requiredProperties.polygon;
@@ -1026,6 +1066,10 @@ var ShaderLayer = module.exports = function(shader, renderOrder) {
 };
 
 var proto = ShaderLayer.prototype = new Events();
+
+proto.clone = function() {
+  return new ShaderLayer(this._shaderSrc, this._renderOrder);
+};
 
 proto.compile = function(shader) {
   this._shaderSrc = shader;
@@ -1109,7 +1153,7 @@ proto.textApply = function(context, style) {
 
 proto.renderOrder = function() {
   return this._renderOrder;
-},
+};
 
 // return true if the feature need to be rendered
 proto.needsRender = function(geometryType, style) {
@@ -1134,7 +1178,46 @@ proto.needsRender = function(geometryType, style) {
   return false;
 };
 
+var RGB2Int = function(r,g,b){
+    return r | (g<<8) | (b<<16);
+};
+
+var Int2RGB = function(input){
+    var r = input & 0xff;
+    var g = (input >> 8) & 0xff;
+    var b = (input >> 16) & 0xff;
+    return [r,g,b];
+};
+
+
+/**
+ * return a shader clone ready for hit test.
+ * @keyAttribute: string with the attribute used as key (usually the feature id)
+ */
+proto.hitShader = function(keyAttribute) {
+  var hit = this.clone();
+  // replace all fillStyle and strokeStyle props to use a custom
+  // color
+  for(var k in hit._compiled) {
+    if (k === 'fillStyle' || k === 'strokeStyle') {
+      //var p = hit._compiled[k];
+      hit._compiled[k] = function(featureProperties, mapContext) {
+        return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
+      }
+    }
+  }
+  return hit;
+}
+
+ShaderLayer.RGB2Int = RGB2Int;
+ShaderLayer.Int2RGB = Int2RGB;
+
+
+
+
 },{"./core/events":2,"./geometry":3}],14:[function(_dereq_,module,exports){
+
+var ShaderLayer = _dereq_('./shader.layer');
 
 var Tile = module.exports = function(options) {
   options = options || {};
@@ -1166,6 +1249,13 @@ var Tile = module.exports = function(options) {
 
 Tile.SIZE = 256;
 
+function createCanvas() {
+  var canvas  = document.createElement('CANVAS');
+  canvas.width  = Tile.SIZE;
+  canvas.height = Tile.SIZE;
+  return canvas;
+}
+
 var proto = Tile.prototype;
 
 proto.getDomElement = function() {
@@ -1178,6 +1268,48 @@ proto.render = function() {
   });
 };
 
-},{}]},{},[5])
+/**
+ * return hit grid
+ */
+proto._renderHitCanvas = function() {
+  var canvas = createCanvas();
+  var context = canvas.getContext('2d');
+  context.mozImageSmoothingEnabled = false;
+  context.webkitImageSmoothingEnabled = false;
+
+  // save current shader and use hitShader for rendering the grid
+  var currentShader = this._renderer.shader();
+  this._renderer.shader(currentShader.hitShader('cartodb_id'));
+  this._renderer.render(this._layer, context, this._data, {
+    zoom: this._coords.z
+  });
+
+  // retore shader
+  this._renderer.shader(currentShader);
+  return context.getImageData(0, 0, canvas.width, canvas.height).data;
+};
+
+/**
+ * returns feature id at position. null for fo feature
+ * @pos: point object like {x: X, y: Y }
+ */
+proto.featureAt = function(x, y) {
+
+  if (!this._hitGrid) {
+    this._hitGrid = this._renderHitCanvas();
+  }
+  var idx = 4*((y|0) * Tile.SIZE + (x|0));
+  var r = this._hitGrid[idx + 0];
+  var g = this._hitGrid[idx + 1];
+  var b = this._hitGrid[idx + 2];
+  var id = ShaderLayer.RGB2Int(r, g, b);
+  if (id) {
+    return id - 1;
+  }
+  return null;
+
+};
+
+},{"./shader.layer":13}]},{},[5])
 (5)
 });

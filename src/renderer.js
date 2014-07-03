@@ -83,7 +83,7 @@ proto.render = function(layer, context, collection, mapContext) {
           break;
         }
 
-        if (shaderPass.apply(context, style)) {
+        if (shader.apply(context, style)) {
           // TODO: stroke/fill here if the style has changed to close previous polygons
         }
 
@@ -123,6 +123,11 @@ context.restore();
     }
   }
 };
+
+// TODO: make sure, label has not yet been rendered somewhere else
+// on render -> check other tiles, whether it has been drawn already
+// TODO: avoid overlapping
+// TODO: solve labels close outside tile border
 
 proto._getLabelPosition = function(layer, feature) {
   if (feature.type === Geometry.POINT) {
