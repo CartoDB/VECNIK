@@ -46,22 +46,12 @@ module.exports = function(grunt) {
 //      }
 //    },
 
-    execute: {
+    shell: {
+      browserify: {
+        command: 'node node_modules/browserify/bin/cmd.js src/main.js -s VECNIK -o ./<%= pkg.name %>.debug.js'
+      },
       test: {
-        src: ['phantomjs test/vendor/runner.js test/index.html?noglobals=true']
-      }
-    },
-
-
-    // TODO: broken!
-    // meanwhile exec this: node node_modules/browserify/bin/cmd.js src/main.js -s VECNIK -o ./vecnik.debug.js
-    browserify: {
-      js: {
-        options: {
-          browserifyOptions: { standalone: 'VECNIK' }
-        },
-        src: './src/main.js',
-        dest: './<%= pkg.name %>.debug.js'
+        command: 'phantomjs test/vendor/runner.js test/index.html?noglobals=true'
       }
     },
 
@@ -74,18 +64,26 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
 //  grunt.loadNpmTasks('grunt-closure-compiler');
 //  grunt.loadNpmTasks('grunt-contrib-jasmine');
-  grunt.loadNpmTasks('grunt-execute');
+  grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-browserify');
 
-  grunt.registerTask('default', 'Create development build', function() {
-    grunt.task.run('browserify');
-    grunt.task.run('uglify');
+  grunt.registerTask('browserify', 'Resolve modules', function() {
+    grunt.task.run('shell:browserify');
+  });
+
+  grunt.registerTask('test', 'Run tests', function() {
+    grunt.task.run('shell:test');
   });
 
   grunt.registerTask('lint', 'JSHint check', function() {
     grunt.task.run('browserify');
     grunt.task.run('jshint');
+  });
+
+  grunt.registerTask('default', 'Create development build', function() {
+    grunt.task.run('browserify');
+    grunt.task.run('uglify');
   });
 
 //  grunt.registerTask('compress', ['uglify', 'closure-compiler:frontend']);
