@@ -52,6 +52,12 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype._removeTile.call(this, key);
     },
 
+    _update: function(key) {
+      this._uniqueItems = {};
+      L.TileLayer.prototype._update.call(this, key);
+    },
+
+
     createTile: function(coords) {
       var tile = new Tile({
         coords: coords,
@@ -68,11 +74,41 @@ if (typeof L !== 'undefined') {
 
     redraw: function() {
       var timer = Profiler.metric('tiles.render.time').start();
-      for(var key in this._tileObjects) {
+      this._uniqueItems = {};
+      for (var key in this._tileObjects) {
         this._tileObjects[key].render();
       }
       timer.end();
     },
+
+// TODO: handle global / local pos here!!!
+
+uniqueItems: {},
+
+getLabelPosition: function(feature) {
+  var
+    key = 'label:'+ feature.groupId, // register also values: global position (pos+tilepos)
+    pos;
+  // step 1: render always
+  // step 2: render only on bbox intersection
+  // combine this with getting labelpos
+  if (pos = this._uniqueItems[key]) {
+    return pos;
+  }
+
+  if (feature.type === Geometry.POINT) {
+    pos = { x:feature.coordinates[0], y:feature.coordinates[1] };
+    this._uniqueItems[key] = pos;
+    return pos;
+  }
+
+  var featureParts = this.getFeatureParts(feature.groupId);
+  pos = Geometry.getCentroid(featureParts);
+  this.registerItem(key, pos);
+  return pos;
+},
+
+
 
     getFeatureParts: function(groupId) {
       var

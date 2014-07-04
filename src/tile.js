@@ -44,8 +44,16 @@ proto.getDomElement = function() {
   return this._canvas;
 };
 
+proto.getLayer = function() {
+  return this._layer;
+};
+
+proto.getContext = function() {
+  return this._context;
+};
+
 proto.render = function() {
-  this._renderer.render(this._layer, this._context, this._data, {
+  this._renderer.render(this, this._data, {
     zoom: this._coords.z
   });
 };

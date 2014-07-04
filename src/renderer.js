@@ -42,8 +42,10 @@ proto._drawMarker = function (context, coordinates, size) {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(layer, context, collection, mapContext) {
+proto.render = function(tile, collection, mapContext) {
   var
+    layer = tile.getLayer(),
+    context = tile.getContext(),
     shaderLayers = this._shader.getLayers(),
     shader, style,
     i, il, j, jl, s, sl,
@@ -101,7 +103,8 @@ proto.render = function(layer, context, collection, mapContext) {
         }
 
         if ('needs label') { // TODO: proper check
-          if (pos = this._getLabelPosition(layer, feature)) {
+//          if (pos = this._getLabelPosition(layer, feature)) {
+          if (pos = layer.getLabelPosition(feature)) {
             labelText = feature.groupId;
 // TODO: align state changes with shader.apply()
 context.save();
@@ -124,16 +127,32 @@ context.restore();
   }
 };
 
+/***
 // TODO: make sure, label has not yet been rendered somewhere else
 // on render -> check other tiles, whether it has been drawn already
 // TODO: avoid overlapping
 // TODO: solve labels close outside tile border
 
 proto._getLabelPosition = function(layer, feature) {
+  var
+    key = 'label:'+ feature.groupId, // register also values: global position (pos+tilepos)
+    pos;
+  // step 1: render always
+  // step 2: render only on bbox intersection
+  // combine this with getting labelpos
+  if (pos = layer.itemExists(key)) {
+    return pos;
+  }
+
   if (feature.type === Geometry.POINT) {
-    return { x:feature.coordinates[0], y:feature.coordinates[1] };
+    pos = { x:feature.coordinates[0], y:feature.coordinates[1] };
+    layer.registerItem(key, pos);
+    return pos;
   }
 
   var featureParts = layer.getFeatureParts(feature.groupId);
-  return Geometry.getCentroid(featureParts);
+  pos = Geometry.getCentroid(featureParts);
+  layer.registerItem(key, pos);
+  return pos;
 };
+***/
