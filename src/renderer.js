@@ -46,6 +46,7 @@ proto.render = function(tile, collection, mapContext) {
   var
     layer = tile.getLayer(),
     context = tile.getContext(),
+    tileCoords = tile.getCoords(),
     shaderLayers = this._shader.getLayers(),
     shader, style,
     i, il, j, jl, s, sl,
@@ -103,8 +104,9 @@ proto.render = function(tile, collection, mapContext) {
         }
 
         if ('needs label') { // TODO: proper check
-//          if (pos = this._getLabelPosition(layer, feature)) {
           if (pos = layer.getLabelPosition(feature)) {
+
+            // pos + tileCoords
             labelText = feature.groupId;
 // TODO: align state changes with shader.apply()
 context.save();
@@ -115,10 +117,10 @@ context.save();
             context.lineWidth = 4; // text outline width
             context.font = 'bold 11px sans-serif';
             context.textAlign = 'center';
-            context.strokeText(labelText, pos.x, pos.y);
+            context.strokeText(labelText, pos.x-tileCoords.x, pos.y-tileCoords.y);
 
             context.fillStyle = '#000';
-            context.fillText(labelText, pos.x, pos.y);
+            context.fillText(labelText, pos.x-tileCoords.x, pos.y-tileCoords.y);
 context.restore();
           }
         }
@@ -127,32 +129,7 @@ context.restore();
   }
 };
 
-/***
 // TODO: make sure, label has not yet been rendered somewhere else
 // on render -> check other tiles, whether it has been drawn already
 // TODO: avoid overlapping
 // TODO: solve labels close outside tile border
-
-proto._getLabelPosition = function(layer, feature) {
-  var
-    key = 'label:'+ feature.groupId, // register also values: global position (pos+tilepos)
-    pos;
-  // step 1: render always
-  // step 2: render only on bbox intersection
-  // combine this with getting labelpos
-  if (pos = layer.itemExists(key)) {
-    return pos;
-  }
-
-  if (feature.type === Geometry.POINT) {
-    pos = { x:feature.coordinates[0], y:feature.coordinates[1] };
-    layer.registerItem(key, pos);
-    return pos;
-  }
-
-  var featureParts = layer.getFeatureParts(feature.groupId);
-  pos = Geometry.getCentroid(featureParts);
-  layer.registerItem(key, pos);
-  return pos;
-};
-***/

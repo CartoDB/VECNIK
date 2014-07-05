@@ -8,28 +8,37 @@ Geometry.POLYGON = 'Polygon';
 var proto = Geometry;
 
 proto.getCentroid = function(featureParts) {
-  var feature, coordinates;
+  var part, coordinates;
 
   if (!featureParts || !featureParts.length) {
     return;
   }
 
   if (featureParts.length > 1) {
-    feature = getLargestPart(featureParts); //coords+type
+    part = getLargestPart(featureParts); //coords+type
   } else {
-    feature = featureParts[0];
+    part = featureParts[0];
   }
 
-  if (!feature) {
+  if (!part) {
     return;
   }
 
-  coordinates = feature.coordinates;
-  if (feature.type === Geometry.POLYGON) {
+  coordinates = part.feature.coordinates;
+
+  if (part.feature.type === Geometry.POINT) {
+    return {
+      x:coordinates[0]+part.tileCoords.x,
+      y:coordinates[1]+part.tileCoords.y
+    };
+  }
+
+  if (part.feature.type === Geometry.POLYGON) {
     coordinates = coordinates[0];
   }
 
   var
+    tileCoords = part.tileCoords,
     startX = coordinates[0], startY = coordinates[1],
     xTmp = 0, yTmp = 0,
     dx0, dy0,
@@ -51,14 +60,14 @@ proto.getCentroid = function(featureParts) {
 
   if (lenSum) {
     return {
-      x: (xTmp/(3*lenSum)) + startX <<0,
-      y: (yTmp/(3*lenSum)) + startY <<0
+      x: tileCoords.x + (xTmp/(3*lenSum)) + startX <<0,
+      y: tileCoords.y + (yTmp/(3*lenSum)) + startY <<0
     };
   }
 
   return {
-    x: startX,
-    y: startY
+    x: tileCoords.x + startX,
+    y: tileCoords.y + startY
   };
 };
 
@@ -92,14 +101,14 @@ function getArea(coordinates) {
 function getLargestPart(featureParts) {
   var
     area, maxArea = -Infinity,
-    feature, maxFeature,
+    part, maxPart,
     coordinates;
 
   for (var i = 0, il = featureParts.length; i < il; i++) {
-    feature = featureParts[i];
-    coordinates = feature.coordinates;
+    part = featureParts[i];
+    coordinates = part.feature.coordinates;
 
-    if (feature.type === Geometry.POLYGON) {
+    if (part.feature.type === Geometry.POLYGON) {
       coordinates = coordinates[0];
     }
 
@@ -107,9 +116,9 @@ function getLargestPart(featureParts) {
 
     if (area > maxArea) {
       maxArea = area;
-      maxFeature = feature;
+      maxPart = part;
     }
   }
 
-  return maxFeature;
+  return maxPart;
 }

@@ -1,4 +1,6 @@
 
+var Geometry = require('./geometry');
+
 // do this only when Leaflet exists (aka don't when run in web worker)
 if (typeof L !== 'undefined') {
   var Tile = require('./tile');
@@ -81,34 +83,24 @@ if (typeof L !== 'undefined') {
       timer.end();
     },
 
-// TODO: handle global / local pos here!!!
+    uniqueItems: {},
 
-uniqueItems: {},
+    // TODO: check for bbox intersection
+    // TODO add tile offset
+    getLabelPosition: function(feature) {
+      var
+        key = 'label:'+ feature.groupId,
+        pos;
 
-getLabelPosition: function(feature) {
-  var
-    key = 'label:'+ feature.groupId, // register also values: global position (pos+tilepos)
-    pos;
-  // step 1: render always
-  // step 2: render only on bbox intersection
-  // combine this with getting labelpos
-  if (pos = this._uniqueItems[key]) {
-    return pos;
-  }
+      if (pos = this._uniqueItems[key]) {
+        return pos;
+      }
 
-  if (feature.type === Geometry.POINT) {
-    pos = { x:feature.coordinates[0], y:feature.coordinates[1] };
-    this._uniqueItems[key] = pos;
-    return pos;
-  }
-
-  var featureParts = this.getFeatureParts(feature.groupId);
-  pos = Geometry.getCentroid(featureParts);
-  this.registerItem(key, pos);
-  return pos;
-},
-
-
+      var featureParts = this.getFeatureParts(feature.groupId);
+      pos = Geometry.getCentroid(featureParts);
+      this._uniqueItems[key] = pos;
+      return pos;
+    },
 
     getFeatureParts: function(groupId) {
       var
@@ -121,7 +113,7 @@ getLabelPosition: function(feature) {
         for (f = 0, fl = tileObject._data.length; f < fl; f++) {
           feature = tileObject._data[f];
           if (feature.groupId === groupId) {
-            featureParts.push(feature);
+            featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
           }
         }
       }

@@ -52,6 +52,10 @@ proto.getContext = function() {
   return this._context;
 };
 
+proto.getCoords = function() {
+  return this._coords;
+};
+
 proto.render = function() {
   this._renderer.render(this, this._data, {
     zoom: this._coords.z
