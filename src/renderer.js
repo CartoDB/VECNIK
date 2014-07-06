@@ -51,7 +51,7 @@ proto.render = function(tile, collection, mapContext) {
     shader, style,
     i, il, j, jl, s, sl,
     feature, coordinates,
-		pos, labelText;
+		pos, labelX, labelY, labelText;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
@@ -105,8 +105,10 @@ proto.render = function(tile, collection, mapContext) {
 
         if ('needs label') { // TODO: proper check
           if (pos = layer.getLabelPosition(feature)) {
+            // TODO: check whether it makes sense to draw, even with tolerance
+            labelX = pos.x-tileCoords.x * 256;
+            labelY = pos.y-tileCoords.y * 256;
 
-            // pos + tileCoords
             labelText = feature.groupId;
 // TODO: align state changes with shader.apply()
 context.save();
@@ -117,10 +119,10 @@ context.save();
             context.lineWidth = 4; // text outline width
             context.font = 'bold 11px sans-serif';
             context.textAlign = 'center';
-            context.strokeText(labelText, pos.x-tileCoords.x, pos.y-tileCoords.y);
+            context.strokeText(labelText, labelX, labelY);
 
             context.fillStyle = '#000';
-            context.fillText(labelText, pos.x-tileCoords.x, pos.y-tileCoords.y);
+            context.fillText(labelText, labelX, labelY);
 context.restore();
           }
         }

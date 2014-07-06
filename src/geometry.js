@@ -8,16 +8,16 @@ Geometry.POLYGON = 'Polygon';
 var proto = Geometry;
 
 proto.getCentroid = function(featureParts) {
-  var part, coordinates;
+  var part, coordinates, tileX, tileY;
 
   if (!featureParts || !featureParts.length) {
     return;
   }
 
-  if (featureParts.length > 1) {
-    part = getLargestPart(featureParts); //coords+type
-  } else {
+  if (featureParts.length === 1) {
     part = featureParts[0];
+  } else {
+    part = getLargestPart(featureParts);
   }
 
   if (!part) {
@@ -25,11 +25,13 @@ proto.getCentroid = function(featureParts) {
   }
 
   coordinates = part.feature.coordinates;
+  tileX = part.tileCoords.x*256;
+  tileY = part.tileCoords.y*256;
 
   if (part.feature.type === Geometry.POINT) {
     return {
-      x:coordinates[0]+part.tileCoords.x,
-      y:coordinates[1]+part.tileCoords.y
+      x: coordinates[0] + tileX,
+      y: coordinates[1] + tileY
     };
   }
 
@@ -38,7 +40,6 @@ proto.getCentroid = function(featureParts) {
   }
 
   var
-    tileCoords = part.tileCoords,
     startX = coordinates[0], startY = coordinates[1],
     xTmp = 0, yTmp = 0,
     dx0, dy0,
@@ -60,14 +61,14 @@ proto.getCentroid = function(featureParts) {
 
   if (lenSum) {
     return {
-      x: tileCoords.x + (xTmp/(3*lenSum)) + startX <<0,
-      y: tileCoords.y + (yTmp/(3*lenSum)) + startY <<0
+      x: (xTmp/(3*lenSum)) + startX + tileX,
+      y: (yTmp/(3*lenSum)) + startY + tileY
     };
   }
 
   return {
-    x: tileCoords.x + startX,
-    y: tileCoords.y + startY
+    x: startX + tileX,
+    y: startY + tileY
   };
 };
 

@@ -54,12 +54,6 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype._removeTile.call(this, key);
     },
 
-    _update: function(key) {
-      this._uniqueItems = {};
-      L.TileLayer.prototype._update.call(this, key);
-    },
-
-
     createTile: function(coords) {
       var tile = new Tile({
         coords: coords,
@@ -76,7 +70,7 @@ if (typeof L !== 'undefined') {
 
     redraw: function() {
       var timer = Profiler.metric('tiles.render.time').start();
-      this._uniqueItems = {};
+      this._labelPositions = {};
       for (var key in this._tileObjects) {
         this._tileObjects[key].render();
       }
@@ -86,19 +80,19 @@ if (typeof L !== 'undefined') {
     uniqueItems: {},
 
     // TODO: check for bbox intersection
-    // TODO add tile offset
     getLabelPosition: function(feature) {
       var
         key = 'label:'+ feature.groupId,
+        scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._uniqueItems[key]) {
-        return pos;
+      if (pos = this._labelPositions[key]) {
+        return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
       var featureParts = this.getFeatureParts(feature.groupId);
       pos = Geometry.getCentroid(featureParts);
-      this._uniqueItems[key] = pos;
+      this._labelPositions[key] = { x: pos.x/scale, y: pos.y/scale };
       return pos;
     },
 
