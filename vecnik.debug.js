@@ -55,24 +55,34 @@ Geometry.POLYGON = 'Polygon';
 var proto = Geometry;
 
 proto.getCentroid = function(featureParts) {
-  var feature, coordinates;
+  var part, coordinates, tileX, tileY;
 
   if (!featureParts || !featureParts.length) {
     return;
   }
 
-  if (featureParts.length > 1) {
-    feature = getLargestPart(featureParts); //coords+type
+  if (featureParts.length === 1) {
+    part = featureParts[0];
   } else {
-    feature = featureParts[0];
+    part = getLargestPart(featureParts);
   }
 
-  if (!feature) {
+  if (!part) {
     return;
   }
 
-  coordinates = feature.coordinates;
-  if (feature.type === Geometry.POLYGON) {
+  coordinates = part.feature.coordinates;
+  tileX = part.tileCoords.x*256;
+  tileY = part.tileCoords.y*256;
+
+  if (part.feature.type === Geometry.POINT) {
+    return {
+      x: coordinates[0] + tileX,
+      y: coordinates[1] + tileY
+    };
+  }
+
+  if (part.feature.type === Geometry.POLYGON) {
     coordinates = coordinates[0];
   }
 
@@ -98,14 +108,14 @@ proto.getCentroid = function(featureParts) {
 
   if (lenSum) {
     return {
-      x: (xTmp/(3*lenSum)) + startX <<0,
-      y: (yTmp/(3*lenSum)) + startY <<0
+      x: (xTmp/(3*lenSum)) + startX + tileX,
+      y: (yTmp/(3*lenSum)) + startY + tileY
     };
   }
 
   return {
-    x: startX,
-    y: startY
+    x: startX + tileX,
+    y: startY + tileY
   };
 };
 
@@ -139,14 +149,14 @@ function getArea(coordinates) {
 function getLargestPart(featureParts) {
   var
     area, maxArea = -Infinity,
-    feature, maxFeature,
+    part, maxPart,
     coordinates;
 
   for (var i = 0, il = featureParts.length; i < il; i++) {
-    feature = featureParts[i];
-    coordinates = feature.coordinates;
+    part = featureParts[i];
+    coordinates = part.feature.coordinates;
 
-    if (feature.type === Geometry.POLYGON) {
+    if (part.feature.type === Geometry.POLYGON) {
       coordinates = coordinates[0];
     }
 
@@ -154,14 +164,16 @@ function getLargestPart(featureParts) {
 
     if (area > maxArea) {
       maxArea = area;
-      maxFeature = feature;
+      maxPart = part;
     }
   }
 
-  return maxFeature;
+  return maxPart;
 }
 
 },{}],4:[function(_dereq_,module,exports){
+
+var Geometry = _dereq_('./geometry');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
 if (typeof L !== 'undefined') {
@@ -232,10 +244,30 @@ if (typeof L !== 'undefined') {
 
     redraw: function() {
       var timer = Profiler.metric('tiles.render.time').start();
-      for(var key in this._tileObjects) {
+      this._labelPositions = {};
+      for (var key in this._tileObjects) {
         this._tileObjects[key].render();
       }
       timer.end();
+    },
+
+    uniqueItems: {},
+
+    // TODO: check for bbox intersection
+    getLabelPosition: function(feature) {
+      var
+        key = 'label:'+ feature.groupId,
+        scale = Math.pow(2, this._map.getZoom()),
+        pos;
+
+      if (pos = this._labelPositions[key]) {
+        return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
+      }
+
+      var featureParts = this.getFeatureParts(feature.groupId);
+      pos = Geometry.getCentroid(featureParts);
+      this._labelPositions[key] = { x: pos.x/scale, y: pos.y/scale };
+      return pos;
     },
 
     getFeatureParts: function(groupId) {
@@ -249,7 +281,7 @@ if (typeof L !== 'undefined') {
         for (f = 0, fl = tileObject._data.length; f < fl; f++) {
           feature = tileObject._data[f];
           if (feature.groupId === groupId) {
-            featureParts.push(feature);
+            featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
           }
         }
       }
@@ -258,7 +290,7 @@ if (typeof L !== 'undefined') {
   });
 }
 
-},{"./profiler":7,"./tile":14}],5:[function(_dereq_,module,exports){
+},{"./geometry":3,"./profiler":7,"./tile":14}],5:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -850,13 +882,16 @@ proto._drawMarker = function (context, coordinates, size) {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(layer, context, collection, mapContext) {
+proto.render = function(tile, collection, mapContext) {
   var
+    layer = tile.getLayer(),
+    context = tile.getContext(),
+    tileCoords = tile.getCoords(),
     shaderLayers = this._shader.getLayers(),
     shader, style,
     i, il, j, jl, s, sl,
     feature, coordinates,
-		pos, labelText;
+		pos, labelX, labelY, labelText;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
@@ -909,7 +944,11 @@ proto.render = function(layer, context, collection, mapContext) {
         }
 
         if ('needs label') { // TODO: proper check
-          if (pos = this._getLabelPosition(layer, feature)) {
+          if (pos = layer.getLabelPosition(feature)) {
+            // TODO: check whether it makes sense to draw, even with tolerance
+            labelX = pos.x-tileCoords.x * 256;
+            labelY = pos.y-tileCoords.y * 256;
+
             labelText = feature.groupId;
 // TODO: align state changes with shader.apply()
 context.save();
@@ -920,10 +959,10 @@ context.save();
             context.lineWidth = 4; // text outline width
             context.font = 'bold 11px sans-serif';
             context.textAlign = 'center';
-            context.strokeText(labelText, pos.x, pos.y);
+            context.strokeText(labelText, labelX, labelY);
 
             context.fillStyle = '#000';
-            context.fillText(labelText, pos.x, pos.y);
+            context.fillText(labelText, labelX, labelY);
 context.restore();
           }
         }
@@ -934,18 +973,8 @@ context.restore();
 
 // TODO: make sure, label has not yet been rendered somewhere else
 // on render -> check other tiles, whether it has been drawn already
-
 // TODO: avoid overlapping
 // TODO: solve labels close outside tile border
-
-proto._getLabelPosition = function(layer, feature) {
-  if (feature.type === Geometry.POINT) {
-    return { x:feature.coordinates[0], y:feature.coordinates[1] };
-  }
-
-  var featureParts = layer.getFeatureParts(feature.groupId);
-  return Geometry.getCentroid(featureParts);
-};
 
 },{"./geometry":3}],12:[function(_dereq_,module,exports){
 
@@ -1262,8 +1291,20 @@ proto.getDomElement = function() {
   return this._canvas;
 };
 
+proto.getLayer = function() {
+  return this._layer;
+};
+
+proto.getContext = function() {
+  return this._context;
+};
+
+proto.getCoords = function() {
+  return this._coords;
+};
+
 proto.render = function() {
-  this._renderer.render(this._layer, this._context, this._data, {
+  this._renderer.render(this, this._data, {
     zoom: this._coords.z
   });
 };
