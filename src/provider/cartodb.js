@@ -3,22 +3,8 @@ var Projection = require('../mercator');
 var Format = require('../reader/geojson');
 
 var Provider = module.exports = function(options) {
-  this._options = options;
   this._projection = new Projection();
-  this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
-
-  if (this._options.ENABLE_SIMPLIFY === undefined) {
-    this._options.ENABLE_SIMPLIFY = true;
-  }
-  if (this._options.ENABLE_SNAPPING === undefined) {
-    this._options.ENABLE_SNAPPING = true;
-  }
-  if (this._options.ENABLE_CLIPPING === undefined) {
-    this._options.ENABLE_CLIPPING = true;
-  }
-  if (this._options.ENABLE_FIXING === undefined) {
-    this._options.ENABLE_FIXING = true;
-  }
+  this.update(options);
 };
 
 var proto = Provider.prototype;
@@ -37,4 +23,22 @@ proto._getUrl = function(x, y, zoom) {
 
 proto.load = function(tileCoords, callback) {
   Format.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), tileCoords, this._projection, callback);
+};
+
+proto.update = function(options) {
+  this._options = options;
+  this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
+
+  if (this._options.ENABLE_SIMPLIFY === undefined) {
+    this._options.ENABLE_SIMPLIFY = true;
+  }
+  if (this._options.ENABLE_SNAPPING === undefined) {
+    this._options.ENABLE_SNAPPING = true;
+  }
+  if (this._options.ENABLE_CLIPPING === undefined) {
+    this._options.ENABLE_CLIPPING = true;
+  }
+  if (this._options.ENABLE_FIXING === undefined) {
+    this._options.ENABLE_FIXING = true;
+  }
 };

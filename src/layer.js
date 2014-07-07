@@ -68,7 +68,11 @@ if (typeof L !== 'undefined') {
       return tile.getDomElement();
     },
 
-    redraw: function() {
+    redraw: function(forceReload) {
+      if (!!forceReload) {
+        L.TileLayer.prototype.redraw.call(this);
+        return;
+      }
       var timer = Profiler.metric('tiles.render.time').start();
       this._labelPositions = {};
       for (var key in this._tileObjects) {
