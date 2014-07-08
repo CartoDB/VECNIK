@@ -52,6 +52,7 @@ html, body {
 }
 </style>
 
+<script src="lib/state.js"></script>
 <script src="lib/leaflet08/leaflet-src.js"></script>
 <script src="../vecnik.debug.js"></script>
 <script src="lib/underscore.js"></script>
@@ -59,7 +60,7 @@ html, body {
 <script>
 var
   map,
-  state = {
+  defaultState = {
     user: 'pluto',
     table: 'mn_mappluto_13v1',
     columns: 'numfloors',
@@ -90,102 +91,86 @@ function $(query) {
   return document.querySelector(query);
 }
 
+function afterKeyUp(el, callback) {
+  var timer, oldValue = '';
+  el.addEventListener('keyup', function() {
+    if (oldValue === el.value) {
+      return;
+    }
+    clearTimeout(timer);
+    timer = setTimeout(callback, 750);
+  });
+}
+
 var provider, shader, vlayer;
 
 function updateProvider() {
-  state.user = userControl.value;
-  state.table = tableControl.value;
-  state.columns = columnsControl.value.replace(/[,; ]+/, ';').split(';');
-  saveState(state);
+  State.set('user', userControl.value);
+  State.set('table', tableControl.value);
+  State.set('columns', columnsControl.value);
+
   provider.update({
-    user: state.user,
-    table: state.table,
-    columns: state.columns
+    user: userControl.value,
+    table: tableControl.value,
+    columns: columnsControl.value.replace(/[,; ]+/, ';').split(';')
   });
   vlayer.redraw(true);
 }
 
 function updateShader() {
-  state.cartocss = cartocss.value
-  saveState(state);
-  shader.update(state.cartocss);
+  State.set('cartocss', cartocssControl.value);
+  shader.update(cartocssControl.value);
   vlayer.redraw();
 }
 
 function updateMap() {
   var center = map.getCenter();
-  state.lat = center.lat.toFixed(5);
-  state.lon = center.lng.toFixed(5);
-  state.zoom = map.getZoom();
-  saveState(state);
-}
-
-function saveState() {
-  var k, v, param = [];
-  for (k in state) {
-    v = state[k];
-    param.push(encodeURIComponent(k) +'='+ encodeURIComponent(v));
-  }
-  location.hash = '#'+ param.join('&');
-}
-
-function restoreState() {
-  var hash = location.hash;
-  hash = hash.substring(1).replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function ($0, $1, $2) {
-    if ($1) {
-      state[decodeURIComponent($1)] = decodeURIComponent($2);
-    }
-  });
+  State.set('lat', center.lat.toFixed(5));
+  State.set('lon', center.lng.toFixed(5));
+  State.set('zoom', map.getZoom());
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   userControl = $('#user');
-  tableControl = $('#table');
-  columnsControl = $('#columns');
+  afterKeyUp(userControl, updateProvider);
 
-  userControl.addEventListener('change', updateProvider);
-  tableControl.addEventListener('change', updateProvider);
-  columnsControl.addEventListener('change', updateProvider);
+  tableControl = $('#table');
+  afterKeyUp(tableControl, updateProvider);
+
+  columnsControl = $('#columns');
+  afterKeyUp(columnsControl, updateProvider);
 
   cartocssControl = $('#cartocss');
+  afterKeyUp(cartocssControl, updateShader);
 
-  var timer, codeStr = '';
-  cartocssControl.addEventListener('change', function() {
-    if (codeStr === cartocssControl.value) {
-      return;
-    }
-    clearTimeout(timer);
-    timer = setTimeout(updateShader, 750);
-  });
+  State.init(defaultState);
 
   map = new L.Map('map').setView([0, 0], 10);
 
   new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
 
-  restoreState();
-
-  if (state.lat !== undefined && state.lon !== undefined) {
-    map.setView([state.lat, state.lon]);
+  if (State.get('lat') !== undefined && State.get('lon') !== undefined) {
+    map.setView([State.get('lat'), State.get('lon')]);
   }
 
-  if (state.zoom !== undefined) {
-    map.setZoom(parseInt(state.zoom, 10));
+  if (State.get('zoom') !== undefined) {
+    map.setZoom(parseInt(State.get('zoom'), 10));
   }
 
-  userControl.value = state.user;
-  tableControl.value = state.table;
-  columnsControl.value = state.columns;
+  userControl.value = State.get('user');
+  tableControl.value = State.get('table');
+  columnsControl.value = State.get('columns');
 
   provider = new VECNIK.CartoDB.API({
-    user: state.user,
-    table: state.table,
-    columns: state.columns.replace(/[,; ]+/, ';').split(';'),
+    user: userControl.value,
+    table: tableControl.value,
+    columns: columnsControl.value.replace(/[,; ]+/, ';').split(';'),
     debug: false,
     bufferSize: 50
   });
 
-  cartocssControl.value = state.cartocss;
-  shader = new VECNIK.CartoShader(state.cartocss);
+  cartocssControl.value = State.get('cartocss');
+  shader = new VECNIK.CartoShader(cartocssControl.value);
 
   vlayer = new VECNIK.Layer({
     provider: provider,
@@ -196,8 +181,6 @@ document.addEventListener('DOMContentLoaded', function() {
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);
 
   map.on('moveend zoomend', updateMap);
-
-  saveState();
 });
 </script>
 </head>
