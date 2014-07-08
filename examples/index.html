@@ -3,6 +3,8 @@
 <head>
 <title>Vecnik</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="stylesheet" href="lib/leaflet08/leaflet.css">
 <style type="text/css">
 html, body {
@@ -44,7 +46,7 @@ html, body {
   top: 155px;
 }
 
-#code {
+#cartocss {
   top: 195px;
   bottom: 10px;
 }
@@ -55,71 +57,147 @@ html, body {
 <script src="lib/underscore.js"></script>
 <script src="lib/carto.js"></script>
 <script>
-
 var
   map,
+  state = {
+    user: 'pluto',
+    table: 'mn_mappluto_13v1',
+    columns: 'numfloors',
+    lat: 40.735291,
+    lon: -73.990731,
+    zoom: 16,
+    cartocss:
+'#layer {\n'+
+'  polygon-fill: rgba(0, 0, 0, 0.1);\n'+
+'  line-color: white;\n'+
+'  line-width: 4;\n'+
+'  [numfloors > 10] {\n'+
+'    polygon-fill: rgba(255, 0, 0, 0.88);\n'+
+'  }\n'+
+'}\n\n'+
+'#layer::pass2 {\n'+
+'  polygon-fill: rgba(0, 0, 0, 0.0);\n'+
+'  line-width: 1;\n'+
+'  line-color: black;\n'+
+'}'
+  },
   userControl,
   tableControl,
   columnsControl,
-  codeControl;
+  cartocssControl;
 
-var provider = new VECNIK.CartoDB.API({
-  user: 'pluto',
-  table: 'mn_mappluto_13v1',
-  columns: ['numfloors'],
-  debug: false,
-  bufferSize: 50
-});
+function $(query) {
+  return document.querySelector(query);
+}
 
-var shader = new VECNIK.CartoShader();
-
-var renderer = new VECNIK.Renderer({ shader: shader });
-
-var vlayer = new VECNIK.Layer({
-  provider: provider,
-  renderer: renderer
-});
+var provider, shader, vlayer;
 
 function updateProvider() {
+  state.user = userControl.value;
+  state.table = tableControl.value;
+  state.columns = columnsControl.value.replace(/[,; ]+/, ';').split(';');
+  saveState(state);
   provider.update({
-    user: userControl.value,
-    table: tableControl.value,
-    columns: columnsControl.value.replace(/[,; ]+/, ';').split(';')
+    user: state.user,
+    table: state.table,
+    columns: state.columns
   });
   vlayer.redraw(true);
 }
 
 function updateShader() {
-  shader.update(codeStr = code.value);
+  state.cartocss = cartocss.value
+  saveState(state);
+  shader.update(state.cartocss);
   vlayer.redraw();
 }
 
+function updateMap() {
+  var center = map.getCenter();
+  state.lat = center.lat.toFixed(5);
+  state.lon = center.lng.toFixed(5);
+  state.zoom = map.getZoom();
+  saveState(state);
+}
+
+function saveState() {
+  var k, v, param = [];
+  for (k in state) {
+    v = state[k];
+    param.push(encodeURIComponent(k) +'='+ encodeURIComponent(v));
+  }
+  location.hash = '#'+ param.join('&');
+}
+
+function restoreState() {
+  var hash = location.hash;
+  hash = hash.substring(1).replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function ($0, $1, $2) {
+    if ($1) {
+      state[decodeURIComponent($1)] = decodeURIComponent($2);
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  userControl = document.getElementById('user');
-  tableControl = document.getElementById('table');
-  columnsControl = document.getElementById('columns');
-  codeControl = document.getElementById('code');
-
-  map = new L.Map('map').setView([40.735291, -73.990731], 16);
-  new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
-
-  vlayer.addTo(map);
-  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+  userControl = $('#user');
+  tableControl = $('#table');
+  columnsControl = $('#columns');
 
   userControl.addEventListener('change', updateProvider);
   tableControl.addEventListener('change', updateProvider);
   columnsControl.addEventListener('change', updateProvider);
 
+  cartocssControl = $('#cartocss');
+
   var timer, codeStr = '';
-  codeControl.addEventListener('change', function() {
-    if (codeStr === codeControl.value) {
+  cartocssControl.addEventListener('change', function() {
+    if (codeStr === cartocssControl.value) {
       return;
     }
     clearTimeout(timer);
     timer = setTimeout(updateShader, 750);
   });
 
-  updateShader();
+  map = new L.Map('map').setView([0, 0], 10);
+
+  new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
+
+  restoreState();
+
+  if (state.lat !== undefined && state.lon !== undefined) {
+    map.setView([state.lat, state.lon]);
+  }
+
+  if (state.zoom !== undefined) {
+    map.setZoom(parseInt(state.zoom, 10));
+  }
+
+  userControl.value = state.user;
+  tableControl.value = state.table;
+  columnsControl.value = state.columns;
+
+  provider = new VECNIK.CartoDB.API({
+    user: state.user,
+    table: state.table,
+    columns: state.columns.replace(/[,; ]+/, ';').split(';'),
+    debug: false,
+    bufferSize: 50
+  });
+
+  cartocssControl.value = state.cartocss;
+  shader = new VECNIK.CartoShader(state.cartocss);
+
+  vlayer = new VECNIK.Layer({
+    provider: provider,
+    renderer: new VECNIK.Renderer({ shader: shader })
+  });
+
+  vlayer.addTo(map);
+  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+
+  map.on('moveend zoomend', updateMap);
+
+  saveState();
 });
 </script>
 </head>
@@ -127,23 +205,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <body>
 <div id="map"></div>
 
-<input type="text" class="control" id="user" value="pluto">
-<input type="text" class="control" id="table" value="mn_mappluto_13v1">
-<input type="text" class="control" id="columns" value="numfloors">
-<textarea class="control" id="code">
-#layer {
-  polygon-fill: rgba(0, 0, 0, 0.1);
-  line-color: white;
-  line-width: 4;
-  [numfloors > 10] {
-    polygon-fill: rgba(255, 0, 0, 0.88);
-  }
-}
-#layer::pass2 {
-  polygon-fill: rgba(0, 0, 0, 0.0);
-  line-width: 1;
-  line-color: black;
-}
-</textarea>
+<input type="text" class="control" id="user">
+<input type="text" class="control" id="table">
+<input type="text" class="control" id="columns">
+<textarea class="control" id="cartocss"></textarea>
 </body>
 </html>
