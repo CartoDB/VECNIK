@@ -201,6 +201,7 @@ if (typeof L !== 'undefined') {
       this._renderer = options.renderer;
 
       this._tileObjects = {};
+      this._labelPositions = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
@@ -269,9 +270,10 @@ if (typeof L !== 'undefined') {
       }
 
       var featureParts = this.getFeatureParts(feature.groupId);
-      pos = Geometry.getCentroid(featureParts);
-      this._labelPositions[key] = { x: pos.x/scale, y: pos.y/scale };
-      return pos;
+      if (pos = Geometry.getCentroid(featureParts)) {
+        this._labelPositions[key] = { x: pos.x/scale, y: pos.y/scale };
+        return pos;
+      }
     },
 
     getFeatureParts: function(groupId) {
