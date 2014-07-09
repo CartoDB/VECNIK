@@ -4,12 +4,14 @@ var ShaderLayer = require('./shader.layer');
 
 var Shader = module.exports = function(style) {
   this._layers = [];
-  style && this.update(style);
+  if (style) {
+    this.update(style);
+  }
 };
 
 var proto = Shader.prototype;
 
-// clones every layer in the shader 
+// clones every layer in the shader
 proto.clone = function() {
   var s = new Shader();
   for (var i = 0; i < this._layers.length; ++i) {
@@ -29,7 +31,7 @@ proto.hitShader = function(attr) {
 proto.update = function(style) {
   var
     shader = new carto.RendererJS().render(style),
-    layer, order, layerShader, sh, p,
+    layer, renderOrder, layerShader, sh, p,
     geometryTypeMapping = {
       line: Geometry.LINE,
       polygon: Geometry.POLYGON,
@@ -41,7 +43,7 @@ proto.update = function(style) {
       layer = shader.layers[i];
 
       // order from cartocss
-      order = layer.getSymbolizers().map(function(s) {
+      renderOrder = layer.getSymbolizers().map(function(s) {
         return geometryTypeMapping[s];
       });
 
@@ -54,7 +56,7 @@ proto.update = function(style) {
         }
       }
 
-      this._layers[i] = new ShaderLayer(sh, order);
+      this._layers[i] = new ShaderLayer(sh, renderOrder);
     }
   }
 };

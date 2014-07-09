@@ -18,11 +18,11 @@ Renderer.POINT_RADIUS = 2;
 
 var proto = Renderer.prototype;
 
-proto.shader = function(_) {
-  if (_) {
-    this._shader = _;
-    return this;
-  }
+proto.setShader = function(shader) {
+  this._shader = shader;
+};
+
+proto.getShader = function() {
   return this._shader;
 };
 
@@ -42,88 +42,92 @@ proto._drawMarker = function (context, coordinates, size) {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(tile, collection, mapContext) {
+proto.render = function(tile, context, collectionByType, mapContext) {
   var
     layer = tile.getLayer(),
-    context = tile.getContext(),
     tileCoords = tile.getCoords(),
-    shaderLayers = this._shader.getLayers(),
-    shader, style,
-    i, il, j, jl, s, sl,
+    layers = this._shader.getLayers(),
+    collection,
+    shaderLayer, style, renderOrder,
+    type,
+    i, il, j, jl, r, rl, s, sl,
     feature, coordinates,
 		pos, labelX, labelY, labelText;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-  for (s = 0, sl = shaderLayers.length; s < sl; s++) {
-    shader = shaderLayers[s];
+  for (s = 0, sl = layers.length; s < sl; s++) {
+    shaderLayer = layers[s];
+    renderOrder = shaderLayer.getRenderOrder();
 
-    // TODO: according to processing principles, features should be sorted accorting to their type first
+    // features are sorted according to their type first
     // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
-    for (i = 0, il = collection.length; i < il; i++) {
-      feature = collection[i];
-      style = shader.evalStyle(feature.properties, mapContext);
+    for (r = 0, rl = renderOrder.length; r < rl; r++) {
+      type = renderOrder[r];
+      collection = collectionByType[type] || [];
 
-      coordinates = feature.coordinates;
+      for (i = 0, il = collection.length; i < il; i++) {
+        feature = collection[i];
+        coordinates = feature.coordinates;
 
-      if (shader.needsRender(feature.type, style)) {
-        context.beginPath();
+        // this needs to be handled further up
+        style = shaderLayer.evalStyle(feature.properties, mapContext);
 
-        switch(feature.type) {
-          case Geometry.POINT:
-            this._drawMarker(context, coordinates, style['marker-width']);
-          break;
+        if (shaderLayer.needsRender(feature.type, style)) {
+          context.beginPath();
 
-          case Geometry.LINE:
-            this._drawLineString(context, coordinates);
-          break;
+          switch(type) {
+            case Geometry.POINT:
+              this._drawMarker(context, coordinates, style['marker-width']);
+            break;
 
-          case Geometry.POLYGON:
-            for (j = 0, jl = coordinates.length; j < jl; j++) {
-              this._drawLineString(context, coordinates[j]);
-            }
-            context.closePath();
-          break;
-        }
+            case Geometry.LINE:
+              this._drawLineString(context, coordinates);
+            break;
 
-        if (shader.apply(context, style)) {
-          // TODO: stroke/fill here if the style has changed to close previous polygons
-        }
-
-        var order = shader.renderOrder();
-
-        if (feature.type === Geometry.POLYGON || feature.type === Geometry.LINE) {
-          context[ strokeFillOrder[order[0]] ]();
-          if (order.length >= 1) {
-            context[ strokeFillOrder[ order[1] ]]();
+            case Geometry.POLYGON:
+              for (j = 0, jl = coordinates.length; j < jl; j++) {
+                this._drawLineString(context, coordinates[j]);
+              }
+              context.closePath();
+            break;
           }
-        } else if (feature.type === Geometry.POINT) {
-          // if case it's a point there is no render order, fill and stroke
-          context.fill();
-          context.stroke();
-        }
 
-        if ('needs label') { // TODO: proper check
-          if (pos = layer.getLabelPosition(feature)) {
-            // TODO: check whether it makes sense to draw, even with tolerance
-            labelX = pos.x-tileCoords.x * 256;
-            labelY = pos.y-tileCoords.y * 256;
+          shaderLayer.apply(context, style);
 
-            labelText = feature.groupId;
-// TODO: align state changes with shader.apply()
-context.save();
-            // TODO: use CartoCSS for text
-            context.lineCap = 'round';
-            context.lineJoin = 'round';
-            context.strokeStyle = 'rgba(255,255,255,1)';
-            context.lineWidth = 4; // text outline width
-            context.font = 'bold 11px sans-serif';
-            context.textAlign = 'center';
-            context.strokeText(labelText, labelX, labelY);
+          if (type === Geometry.POLYGON || type === Geometry.LINE) {
+            context[ strokeFillOrder[ renderOrder[0] ] ]();
+            if (renderOrder.length >= 1) {
+              context[ strokeFillOrder[ renderOrder[1] ]]();
+            }
+          } else if (type === Geometry.POINT) {
+            // if case it's a point there is no render order, fill and stroke
+            context.fill();
+            context.stroke();
+          }
 
-            context.fillStyle = '#000';
-            context.fillText(labelText, labelX, labelY);
-context.restore();
+          if ('needs label') { // TODO: proper check
+            if (pos = layer.getLabelPosition(feature)) {
+              // TODO: check whether it makes sense to draw, even with tolerance
+              labelX = pos.x-tileCoords.x * 256;
+              labelY = pos.y-tileCoords.y * 256;
+
+              labelText = feature.groupId;
+  // TODO: align state changes with shaderLayer.apply()
+  context.save();
+              // TODO: use CartoCSS for text
+              context.lineCap = 'round';
+              context.lineJoin = 'round';
+              context.strokeStyle = 'rgba(255,255,255,1)';
+              context.lineWidth = 4; // text outline width
+              context.font = 'bold 11px sans-serif';
+              context.textAlign = 'center';
+              context.strokeText(labelText, labelX, labelY);
+
+              context.fillStyle = '#000';
+              context.fillText(labelText, labelX, labelY);
+  context.restore();
+            }
           }
         }
       }

@@ -72,6 +72,7 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('test', 'Run tests', function() {
+    grunt.task.run('browserify');
     grunt.task.run('shell:test');
   });
 

@@ -92,11 +92,15 @@ function getBBox(coordinates) {
 }
 
 function getArea(coordinates) {
-  var
-    bbox = getBBox(coordinates),
-    dx = bbox.maxX-bbox.minX,
-    dy = bbox.maxY-bbox.minY;
-  return dx*dy;
+  if (coordinates.length < 6) {
+    return 0;
+  }
+  var sum = 0;
+  for (var i = 0, il = coordinates.length-3; i < il; i+=2) {
+    sum += (coordinates[i+2]-coordinates[i]) * (coordinates[i+1]+coordinates[i+3]);
+  }
+  sum += (coordinates[0]-coordinates[il]) * (coordinates[il+1]+coordinates[1]);
+  return -sum/2;
 }
 
 function getLargestPart(featureParts) {

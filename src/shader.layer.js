@@ -2,22 +2,19 @@
 var Geometry = require('./geometry');
 var Events = require('./core/events');
 
-
 // properties needed for each geometry type to be renderered
-var requiredProperties = {
-  point: [
-    'marker-width',
-    'line-color'
-  ],
-  linestring: [
-    'line-color'
-  ],
-  polygon: [
-    'polygon-fill',
-    'line-color'
-  ]
-};
-requiredProperties.multipolygon = requiredProperties.polygon;
+var requiredProperties = {};
+requiredProperties[Geometry.POINT] = [
+  'marker-width',
+  'line-color'
+];
+requiredProperties[Geometry.LINE] = [
+  'line-color'
+];
+requiredProperties[Geometry.POLYGON] = [
+  'polygon-fill',
+  'line-color'
+];
 
 // last context style applied, this is a shared variable
 // for all the shaders
@@ -135,42 +132,38 @@ proto.textApply = function(context, style) {
   return this.apply(context, style);
 };
 
-proto.renderOrder = function() {
+proto.getRenderOrder = function() {
   return this._renderOrder;
 };
 
 // return true if the feature need to be rendered
 proto.needsRender = function(geometryType, style) {
   // check properties in the shader first
-  var
-    props = requiredProperties[geometryType.toLowerCase()],
-    p;
+  var props = requiredProperties[geometryType], p;
 
-  // ¿?
   if (!props) {
     return false;
   }
 
   for (var i = 0; i < props.length; ++i) {
     p = props[i];
-    if (this._shaderSrc[p]) {
-      if (style[propertyMapping[p]]) {
-        return true;
-      }
+    if (this._shaderSrc[p] && style[ propertyMapping[p] ]) {
+      return true;
     }
   }
+
   return false;
 };
 
-var RGB2Int = function(r,g,b){
-    return r | (g<<8) | (b<<16);
+var RGB2Int = function(r, g, b) {
+  return r | (g<<8) | (b<<16);
 };
 
-var Int2RGB = function(input){
-    var r = input & 0xff;
-    var g = (input >> 8) & 0xff;
-    var b = (input >> 16) & 0xff;
-    return [r,g,b];
+var Int2RGB = function(input) {
+  var r = input & 0xff;
+  var g = (input >> 8) & 0xff;
+  var b = (input >> 16) & 0xff;
+  return [r, g, b];
 };
 
 
@@ -195,6 +188,3 @@ proto.hitShader = function(keyAttribute) {
 
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
-
-
-

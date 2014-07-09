@@ -2,8 +2,8 @@
 module('cartoshader');
 var shader, canvas, ctx;
 
-  QUnit.testStart(function( details ) {
-    canvas = document.createElement('canvas');
+  QUnit.testStart(function(details) {
+    canvas = document.createElement('CANVAS');
     ctx = canvas.getContext('2d')
     shader = new VECNIK.CartoShaderLayer({
       'point-color': '#ffffff',
@@ -29,11 +29,11 @@ var shader, canvas, ctx;
     equal(shader.apply(ctx, shader.evalStyle({ color: '#fff000' })), true);
   });
 
-  test('should tell when line should be rendered', function() {
+  test('should tell when geometry should be rendered', function() {
     var c = new VECNIK.CartoShaderLayer({
       'line-color': '#fff'
     });
-    var st = c.evalStyle({})
+    var st = c.evalStyle({});
     equal(c.needsRender('LineString', st), true);
     equal(c.needsRender('LineString', st), true);
     equal(c.needsRender('LineString', st), true);
@@ -77,7 +77,7 @@ var shader, canvas, ctx;
     equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, { zoom: 2 })), true);
   });
 
-  test('create a interactivity shader', function() {
+  test('create an interactivity shader', function() {
     var hit = shader.hitShader('id');
     var style = hit.evalStyle({ id: 0 });
     equal(style.fillStyle, 'rgb(1,0,0)');

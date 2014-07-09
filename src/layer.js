@@ -87,17 +87,16 @@ if (typeof L !== 'undefined') {
     // TODO: check for bbox intersection
     getLabelPosition: function(feature) {
       var
-        key = 'label:'+ feature.groupId,
         scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._labelPositions[key]) {
+      if (pos = this._labelPositions[feature.groupId]) {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
       var featureParts = this.getFeatureParts(feature.groupId);
       if (pos = Geometry.getCentroid(featureParts)) {
-        this._labelPositions[key] = { x: pos.x/scale, y: pos.y/scale };
+        this._labelPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
@@ -106,14 +105,17 @@ if (typeof L !== 'undefined') {
       var
         tileObject,
         feature, f, fl,
+        type,
         featureParts = [];
 
       for (var key in this._tileObjects) {
         tileObject = this._tileObjects[key];
-        for (f = 0, fl = tileObject._data.length; f < fl; f++) {
-          feature = tileObject._data[f];
-          if (feature.groupId === groupId) {
-            featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
+        for (type in tileObject._data) {
+          for (f = 0, fl = tileObject._data[type].length; f < fl; f++) {
+            feature = tileObject._data[type][f];
+            if (feature.groupId === groupId) {
+              featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
+            }
           }
         }
       }
