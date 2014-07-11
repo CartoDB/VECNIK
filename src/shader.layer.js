@@ -15,6 +15,10 @@ requiredProperties[Geometry.POLYGON] = [
   'polygon-fill',
   'line-color'
 ];
+requiredProperties[Geometry.TEXT] = [
+  'text-name',
+  'text-fill'
+];
 
 // last context style applied, this is a shared variable
 // for all the shaders
@@ -28,11 +32,21 @@ var propertyMapping = {
   'marker-line-width': 'lineWidth',
   'marker-color': 'fillStyle',
   'point-color': 'fillStyle',
+
   'line-color': 'strokeStyle',
   'line-width': 'lineWidth',
   'line-opacity': 'globalAlpha',
+
   'polygon-fill': 'fillStyle',
-  'polygon-opacity': 'globalAlpha'
+  'polygon-opacity': 'globalAlpha',
+
+  'text-face-name': 'font',
+  'text-size': 'font',
+  'text-fill': 'fillStyle',
+  'text-opacity': 'globalAlpha',
+  'text-halo-fill': 'strokeStyle',
+  'text-halo-radius': 'lineWidth',
+  'text-align': 'textAlign'
 };
 
 var ShaderLayer = module.exports = function(shader, renderOrder) {
@@ -41,7 +55,8 @@ var ShaderLayer = module.exports = function(shader, renderOrder) {
   this._renderOrder = renderOrder || [
     Geometry.POINT,
     Geometry.POLYGON,
-    Geometry.LINE
+    Geometry.LINE,
+    Geometry.TEXT
   ];
   this.compile(shader);
 };
@@ -55,7 +70,9 @@ proto.clone = function() {
 proto.compile = function(shader) {
   this._shaderSrc = shader;
   if (typeof shader === 'string') {
-    shader = function() { return shader; };
+    shader = function() {
+      return shader;
+    };
   }
   var property;
   for (var attr in shader) {

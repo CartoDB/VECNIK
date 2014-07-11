@@ -35,7 +35,8 @@ proto.update = function(style) {
     geometryTypeMapping = {
       line: Geometry.LINE,
       polygon: Geometry.POLYGON,
-      markers: Geometry.POINT
+      markers: Geometry.POINT,
+      labels: Geometry.TEXT
     };
 
   if (shader && shader.layers) {

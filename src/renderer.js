@@ -91,11 +91,16 @@ proto.render = function(tile, context, collectionByType, mapContext) {
               }
               context.closePath();
             break;
+
+            case Geometry.TEXT:
+              // TODO
+            break;
           }
 
           shaderLayer.apply(context, style);
 
           if (type === Geometry.POLYGON || type === Geometry.LINE) {
+console.log(renderOrder)
             context[ strokeFillOrder[ renderOrder[0] ] ]();
             if (renderOrder.length >= 1) {
               context[ strokeFillOrder[ renderOrder[1] ]]();
