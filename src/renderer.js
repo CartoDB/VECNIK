@@ -37,30 +37,30 @@ function drawPolygon(context, coordinates) {
   }
 };
 
-var contextStyle = {};
-
+// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
 function setStyle(context, prop, value) {
   if (typeof value === undefined) {
     return false;
   }
-  if (contextStyle[prop] !== value) {
-    context[prop] = (contextStyle[prop] = value);
+  context.defaults = context.defaults || {};
+  if (context.defaults[prop] !== value) {
+    context[prop] = (context.defaults[prop] = value);
   }
   return true;
 }
 
+// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
 function setFont(context, size, face) {
-  debugger
   if (typeof size === undefined && typeof face === undefined) {
     return false;
   }
+  context.defaults = context.defaults || {};
+  size = size || context.defaults.fontSize;
+  face = face || context.defaults.fontFace;
 
-  size = size || contextStyle.fontSize;
-  face = face || contextStyle.fontFace;
-
-  if (contextStyle.fontSize !== size || contextStyle.fontFace !== face) {
-    contextStyle.fontSize = size;
-    contextStyle.fontFace = face;
+  if (context.defaults.fontSize !== size || context.defaults.fontFace !== face) {
+    context.defaults.fontSize = size;
+    context.defaults.fontFace = face;
     context.font = size +'px '+ face;
   }
 

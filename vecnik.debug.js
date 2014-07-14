@@ -887,30 +887,30 @@ function drawPolygon(context, coordinates) {
   }
 };
 
-var contextStyle = {};
-
+// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
 function setStyle(context, prop, value) {
   if (typeof value === undefined) {
     return false;
   }
-  if (contextStyle[prop] !== value) {
-    context[prop] = (contextStyle[prop] = value);
+  context.defaults = context.defaults || {};
+  if (context.defaults[prop] !== value) {
+    context[prop] = (context.defaults[prop] = value);
   }
   return true;
 }
 
+// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
 function setFont(context, size, face) {
-  debugger
   if (typeof size === undefined && typeof face === undefined) {
     return false;
   }
+  context.defaults = context.defaults || {};
+  size = size || context.defaults.fontSize;
+  face = face || context.defaults.fontFace;
 
-  size = size || contextStyle.fontSize;
-  face = face || contextStyle.fontFace;
-
-  if (contextStyle.fontSize !== size || contextStyle.fontFace !== face) {
-    contextStyle.fontSize = size;
-    contextStyle.fontFace = face;
+  if (context.defaults.fontSize !== size || context.defaults.fontFace !== face) {
+    context.defaults.fontSize = size;
+    context.defaults.fontFace = face;
     context.font = size +'px '+ face;
   }
 
@@ -927,8 +927,6 @@ var Renderer = module.exports = function(options) {
 
   this._shader = options.shader;
 };
-
-Renderer.POINT_RADIUS = 2;
 
 var proto = Renderer.prototype;
 
@@ -1030,7 +1028,6 @@ proto.render = function(tile, context, collection, mapContext) {
               // 'text-opacity': 'globalAlpha',
               // context.font = 'bold 11px sans-serif';
               setFont(context, style['text-size'], style['text-face-name']);
-console.log([context.font, style['text-size'], style['text-face-name']]);
               setStyle(context, 'textAlign', style['text-align']);
 
               if (setStyle(context, 'strokeStyle', style['text-halo-fill'])) {
@@ -1132,11 +1129,6 @@ proto.getLayers = function() {
 
 var Shader = _dereq_('./shader');
 var Events = _dereq_('./core/events');
-
-// last context style applied, this is a shared variable
-// for all the shaders
-// could be shared across shader layers but not urgently
-var currentContextStyle = {};
 
 var ShaderLayer = module.exports = function(shader, shadingOrder) {
   Events.prototype.constructor.call(this);
