@@ -34,7 +34,7 @@ var Tile = module.exports = function(options) {
 
   var self = this;
   options.provider.load(options.coords, function(data) {
-    self._data = self._orderByType(data);
+    self._data = data;
     self.render();
   });
 };
@@ -43,14 +43,7 @@ Tile.SIZE = 256;
 
 var proto = Tile.prototype;
 
-proto._orderByType = function(collection) {
-  var res = {}, feature;
-  for (var i = 0, il = collection.length; i < il; i++) {
-    feature = collection[i];
-    (res[ feature.type ] || (res[ feature.type ] = [])).push(feature)
-  }
-  return res;
-};
+
 
 proto.getDomElement = function() {
   return this._canvas;

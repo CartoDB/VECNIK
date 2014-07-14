@@ -27,7 +27,7 @@ if (typeof L !== 'undefined') {
       this._renderer = options.renderer;
 
       this._tileObjects = {};
-      this._labelPositions = {};
+      this._centroidPositions = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
@@ -75,28 +75,25 @@ if (typeof L !== 'undefined') {
         return;
       }
       var timer = Profiler.metric('tiles.render.time').start();
-      this._labelPositions = {};
+      this._centroidPositions = {};
       for (var key in this._tileObjects) {
         this._tileObjects[key].render();
       }
       timer.end();
     },
 
-    uniqueItems: {},
-
-    // TODO: check for bbox intersection
-    getLabelPosition: function(feature) {
+    getCentroid: function(feature) {
       var
         scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._labelPositions[feature.groupId]) {
+      if (pos = this._centroidPositions[feature.groupId]) {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
       var featureParts = this.getFeatureParts(feature.groupId);
       if (pos = Geometry.getCentroid(featureParts)) {
-        this._labelPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
+        this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
@@ -105,17 +102,14 @@ if (typeof L !== 'undefined') {
       var
         tileObject,
         feature, f, fl,
-        type,
         featureParts = [];
 
       for (var key in this._tileObjects) {
         tileObject = this._tileObjects[key];
-        for (type in tileObject._data) {
-          for (f = 0, fl = tileObject._data[type].length; f < fl; f++) {
-            feature = tileObject._data[type][f];
-            if (feature.groupId === groupId) {
-              featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
-            }
+        for (f = 0, fl = tileObject._data.length; f < fl; f++) {
+          feature = tileObject._data[f];
+          if (feature.groupId === groupId) {
+            featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
           }
         }
       }

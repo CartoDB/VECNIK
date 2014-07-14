@@ -1,7 +1,4 @@
 
-var Geometry = require('./geometry');
-var ShaderLayer = require('./shader.layer');
-
 var Shader = module.exports = function(style) {
   this._layers = [];
   if (style) {
@@ -10,6 +7,11 @@ var Shader = module.exports = function(style) {
 };
 
 var proto = Shader.prototype;
+
+module.exports.LINE    = 'line';
+module.exports.POLYGON = 'polygon';
+module.exports.POINT   = 'markers';
+module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
 proto.clone = function() {
@@ -29,24 +31,17 @@ proto.hitShader = function(attr) {
 };
 
 proto.update = function(style) {
+  // TODO: improve var naming
   var
     shader = new carto.RendererJS().render(style),
-    layer, renderOrder, layerShader, sh, p,
-    geometryTypeMapping = {
-      line: Geometry.LINE,
-      polygon: Geometry.POLYGON,
-      markers: Geometry.POINT,
-      text: Geometry.TEXT
-    };
+    layer, layerShader, sh, p;
 
   if (shader && shader.layers) {
+    // requiring this late in order to avoid circular reference shader <-> shader.layer
+    var ShaderLayer = require('./shader.layer');
+
     for (var i = 0, il = shader.layers.length; i < il; i++) {
       layer = shader.layers[i];
-
-      // order from cartocss
-      renderOrder = layer.getSymbolizers().map(function(s) {
-        return geometryTypeMapping[s];
-      });
 
       // get shader from cartocss shader
       layerShader = layer.getShader();
@@ -57,7 +52,7 @@ proto.update = function(style) {
         }
       }
 
-      this._layers[i] = new ShaderLayer(sh, renderOrder);
+      this._layers[i] = new ShaderLayer(sh, layer.getSymbolizers());
     }
   }
 };
