@@ -36,7 +36,7 @@ proto.update = function(style) {
       line: Geometry.LINE,
       polygon: Geometry.POLYGON,
       markers: Geometry.POINT,
-      labels: Geometry.TEXT
+      text: Geometry.TEXT
     };
 
   if (shader && shader.layers) {

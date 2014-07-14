@@ -1,9 +1,22 @@
 
 var Geometry = require('./geometry');
 
-var strokeFillOrder = {};
-strokeFillOrder[Geometry.POLYGON] = 'fill';
-strokeFillOrder[Geometry.LINE] = 'stroke';
+
+function getStrokeFillOrder(renderOrder) {
+  var
+    type,
+    res = [];
+  for (var i = 0, il = renderOrder.length; i < il; i++) {
+    type = renderOrder[i];
+    if (type === Geometry.POLYGON) {
+      res.push('fill');
+    }
+    if (type === Geometry.LINE) {
+      res.push('stroke');
+    }
+  }
+  return res;
+}
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -48,7 +61,8 @@ proto.render = function(tile, context, collectionByType, mapContext) {
     tileCoords = tile.getCoords(),
     layers = this._shader.getLayers(),
     collection,
-    shaderLayer, style, renderOrder,
+    shaderLayer, style,
+    renderOrder, strokeAndFill,
     type,
     i, il, j, jl, r, rl, s, sl,
     feature, coordinates,
@@ -59,6 +73,7 @@ proto.render = function(tile, context, collectionByType, mapContext) {
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     renderOrder = shaderLayer.getRenderOrder();
+    strokeAndFill = getStrokeFillOrder(renderOrder);
 
     // features are sorted according to their type first
     // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
@@ -79,10 +94,13 @@ proto.render = function(tile, context, collectionByType, mapContext) {
           switch(type) {
             case Geometry.POINT:
               this._drawMarker(context, coordinates, style['marker-width']);
+              context.fill();
+              context.stroke();
             break;
 
             case Geometry.LINE:
               this._drawLineString(context, coordinates);
+              context.stroke();
             break;
 
             case Geometry.POLYGON:
@@ -90,6 +108,8 @@ proto.render = function(tile, context, collectionByType, mapContext) {
                 this._drawLineString(context, coordinates[j]);
               }
               context.closePath();
+              strokeAndFill[0] && context[ strokeAndFill[0] ]();
+              strokeAndFill[1] && context[ strokeAndFill[1] ]();
             break;
 
             case Geometry.TEXT:
@@ -98,18 +118,6 @@ proto.render = function(tile, context, collectionByType, mapContext) {
           }
 
           shaderLayer.apply(context, style);
-
-          if (type === Geometry.POLYGON || type === Geometry.LINE) {
-console.log(renderOrder)
-            context[ strokeFillOrder[ renderOrder[0] ] ]();
-            if (renderOrder.length >= 1) {
-              context[ strokeFillOrder[ renderOrder[1] ]]();
-            }
-          } else if (type === Geometry.POINT) {
-            // if case it's a point there is no render order, fill and stroke
-            context.fill();
-            context.stroke();
-          }
 
           if ('needs label') { // TODO: proper check
             if (pos = layer.getLabelPosition(feature)) {

@@ -197,11 +197,11 @@ proto.hitShader = function(keyAttribute) {
       //var p = hit._compiled[k];
       hit._compiled[k] = function(featureProperties, mapContext) {
         return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
-      }
+      };
     }
   }
   return hit;
-}
+};
 
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
