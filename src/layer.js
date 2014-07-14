@@ -27,7 +27,7 @@ if (typeof L !== 'undefined') {
       this._renderer = options.renderer;
 
       this._tileObjects = {};
-      this._labelPositions = {};
+      this._centroidPositions = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
@@ -75,29 +75,25 @@ if (typeof L !== 'undefined') {
         return;
       }
       var timer = Profiler.metric('tiles.render.time').start();
-      this._labelPositions = {};
+      this._centroidPositions = {};
       for (var key in this._tileObjects) {
         this._tileObjects[key].render();
       }
       timer.end();
     },
 
-    uniqueItems: {},
-
-    // TODO: check for bbox intersection
-    getLabelPosition: function(feature) {
+    getCentroid: function(feature) {
       var
-        key = 'label:'+ feature.groupId,
         scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._labelPositions[key]) {
+      if (pos = this._centroidPositions[feature.groupId]) {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
       var featureParts = this.getFeatureParts(feature.groupId);
       if (pos = Geometry.getCentroid(featureParts)) {
-        this._labelPositions[key] = { x: pos.x/scale, y: pos.y/scale };
+        this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },

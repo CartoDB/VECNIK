@@ -1,21 +1,35 @@
 
 var ShaderLayer = require('./shader.layer');
 
+function createCanvas() {
+  var
+    canvas = document.createElement('CANVAS'),
+    context = canvas.getContext('2d');
+
+  canvas.width  = Tile.SIZE;
+  canvas.height = Tile.SIZE;
+  context.mozImageSmoothingEnabled = false;
+  context.webkitImageSmoothingEnabled = false;
+
+  // TODO: allow these to be handled in Renderer / CartoCSS
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+
+  return canvas;
+}
+
 var Tile = module.exports = function(options) {
   options = options || {};
 
   var
-    canvas  = this._canvas  = document.createElement('CANVAS'),
-    context = this._context = canvas.getContext('2d');
+    canvas = this._canvas = createCanvas(),
+    hitCanvas = this._hitCanvas = createCanvas();
 
-  canvas.width  = Tile.SIZE;
-  canvas.height = Tile.SIZE;
+  this._context = canvas.getContext('2d');
+  this._hitContext = hitCanvas.getContext('2d');
 
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
-
-  context.mozImageSmoothingEnabled = false;
-  context.webkitImageSmoothingEnabled = false;
 
   this._layer = options.layer;
   this._renderer = options.renderer;
@@ -31,14 +45,9 @@ var Tile = module.exports = function(options) {
 
 Tile.SIZE = 256;
 
-function createCanvas() {
-  var canvas  = document.createElement('CANVAS');
-  canvas.width  = Tile.SIZE;
-  canvas.height = Tile.SIZE;
-  return canvas;
-}
-
 var proto = Tile.prototype;
+
+
 
 proto.getDomElement = function() {
   return this._canvas;
@@ -57,7 +66,7 @@ proto.getCoords = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this, this._data, {
+  this._renderer.render(this, this._context, this._data, {
     zoom: this._coords.z
   });
 };
@@ -65,22 +74,17 @@ proto.render = function() {
 /**
  * return hit grid
  */
-proto._renderHitCanvas = function() {
-  var canvas = createCanvas();
-  var context = canvas.getContext('2d');
-  context.mozImageSmoothingEnabled = false;
-  context.webkitImageSmoothingEnabled = false;
-
-  // save current shader and use hitShader for rendering the grid
-  var currentShader = this._renderer.shader();
-  this._renderer.shader(currentShader.hitShader('cartodb_id'));
-  this._renderer.render(this._layer, context, this._data, {
+proto._renderHitGrid = function() {
+  // store current shader and use hitShader for rendering the grid
+  var currentShader = this._renderer.getShader();
+  this._renderer.setShader(currentShader.hitShader('cartodb_id'));
+  this._renderer.render(this, this._hitContext, this._data, {
     zoom: this._coords.z
   });
 
-  // retore shader
-  this._renderer.shader(currentShader);
-  return context.getImageData(0, 0, canvas.width, canvas.height).data;
+  // restore shader
+  this._renderer.setShader(currentShader);
+  return this._hitContext.getImageData(0, 0, hitCanvas.width, hitCanvas.height).data;
 };
 
 /**
@@ -88,18 +92,17 @@ proto._renderHitCanvas = function() {
  * @pos: point object like {x: X, y: Y }
  */
 proto.featureAt = function(x, y) {
-
   if (!this._hitGrid) {
-    this._hitGrid = this._renderHitCanvas();
+    this._hitGrid = this._renderHitGrid();
   }
   var idx = 4*((y|0) * Tile.SIZE + (x|0));
-  var r = this._hitGrid[idx + 0];
-  var g = this._hitGrid[idx + 1];
-  var b = this._hitGrid[idx + 2];
-  var id = ShaderLayer.RGB2Int(r, g, b);
+  var id = ShaderLayer.RGB2Int(
+    this._hitGrid[idx],
+    this._hitGrid[idx+1],
+    this._hitGrid[idx+2]
+  );
   if (id) {
-    return id - 1;
+    return id-1;
   }
   return null;
-
 };

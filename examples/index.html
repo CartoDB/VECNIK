@@ -69,17 +69,24 @@ var
     zoom: 16,
     cartocss:
 '#layer {\n'+
-'  polygon-fill: rgba(0, 0, 0, 0.1);\n'+
+'  polygon-fill: rgba(0, 0, 0, 0.3);\n'+
 '  line-color: white;\n'+
 '  line-width: 4;\n'+
 '  [numfloors > 10] {\n'+
-'    polygon-fill: rgba(255, 0, 0, 0.88);\n'+
+'    polygon-fill: rgba(255, 0, 0, 0.7);\n'+
 '  }\n'+
 '}\n\n'+
 '#layer::pass2 {\n'+
 '  polygon-fill: rgba(0, 0, 0, 0.0);\n'+
 '  line-width: 1;\n'+
 '  line-color: black;\n'+
+'  text-name: [numfloors];\n'+
+'  text-fill: #0f0;\n'+
+'  text-halo-fill: #000;\n'+
+'  text-halo-radius: 3;\n'+
+'  text-face-name: serif;\n'+
+'  text-size: 30px;\n'+
+'  text-align: center;\n'+
 '}'
   },
   userControl,
@@ -98,7 +105,7 @@ function afterKeyUp(el, callback) {
       return;
     }
     clearTimeout(timer);
-    timer = setTimeout(callback, 750);
+    timer = setTimeout(callback, 3000);
   });
 }
 
