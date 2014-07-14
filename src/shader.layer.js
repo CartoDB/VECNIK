@@ -46,7 +46,8 @@ var propertyMapping = {
   'text-opacity': 'globalAlpha',
   'text-halo-fill': 'strokeStyle',
   'text-halo-radius': 'lineWidth',
-  'text-align': 'textAlign'
+  'text-align': 'textAlign',
+  'text-name': 'text-name'
 };
 
 var ShaderLayer = module.exports = function(shader, shadingOrder) {
@@ -155,12 +156,7 @@ proto.getShadingOrder = function() {
 
 // return true if the feature need to be rendered
 proto.needsRender = function(shadingType, style) {
-  // check properties in the shader first
   var props = requiredProperties[shadingType], p;
-
-  if (!props) {
-    return false;
-  }
 
   for (var i = 0; i < props.length; ++i) {
     p = props[i];

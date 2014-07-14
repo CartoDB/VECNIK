@@ -205,7 +205,7 @@ if (typeof L !== 'undefined') {
       this._renderer = options.renderer;
 
       this._tileObjects = {};
-      this._labelPositions = {};
+      this._centroidPositions = {};
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
@@ -253,28 +253,25 @@ if (typeof L !== 'undefined') {
         return;
       }
       var timer = Profiler.metric('tiles.render.time').start();
-      this._labelPositions = {};
+      this._centroidPositions = {};
       for (var key in this._tileObjects) {
         this._tileObjects[key].render();
       }
       timer.end();
     },
 
-    uniqueItems: {},
-
-    // TODO: check for bbox intersection
-    getLabelPosition: function(feature) {
+    getCentroid: function(feature) {
       var
         scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._labelPositions[feature.groupId]) {
+      if (pos = this._centroidPositions[feature.groupId]) {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
       var featureParts = this.getFeatureParts(feature.groupId);
       if (pos = Geometry.getCentroid(featureParts)) {
-        this._labelPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
+        this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
@@ -283,17 +280,14 @@ if (typeof L !== 'undefined') {
       var
         tileObject,
         feature, f, fl,
-        type,
         featureParts = [];
 
       for (var key in this._tileObjects) {
         tileObject = this._tileObjects[key];
-        for (type in tileObject._data) {
-          for (f = 0, fl = tileObject._data[type].length; f < fl; f++) {
-            feature = tileObject._data[type][f];
-            if (feature.groupId === groupId) {
-              featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
-            }
+        for (f = 0, fl = tileObject._data.length; f < fl; f++) {
+          feature = tileObject._data[f];
+          if (feature.groupId === groupId) {
+            featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
           }
         }
       }
@@ -855,11 +849,44 @@ Reader.convertForWorker = function(collection, tileCoords) {
 
 },{"../core/core":1,"../geometry":3,"../mercator":6}],11:[function(_dereq_,module,exports){
 
+var Shader = _dereq_('./shader');
 var Geometry = _dereq_('./geometry');
 
-var strokeFillOrder = {};
-strokeFillOrder[Geometry.POLYGON] = 'fill';
-strokeFillOrder[Geometry.LINE] = 'stroke';
+function getStrokeFillOrder(shadingOrder) {
+  var
+    shadingType,
+    res = [];
+  for (var i = 0, il = shadingOrder.length; i < il; i++) {
+    shadingType = shadingOrder[i];
+    if (shadingType === Shader.POLYGON) {
+      res.push('fill');
+    }
+    if (shadingType === Shader.LINE) {
+      res.push('stroke');
+    }
+  }
+  return res;
+}
+
+function drawMarker(context, center, size) {
+  // TODO: manage image sprites
+  // TODO: precache render to a canvas
+  context.arc(center.x, center.y, size, 0, Math.PI*2);
+}
+
+function drawLine(context, coordinates) {
+  context.moveTo(coordinates[0], coordinates[1]);
+  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
+    context.lineTo(coordinates[i], coordinates[i+1]);
+  }
+};
+
+function drawPolygon(context, coordinates) {
+  for (var i = 0, il = coordinates.length; i < il; i++) {
+    drawLine(context, coordinates[i]);
+  }
+};
+
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -882,30 +909,18 @@ proto.getShader = function() {
   return this._shader;
 };
 
-proto._drawLineString = function(context, coordinates) {
-  context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
-    context.lineTo(coordinates[i], coordinates[i+1]);
-  }
-};
-
-proto._drawMarker = function (context, coordinates, size) {
-  //TODO: manage image sprites
-  //TODO: precache render to a canvas
-  context.arc(coordinates[0], coordinates[1], size, 0, Math.PI*2);
-};
-
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(tile, context, collectionByType, mapContext) {
+proto.render = function(tile, context, collection, mapContext) {
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
     layers = this._shader.getLayers(),
     collection,
-    shaderLayer, style, renderOrder,
-    type,
+    shaderLayer, style,
+    shadingOrder, shadingType,
+    strokeAndFill,
     i, il, j, jl, r, rl, s, sl,
     feature, coordinates,
 		pos, labelX, labelY, labelText;
@@ -914,76 +929,79 @@ proto.render = function(tile, context, collectionByType, mapContext) {
 
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
-    renderOrder = shaderLayer.getRenderOrder();
+    shadingOrder = shaderLayer.getShadingOrder();
+    strokeAndFill = getStrokeFillOrder(shadingOrder);
 
-    // features are sorted according to their type first
+
+    // features are sorted according to their geometry type first
     // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
-    for (r = 0, rl = renderOrder.length; r < rl; r++) {
-      type = renderOrder[r];
-      collection = collectionByType[type] || [];
+    for (r = 0, rl = shadingOrder.length; r < rl; r++) {
+      shadingType = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
         coordinates = feature.coordinates;
 
-        // this needs to be handled further up
+        // QUESTION: could we combine next 2 lines?
         style = shaderLayer.evalStyle(feature.properties, mapContext);
 
-        if (shaderLayer.needsRender(feature.type, style)) {
-          context.beginPath();
-
-          switch(type) {
-            case Geometry.POINT:
-              this._drawMarker(context, coordinates, style['marker-width']);
-            break;
-
-            case Geometry.LINE:
-              this._drawLineString(context, coordinates);
-            break;
-
-            case Geometry.POLYGON:
-              for (j = 0, jl = coordinates.length; j < jl; j++) {
-                this._drawLineString(context, coordinates[j]);
-              }
-              context.closePath();
-            break;
-          }
-
+        if (shaderLayer.needsRender(shadingType, style)) {
           shaderLayer.apply(context, style);
 
-          if (type === Geometry.POLYGON || type === Geometry.LINE) {
-            context[ strokeFillOrder[ renderOrder[0] ] ]();
-            if (renderOrder.length >= 1) {
-              context[ strokeFillOrder[ renderOrder[1] ]]();
-            }
-          } else if (type === Geometry.POINT) {
-            // if case it's a point there is no render order, fill and stroke
-            context.fill();
-            context.stroke();
-          }
+          switch (shadingType) {
+            case Shader.POINT:
+              if (pos = layer.getCentroid(feature)) {
+                drawMarker(context, pos, style['marker-width']);
+                // TODO: fix logic of stroke/fill once per pass
+                context.fill();
+                context.stroke();
+              }
+            break;
 
-          if ('needs label') { // TODO: proper check
-            if (pos = layer.getLabelPosition(feature)) {
-              // TODO: check whether it makes sense to draw, even with tolerance
-              labelX = pos.x-tileCoords.x * 256;
-              labelY = pos.y-tileCoords.y * 256;
+            case Shader.LINE:
+              if (feature.type === Geometry.POLYGON) {
+                coordinates = coordinates[0]
+              }
+              context.beginPath();
+              drawLine(context, coordinates);
+              // TODO: fix logic of stroke/fill once per pass
+              context.stroke();
+            break;
 
-              labelText = feature.groupId;
-  // TODO: align state changes with shaderLayer.apply()
-  context.save();
-              // TODO: use CartoCSS for text
-              context.lineCap = 'round';
-              context.lineJoin = 'round';
-              context.strokeStyle = 'rgba(255,255,255,1)';
-              context.lineWidth = 4; // text outline width
-              context.font = 'bold 11px sans-serif';
-              context.textAlign = 'center';
-              context.strokeText(labelText, labelX, labelY);
+            case Shader.POLYGON:
+              // QUESTION: should we try to draw lines and points as well here?
+              if (feature.type === Geometry.POLYGON) {
+                context.beginPath();
+                drawPolygon(context, coordinates);
+                context.closePath();
+                // TODO: fix logic of stroke/fill once per pass
+                strokeAndFill[0] && context[ strokeAndFill[0] ]();
+                strokeAndFill[1] && context[ strokeAndFill[1] ]();
+              }
+            break;
 
-              context.fillStyle = '#000';
-              context.fillText(labelText, labelX, labelY);
-  context.restore();
-            }
+            case Shader.TEXT:
+              if (pos = layer.getCentroid(feature)) {
+                labelX = pos.x-tileCoords.x * 256;
+                labelY = pos.y-tileCoords.y * 256;
+
+                labelText = feature.groupId;
+                // TODO: align state changes with shaderLayer.apply()
+                context.save();
+                // TODO: use CartoCSS for text
+                context.lineCap = 'round';
+                context.lineJoin = 'round';
+                context.strokeStyle = 'rgba(255,255,255,1)';
+                context.lineWidth = 4; // text outline width
+                context.font = 'bold 11px sans-serif';
+                context.textAlign = 'center';
+                context.strokeText(style['text-name'], labelX, labelY);
+
+                context.fillStyle = '#000';
+                context.fillText(style['text-name'], labelX, labelY);
+                context.restore();
+              }
+            break;
           }
         }
       }
@@ -996,10 +1014,7 @@ proto.render = function(tile, context, collectionByType, mapContext) {
 // TODO: avoid overlapping
 // TODO: solve labels close outside tile border
 
-},{"./geometry":3}],12:[function(_dereq_,module,exports){
-
-var Geometry = _dereq_('./geometry');
-var ShaderLayer = _dereq_('./shader.layer');
+},{"./geometry":3,"./shader":12}],12:[function(_dereq_,module,exports){
 
 var Shader = module.exports = function(style) {
   this._layers = [];
@@ -1009,6 +1024,11 @@ var Shader = module.exports = function(style) {
 };
 
 var proto = Shader.prototype;
+
+module.exports.LINE    = 'line';
+module.exports.POLYGON = 'polygon';
+module.exports.POINT   = 'markers';
+module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
 proto.clone = function() {
@@ -1028,23 +1048,17 @@ proto.hitShader = function(attr) {
 };
 
 proto.update = function(style) {
+  // TODO: improve var naming
   var
     shader = new carto.RendererJS().render(style),
-    layer, renderOrder, layerShader, sh, p,
-    geometryTypeMapping = {
-      line: Geometry.LINE,
-      polygon: Geometry.POLYGON,
-      markers: Geometry.POINT
-    };
+    layer, layerShader, sh, p;
 
   if (shader && shader.layers) {
+    // requiring this late in order to avoid circular reference shader <-> shader.layer
+    var ShaderLayer = _dereq_('./shader.layer');
+
     for (var i = 0, il = shader.layers.length; i < il; i++) {
       layer = shader.layers[i];
-
-      // order from cartocss
-      renderOrder = layer.getSymbolizers().map(function(s) {
-        return geometryTypeMapping[s];
-      });
 
       // get shader from cartocss shader
       layerShader = layer.getShader();
@@ -1055,7 +1069,7 @@ proto.update = function(style) {
         }
       }
 
-      this._layers[i] = new ShaderLayer(sh, renderOrder);
+      this._layers[i] = new ShaderLayer(sh, layer.getSymbolizers());
     }
   }
 };
@@ -1064,23 +1078,27 @@ proto.getLayers = function() {
   return this._layers;
 };
 
-},{"./geometry":3,"./shader.layer":13}],13:[function(_dereq_,module,exports){
+},{"./shader.layer":13}],13:[function(_dereq_,module,exports){
 
-var Geometry = _dereq_('./geometry');
+var Shader = _dereq_('./shader');
 var Events = _dereq_('./core/events');
 
 // properties needed for each geometry type to be renderered
 var requiredProperties = {};
-requiredProperties[Geometry.POINT] = [
+requiredProperties[Shader.POINT] = [
   'marker-width',
   'line-color'
 ];
-requiredProperties[Geometry.LINE] = [
+requiredProperties[Shader.LINE] = [
   'line-color'
 ];
-requiredProperties[Geometry.POLYGON] = [
+requiredProperties[Shader.POLYGON] = [
   'polygon-fill',
   'line-color'
+];
+requiredProperties[Shader.TEXT] = [
+  'text-name',
+  'text-fill'
 ];
 
 // last context style applied, this is a shared variable
@@ -1095,20 +1113,32 @@ var propertyMapping = {
   'marker-line-width': 'lineWidth',
   'marker-color': 'fillStyle',
   'point-color': 'fillStyle',
+
   'line-color': 'strokeStyle',
   'line-width': 'lineWidth',
   'line-opacity': 'globalAlpha',
+
   'polygon-fill': 'fillStyle',
-  'polygon-opacity': 'globalAlpha'
+  'polygon-opacity': 'globalAlpha',
+
+  'text-face-name': 'font',
+  'text-size': 'font',
+  'text-fill': 'fillStyle',
+  'text-opacity': 'globalAlpha',
+  'text-halo-fill': 'strokeStyle',
+  'text-halo-radius': 'lineWidth',
+  'text-align': 'textAlign',
+  'text-name': 'text-name'
 };
 
-var ShaderLayer = module.exports = function(shader, renderOrder) {
+var ShaderLayer = module.exports = function(shader, shadingOrder) {
   Events.prototype.constructor.call(this);
   this._compiled = {};
-  this._renderOrder = renderOrder || [
-    Geometry.POINT,
-    Geometry.POLYGON,
-    Geometry.LINE
+  this._shadingOrder = shadingOrder || [
+    Shader.POINT,
+    Shader.POLYGON,
+    Shader.LINE,
+    Shader.TEXT
   ];
   this.compile(shader);
 };
@@ -1116,13 +1146,15 @@ var ShaderLayer = module.exports = function(shader, renderOrder) {
 var proto = ShaderLayer.prototype = new Events();
 
 proto.clone = function() {
-  return new ShaderLayer(this._shaderSrc, this._renderOrder);
+  return new ShaderLayer(this._shaderSrc, this._shadingOrder);
 };
 
 proto.compile = function(shader) {
   this._shaderSrc = shader;
   if (typeof shader === 'string') {
-    shader = function() { return shader; };
+    shader = function() {
+      return shader;
+    };
   }
   var property;
   for (var attr in shader) {
@@ -1199,24 +1231,24 @@ proto.textApply = function(context, style) {
   return this.apply(context, style);
 };
 
-proto.getRenderOrder = function() {
-  return this._renderOrder;
+proto.getShadingOrder = function() {
+  return this._shadingOrder;
 };
 
 // return true if the feature need to be rendered
-proto.needsRender = function(geometryType, style) {
-  // check properties in the shader first
-  var props = requiredProperties[geometryType], p;
-
-  if (!props) {
-    return false;
-  }
+proto.needsRender = function(shadingType, style) {
+  var props = requiredProperties[shadingType], p;
 
   for (var i = 0; i < props.length; ++i) {
     p = props[i];
     if (this._shaderSrc[p] && style[ propertyMapping[p] ]) {
       return true;
     }
+
+if (p === 'text-name') {
+  return true;
+}
+
   }
 
   return false;
@@ -1247,16 +1279,17 @@ proto.hitShader = function(keyAttribute) {
       //var p = hit._compiled[k];
       hit._compiled[k] = function(featureProperties, mapContext) {
         return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
-      }
+      };
     }
   }
   return hit;
-}
+};
 
+// TODO: could be static methods of VECNIK.Shader
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
 
-},{"./core/events":2,"./geometry":3}],14:[function(_dereq_,module,exports){
+},{"./core/events":2,"./shader":12}],14:[function(_dereq_,module,exports){
 
 var ShaderLayer = _dereq_('./shader.layer');
 
@@ -1293,7 +1326,7 @@ var Tile = module.exports = function(options) {
 
   var self = this;
   options.provider.load(options.coords, function(data) {
-    self._data = self._orderByType(data);
+    self._data = data;
     self.render();
   });
 };
@@ -1302,14 +1335,7 @@ Tile.SIZE = 256;
 
 var proto = Tile.prototype;
 
-proto._orderByType = function(collection) {
-  var res = {}, feature;
-  for (var i = 0, il = collection.length; i < il; i++) {
-    feature = collection[i];
-    (res[ feature.type ] || (res[ feature.type ] = [])).push(feature)
-  }
-  return res;
-};
+
 
 proto.getDomElement = function() {
   return this._canvas;
