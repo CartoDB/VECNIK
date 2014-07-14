@@ -11,6 +11,10 @@ function createCanvas() {
   context.mozImageSmoothingEnabled = false;
   context.webkitImageSmoothingEnabled = false;
 
+  // TODO: allow these to be handled in Renderer / CartoCSS
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+
   return canvas;
 }
 

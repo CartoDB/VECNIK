@@ -868,10 +868,10 @@ function getStrokeFillOrder(shadingOrder) {
   return res;
 }
 
-function drawMarker(context, center, size) {
+function drawMarker(context, x, y, size) {
   // TODO: manage image sprites
   // TODO: precache render to a canvas
-  context.arc(center.x, center.y, size, 0, Math.PI*2);
+  context.arc(x, y, size, 0, Math.PI*2);
 }
 
 function drawLine(context, coordinates) {
@@ -921,9 +921,9 @@ proto.render = function(tile, context, collection, mapContext) {
     shaderLayer, style,
     shadingOrder, shadingType,
     strokeAndFill,
-    i, il, j, jl, r, rl, s, sl,
+    i, il, r, rl, s, sl,
     feature, coordinates,
-		pos, labelX, labelY, labelText;
+		pos, posX, posY;
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
@@ -931,7 +931,6 @@ proto.render = function(tile, context, collection, mapContext) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeAndFill = getStrokeFillOrder(shadingOrder);
-
 
     // features are sorted according to their geometry type first
     // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
@@ -951,7 +950,10 @@ proto.render = function(tile, context, collection, mapContext) {
           switch (shadingType) {
             case Shader.POINT:
               if (pos = layer.getCentroid(feature)) {
-                drawMarker(context, pos, style['marker-width']);
+                posX = pos.x-tileCoords.x * 256;
+                posY = pos.y-tileCoords.y * 256;
+
+                drawMarker(context, posX, posY, style['marker-width']);
                 // TODO: fix logic of stroke/fill once per pass
                 context.fill();
                 context.stroke();
@@ -982,24 +984,16 @@ proto.render = function(tile, context, collection, mapContext) {
 
             case Shader.TEXT:
               if (pos = layer.getCentroid(feature)) {
-                labelX = pos.x-tileCoords.x * 256;
-                labelY = pos.y-tileCoords.y * 256;
-
-                labelText = feature.groupId;
-                // TODO: align state changes with shaderLayer.apply()
-                context.save();
-                // TODO: use CartoCSS for text
-                context.lineCap = 'round';
-                context.lineJoin = 'round';
-                context.strokeStyle = 'rgba(255,255,255,1)';
+                posX = pos.x-tileCoords.x * 256;
+                posY = pos.y-tileCoords.y * 256;
+              context.save();
                 context.lineWidth = 4; // text outline width
                 context.font = 'bold 11px sans-serif';
                 context.textAlign = 'center';
-                context.strokeText(style['text-name'], labelX, labelY);
+                context.strokeText(style['text-name'], posX, posY);
 
-                context.fillStyle = '#000';
-                context.fillText(style['text-name'], labelX, labelY);
-                context.restore();
+                context.fillText(style['text-name'], posX, posY);
+              context.restore();
               }
             break;
           }
@@ -1244,11 +1238,6 @@ proto.needsRender = function(shadingType, style) {
     if (this._shaderSrc[p] && style[ propertyMapping[p] ]) {
       return true;
     }
-
-if (p === 'text-name') {
-  return true;
-}
-
   }
 
   return false;
@@ -1302,6 +1291,10 @@ function createCanvas() {
   canvas.height = Tile.SIZE;
   context.mozImageSmoothingEnabled = false;
   context.webkitImageSmoothingEnabled = false;
+
+  // TODO: allow these to be handled in Renderer / CartoCSS
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
 
   return canvas;
 }

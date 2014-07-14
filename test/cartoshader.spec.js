@@ -34,26 +34,26 @@ var shader, canvas, ctx;
       'line-color': '#fff'
     });
     var st = c.evalStyle({});
-    equal(c.needsRender('LineString', st), true);
-    equal(c.needsRender('LineString', st), true);
-    equal(c.needsRender('LineString', st), true);
-    equal(c.needsRender('Polygon', st), true);
-    equal(c.needsRender('Point', st), true);
+    equal(c.needsRender('line', st), true);
+    equal(c.needsRender('line', st), true);
+    equal(c.needsRender('line', st), true);
+    equal(c.needsRender('polygon', st), true);
+    equal(c.needsRender('markers', st), true);
 
     c = new VECNIK.CartoShaderLayer({
       'polygon-fill': '#fff'
     });
     var st = c.evalStyle({});
-    equal(c.needsRender('LineString', st), false);
-    equal(c.needsRender('Point', st), false);
-    equal(c.needsRender('Polygon', st), true);
-    equal(c.needsRender('Point', st), false);
+    equal(c.needsRender('line', st), false);
+    equal(c.needsRender('markers', st), false);
+    equal(c.needsRender('polygon', st), true);
+    equal(c.needsRender('markers', st), false);
 
     c = new VECNIK.CartoShaderLayer({
       'marker-width': 10
     });
     st = c.evalStyle({});
-    equal(c.needsRender('Point', st), true);
+    equal(c.needsRender('markers', st), true);
 
     c = new VECNIK.CartoShaderLayer({
       'line-color': function(data) {
@@ -62,8 +62,8 @@ var shader, canvas, ctx;
         }
       }
     });
-    equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
-    equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
+    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
+    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
 
     c = new VECNIK.CartoShaderLayer({
       'line-color': function(data, ctx) {
@@ -72,9 +72,9 @@ var shader, canvas, ctx;
         }
       }
     });
-    equal(c.needsRender('LineString', c.evalStyle({ value: 0 })), false);
-    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, { zoom: 1 })), false);
-    equal(c.needsRender('LineString', c.evalStyle({ value: 0 }, { zoom: 2 })), true);
+    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
+    equal(c.needsRender('line', c.evalStyle({ value: 0 }, { zoom: 1 })), false);
+    equal(c.needsRender('line', c.evalStyle({ value: 0 }, { zoom: 2 })), true);
   });
 
   test('create an interactivity shader', function() {
