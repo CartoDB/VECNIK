@@ -49,6 +49,25 @@ function setStyle(context, prop, value) {
   return true;
 }
 
+function setFont(context, size, face) {
+  debugger
+  if (typeof size === undefined && typeof face === undefined) {
+    return false;
+  }
+
+  size = size || contextStyle.fontSize;
+  face = face || contextStyle.fontFace;
+
+  if (contextStyle.fontSize !== size || contextStyle.fontFace !== face) {
+    contextStyle.fontSize = size;
+    contextStyle.fontFace = face;
+    context.font = size +'px '+ face;
+  }
+
+  return true;
+}
+
+
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -58,8 +77,6 @@ var Renderer = module.exports = function(options) {
 
   this._shader = options.shader;
 };
-
-Renderer.POINT_RADIUS = 2;
 
 var proto = Renderer.prototype;
 
@@ -160,7 +177,7 @@ proto.render = function(tile, context, collection, mapContext) {
               // TODO: check, whether to do outline at all
               // 'text-opacity': 'globalAlpha',
               // context.font = 'bold 11px sans-serif';
-              setStyle(context, 'font', 'normal '+ style['text-size'] +'px '+ style['text-face-name']);
+              setFont(context, style['text-size'], style['text-face-name']);
               setStyle(context, 'textAlign', style['text-align']);
 
               if (setStyle(context, 'strokeStyle', style['text-halo-fill'])) {
@@ -178,7 +195,7 @@ proto.render = function(tile, context, collection, mapContext) {
   }
 };
 
-// TODO: solve labels close outside tile border
+// TODO: solve labels closely beyond tile border
 
 /***
 prop = props[i];

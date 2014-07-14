@@ -2,11 +2,6 @@
 var Shader = require('./shader');
 var Events = require('./core/events');
 
-// last context style applied, this is a shared variable
-// for all the shaders
-// could be shared across shader layers but not urgently
-var currentContextStyle = {};
-
 var ShaderLayer = module.exports = function(shader, shadingOrder) {
   Events.prototype.constructor.call(this);
   this._compiled = {};
