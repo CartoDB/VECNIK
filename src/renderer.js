@@ -37,6 +37,18 @@ function drawPolygon(context, coordinates) {
   }
 };
 
+var contextStyle = {};
+
+function setStyle(context, prop, value) {
+  if (typeof value === undefined) {
+    return false;
+  }
+  if (contextStyle[prop] !== value) {
+    context[prop] = (contextStyle[prop] = value);
+  }
+  return true;
+}
+
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -91,69 +103,94 @@ proto.render = function(tile, context, collection, mapContext) {
         feature = collection[i];
         coordinates = feature.coordinates;
 
-        // QUESTION: could we combine next 2 lines?
-        style = shaderLayer.evalStyle(feature.properties, mapContext);
+        style = shaderLayer.getStyle(feature.properties, mapContext);
+        switch (shadingType) {
+          case Shader.POINT:
+            if ((pos = layer.getCentroid(feature)) && style['marker-width'] && style['marker-fill']) {
+              posX = pos.x-tileCoords.x * 256;
+              posY = pos.y-tileCoords.y * 256;
 
-        if (shaderLayer.needsRender(shadingType, style)) {
-          shaderLayer.apply(context, style);
-
-          switch (shadingType) {
-            case Shader.POINT:
-              if (pos = layer.getCentroid(feature)) {
-                posX = pos.x-tileCoords.x * 256;
-                posY = pos.y-tileCoords.y * 256;
-
-                drawMarker(context, posX, posY, style['marker-width']);
-                // TODO: fix logic of stroke/fill once per pass
-                context.fill();
+              drawMarker(context, posX, posY, style['marker-width']);
+              // TODO: fix logic of stroke/fill once per pass
+              setStyle(context, 'fillStyle', style['marker-fill']);
+              context.fill();
+              if (setStyle(context, 'strokeStyle', style['marker-line-color'])) {
+                setStyle(context, 'lineWidth', style['marker-line-width']);
                 context.stroke();
               }
-            break;
+            }
+          break;
 
-            case Shader.LINE:
+          case Shader.LINE:
+            if (style['line-color']) {
               if (feature.type === Geometry.POLYGON) {
-                coordinates = coordinates[0]
+                coordinates = coordinates[0];
               }
               context.beginPath();
               drawLine(context, coordinates);
               // TODO: fix logic of stroke/fill once per pass
+              // 'line-opacity': 'globalAlpha',
+              setStyle(context, 'strokeStyle', style['line-color']);
+              setStyle(context, 'lineWidth', style['line-width']);
               context.stroke();
-            break;
+            }
+          break;
 
-            case Shader.POLYGON:
-              // QUESTION: should we try to draw lines and points as well here?
-              if (feature.type === Geometry.POLYGON) {
-                context.beginPath();
-                drawPolygon(context, coordinates);
-                context.closePath();
-                // TODO: fix logic of stroke/fill once per pass
-                strokeAndFill[0] && context[ strokeAndFill[0] ]();
-                strokeAndFill[1] && context[ strokeAndFill[1] ]();
-              }
-            break;
+          case Shader.POLYGON:
+            // QUESTION: should we try to draw lines and points as well here?
+            if (feature.type === Geometry.POLYGON && (style['line-color'] || style['polygon-fill'])) {
+              context.beginPath();
+              drawPolygon(context, coordinates);
+              context.closePath();
+              // TODO: fix logic of stroke/fill once per pass
+              // 'line-opacity': 'globalAlpha',
+              // 'polygon-opacity': 'globalAlpha',
+              setStyle(context, 'strokeStyle', style['line-color']);
+              setStyle(context, 'lineWidth', style['line-width']);
+              setStyle(context, 'fillStyle', style['polygon-fill']);
+              strokeAndFill[0] && context[ strokeAndFill[0] ]();
+              strokeAndFill[1] && context[ strokeAndFill[1] ]();
+            }
+          break;
 
-            case Shader.TEXT:
-              if (pos = layer.getCentroid(feature)) {
-                posX = pos.x-tileCoords.x * 256;
-                posY = pos.y-tileCoords.y * 256;
-              context.save();
-                context.lineWidth = 4; // text outline width
-                context.font = 'bold 11px sans-serif';
-                context.textAlign = 'center';
+          case Shader.TEXT:
+            if ((pos = layer.getCentroid(feature)) && style['text-name']) {
+              posX = pos.x-tileCoords.x * 256;
+              posY = pos.y-tileCoords.y * 256;
+              // TODO: check, whether to do outline at all
+              // 'text-opacity': 'globalAlpha',
+              // context.font = 'bold 11px sans-serif';
+              setStyle(context, 'font', 'normal '+ style['text-size'] +'px '+ style['text-face-name']);
+              setStyle(context, 'textAlign', style['text-align']);
+
+              if (setStyle(context, 'strokeStyle', style['text-halo-fill'])) {
+                setStyle(context, 'lineWidth', style['text-halo-radius']);
                 context.strokeText(style['text-name'], posX, posY);
-
-                context.fillText(style['text-name'], posX, posY);
-              context.restore();
               }
-            break;
-          }
+
+              setStyle(context, 'fillStyle', style['text-fill']);
+              context.fillText(style['text-name'], posX, posY);
+            }
+          break;
         }
       }
     }
   }
 };
 
-// TODO: make sure, label has not yet been rendered somewhere else
-// on render -> check other tiles, whether it has been drawn already
-// TODO: avoid overlapping
 // TODO: solve labels close outside tile border
+
+/***
+prop = props[i];
+// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+//
+// color parse (and probably other props) depends on canvas implementation so direct
+// comparasions with context contents can't be done.
+// use an extra object to store current state
+// * chrome 35.0.1916.153:
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+// * ff 29.0.1
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+***/
