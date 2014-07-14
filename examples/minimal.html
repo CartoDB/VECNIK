@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vecnik</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="lib/leaflet08/leaflet.css">
+<style type="text/css">
+html, body {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#map {
+  height: 100%;
+}
+</style>
+
+<script src="lib/leaflet08/leaflet-src.js"></script>
+<script src="../vecnik.debug.js"></script>
+<script src="lib/underscore.js"></script>
+<script src="lib/carto.js"></script>
+<script>
+var map;
+document.addEventListener('DOMContentLoaded', function() {
+  map = new L.Map('map').setView([40.735291, -73.990731], 16);
+
+  new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
+
+  var provider = new VECNIK.CartoDB.API({
+    user: 'pluto',
+    table: 'mn_mappluto_13v1',
+    columns: ['numfloors'],
+    debug: false,
+    bufferSize: 50
+  });
+
+  var shader = new VECNIK.CartoShader(
+    '#layer {\n'+
+    '  polygon-fill: rgba(0, 0, 0, 0.3);\n'+
+    '  line-color: white;\n'+
+    '  line-width: 4;\n'+
+    '  [numfloors > 10] {\n'+
+    '    polygon-fill: rgba(255, 0, 0, 0.7);\n'+
+    '  }\n'+
+    '}\n\n'+
+    '#layer::pass2 {\n'+
+    '  polygon-fill: rgba(0, 0, 0, 0.0);\n'+
+    '  line-width: 1;\n'+
+    '  line-color: black;\n'+
+    '  text-name: [numfloors];\n'+
+    '  text-fill: #00cc00;\n'+
+    '  text-halo-fill: #996633;\n'+
+    '  text-halo-radius: 2;\n'+
+    '  text-face-name: serif;\n'+
+    '  text-size: 25px;\n'+
+    '  text-align: center;\n'+
+    '}'
+  );
+
+  var vlayer = new VECNIK.Layer({
+    provider: provider,
+    renderer: new VECNIK.Renderer({ shader: shader })
+  });
+
+  vlayer.addTo(map);
+  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+});
+</script>
+</head>
+
+<body>
+<div id="map"></div>
+</body>
+</html>
