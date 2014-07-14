@@ -1,21 +1,21 @@
 
-var Geometry = require('./geometry');
+var Shader = require('./shader');
 var Events = require('./core/events');
 
 // properties needed for each geometry type to be renderered
 var requiredProperties = {};
-requiredProperties[Geometry.POINT] = [
+requiredProperties[Shader.POINT] = [
   'marker-width',
   'line-color'
 ];
-requiredProperties[Geometry.LINE] = [
+requiredProperties[Shader.LINE] = [
   'line-color'
 ];
-requiredProperties[Geometry.POLYGON] = [
+requiredProperties[Shader.POLYGON] = [
   'polygon-fill',
   'line-color'
 ];
-requiredProperties[Geometry.TEXT] = [
+requiredProperties[Shader.TEXT] = [
   'text-name',
   'text-fill'
 ];
@@ -49,14 +49,14 @@ var propertyMapping = {
   'text-align': 'textAlign'
 };
 
-var ShaderLayer = module.exports = function(shader, renderOrder) {
+var ShaderLayer = module.exports = function(shader, shadingOrder) {
   Events.prototype.constructor.call(this);
   this._compiled = {};
-  this._renderOrder = renderOrder || [
-    Geometry.POINT,
-    Geometry.POLYGON,
-    Geometry.LINE,
-    Geometry.TEXT
+  this._shadingOrder = shadingOrder || [
+    Shader.POINT,
+    Shader.POLYGON,
+    Shader.LINE,
+    Shader.TEXT
   ];
   this.compile(shader);
 };
@@ -64,7 +64,7 @@ var ShaderLayer = module.exports = function(shader, renderOrder) {
 var proto = ShaderLayer.prototype = new Events();
 
 proto.clone = function() {
-  return new ShaderLayer(this._shaderSrc, this._renderOrder);
+  return new ShaderLayer(this._shaderSrc, this._shadingOrder);
 };
 
 proto.compile = function(shader) {
@@ -149,14 +149,14 @@ proto.textApply = function(context, style) {
   return this.apply(context, style);
 };
 
-proto.getRenderOrder = function() {
-  return this._renderOrder;
+proto.getShadingOrder = function() {
+  return this._shadingOrder;
 };
 
 // return true if the feature need to be rendered
-proto.needsRender = function(geometryType, style) {
+proto.needsRender = function(shadingType, style) {
   // check properties in the shader first
-  var props = requiredProperties[geometryType], p;
+  var props = requiredProperties[shadingType], p;
 
   if (!props) {
     return false;
@@ -203,5 +203,6 @@ proto.hitShader = function(keyAttribute) {
   return hit;
 };
 
+// TODO: could be static methods of VECNIK.Shader
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
