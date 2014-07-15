@@ -887,6 +887,8 @@ function drawPolygon(context, coordinates) {
   }
 };
 
+// checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
+
 // TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
 function setStyle(context, prop, value) {
   if (typeof value === undefined) {
@@ -981,7 +983,8 @@ proto.render = function(tile, context, collection, mapContext) {
               // TODO: fix logic of stroke/fill once per pass
               setStyle(context, 'fillStyle', style.markerFill);
               context.fill();
-              if (setStyle(context, 'strokeStyle', style.markerStrokeStyle)) {
+              if (style.markerStrokeStyle) {
+                setStyle(context, 'strokeStyle', style.markerStrokeStyle);
                 setStyle(context, 'lineWidth', style.markerLineWidth);
                 context.stroke();
               }
@@ -996,7 +999,6 @@ proto.render = function(tile, context, collection, mapContext) {
               context.beginPath();
               drawLine(context, coordinates);
               // TODO: fix logic of stroke/fill once per pass
-              // 'line-opacity': 'globalAlpha',
               setStyle(context, 'strokeStyle', style.strokeStyle);
               setStyle(context, 'lineWidth', style.lineWidth);
               context.stroke();
@@ -1004,14 +1006,11 @@ proto.render = function(tile, context, collection, mapContext) {
           break;
 
           case Shader.POLYGON:
-            // QUESTION: should we try to draw lines and points as well here?
             if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
               context.beginPath();
               drawPolygon(context, coordinates);
               context.closePath();
               // TODO: fix logic of stroke/fill once per pass
-              // 'line-opacity': 'globalAlpha',
-              // 'polygon-opacity': 'globalAlpha',
               setStyle(context, 'strokeStyle', style.strokeStyle);
               setStyle(context, 'lineWidth', style.lineWidth);
               setStyle(context, 'fillStyle', style.polygonFill);
@@ -1024,13 +1023,11 @@ proto.render = function(tile, context, collection, mapContext) {
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               posX = pos.x-tileCoords.x * 256;
               posY = pos.y-tileCoords.y * 256;
-              // TODO: check, whether to do outline at all
-              // 'text-opacity': 'globalAlpha',
-              // context.font = 'bold 11px sans-serif';
               setFont(context, style.fontSize, style.fontFace);
               setStyle(context, 'textAlign', style.textAlign);
 
-              if (setStyle(context, 'strokeStyle', style.textStrokeStyle)) {
+              if (style.textStrokeStyle) {
+                setStyle(context, 'strokeStyle', style.textStrokeStyle);
                 setStyle(context, 'lineWidth', style.textLineWidth);
                 context.strokeText(style.textContent, posX, posY);
               }
