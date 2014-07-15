@@ -1,35 +1,12 @@
 
 var ShaderLayer = require('./shader.layer');
-
-function createCanvas() {
-  var
-    canvas = document.createElement('CANVAS'),
-    context = canvas.getContext('2d');
-
-  canvas.width  = Tile.SIZE;
-  canvas.height = Tile.SIZE;
-  context.mozImageSmoothingEnabled = false;
-  context.webkitImageSmoothingEnabled = false;
-
-  // TODO: allow these to be handled in Renderer / CartoCSS
-  context.lineCap = 'round';
-  context.lineJoin = 'round';
-
-  return canvas;
-}
+var Canvas = require('./canvas');
 
 var Tile = module.exports = function(options) {
   options = options || {};
 
-  var
-    canvas = this._canvas = createCanvas(),
-    hitCanvas = this._hitCanvas = createCanvas();
-
-  this._context = canvas.getContext('2d');
-  this._hitContext = hitCanvas.getContext('2d');
-
-  canvas.style.width  = canvas.width  +'px';
-  canvas.style.height = canvas.height +'px';
+  this._canvas = new Canvas({ size: Tile.SIZE }),
+  this._hitCanvas = new Canvas({ size: Tile.SIZE });
 
   this._layer = options.layer;
   this._renderer = options.renderer;
@@ -48,17 +25,12 @@ Tile.SIZE = 256;
 var proto = Tile.prototype;
 
 
-
 proto.getDomElement = function() {
-  return this._canvas;
+  return this._canvas.getDomElement();
 };
 
 proto.getLayer = function() {
   return this._layer;
-};
-
-proto.getContext = function() {
-  return this._context;
 };
 
 proto.getCoords = function() {
@@ -66,7 +38,7 @@ proto.getCoords = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this, this._context, this._data, {
+  this._renderer.render(this, this._canvas, this._data, {
     zoom: this._coords.z
   });
 };
@@ -78,13 +50,13 @@ proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
   this._renderer.setShader(currentShader.hitShader('cartodb_id'));
-  this._renderer.render(this, this._hitContext, this._data, {
+  this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
 
   // restore shader
   this._renderer.setShader(currentShader);
-  return this._hitContext.getImageData(0, 0, hitCanvas.width, hitCanvas.height).data;
+  return this._hitCanvas.getData();
 };
 
 /**

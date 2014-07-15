@@ -1,5 +1,201 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.VECNIK=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 
+// TODO: stroke/fill order
+// var shadingOrder, strokeAndFill;
+// strokeAndFill = getStrokeFillOrder(shadingOrder);
+
+var Canvas = module.exports = function(options) {
+  options = options || {};
+
+  var
+    canvas  = this._canvas  = document.createElement('CANVAS'),
+    context = this._context = canvas.getContext('2d');
+
+  canvas.width  = options.width  || options.size || 0;
+  canvas.height = options.height || options.size || 0;
+  canvas.style.width  = canvas.width  +'px';
+  canvas.style.height = canvas.height +'px';
+
+  context.mozImageSmoothingEnabled    = false;
+  context.webkitImageSmoothingEnabled = false;
+
+  context.lineCap  = 'round';
+  context.lineJoin = 'round';
+
+  this._state = {};
+};
+
+var proto = Canvas.prototype;
+
+proto.getDomElement = function() {
+  return this._canvas;
+};
+
+proto.getContext = function() {
+  return this._context;
+};
+
+proto.clear = function() {
+  this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+};
+
+proto.getData = function() {
+  return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
+};
+
+proto._drawLineSegments = function(coordinates) {
+  var context = this._context;
+  context.moveTo(coordinates[0], coordinates[1]);
+  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
+    context.lineTo(coordinates[i], coordinates[i+1]);
+  }
+};
+
+proto.drawCircle = function(x, y, size, fill, stroke, lineWidth) {
+  if ((!fill && !stroke) || !size) {
+    return;
+  }
+
+  this.setStrokeStyle(stroke, lineWidth);
+  this.setFillStyle(fill);
+
+  this._beginBatch('circle', 'SF');
+
+  this._context.arc(x, y, size, 0, Math.PI*2);
+};
+
+proto.drawLine = function(coordinates, stroke, lineWidth) {
+  if (!stroke) {
+    return;
+  }
+
+  this.setStrokeStyle(stroke, lineWidth);
+
+  this._beginBatch('line', 'S');
+
+  this._drawLineSegments(coordinates);
+};
+
+proto.drawPolygon = function(coordinates, fill, stroke, lineWidth) {
+  if (!fill && !stroke) {
+    return;
+  }
+
+  this.setStrokeStyle(stroke, lineWidth);
+  this.setFillStyle(fill);
+
+  this._beginBatch('polygon', 'SF');
+
+  for (var i = 0, il = coordinates.length; i < il; i++) {
+    this._drawLineSegments(coordinates[i]);
+  }
+};
+
+proto.drawText = function(text, x, y, align, fill, stroke, lineWidth) {
+  if (!text || !(fill && stroke)) {
+    return;
+  }
+
+  this._finishBatch();
+
+  var context = this._context;
+
+  this.setStyle('textAlign', align);
+
+  if (stroke) {
+    this.setStrokeStyle(stroke, lineWidth);
+    context.strokeText(text, x, y);
+  }
+
+  this.setFillStyle(fill);
+  context.fillText(text, x, y);
+};
+
+// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
+proto.setStyle = function(prop, value) {
+  // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
+  if (typeof value !== undefined && this._state[prop] !== value) {
+    // finish previous stroke/fill operations, if any
+    this._finishBatch();
+    this._context[prop] = (this._state[prop] = value);
+  }
+};
+
+proto.setFillStyle = function(fill) {
+  this.setStyle('fillStyle', fill);
+};
+
+proto.setStrokeStyle = function(stroke, lineWidth) {
+  this.setStyle('strokeStyle', stroke);
+  this.setStyle('lineWidth', lineWidth);
+};
+
+proto._strokeFillMapping = {
+  S: 'stroke',
+  F: 'fill'
+};
+
+proto._beginBatch = function(operation, strokeFillOrder) {
+  if (this._operation === operation && this._strokeFillOrder === strokeFillOrder) {
+    return;
+  }
+  this._finishBatch();
+  this._operation = operation;
+  this._strokeFillOrder = strokeFillOrder || 'S';
+  this._context.beginPath();
+};
+
+proto._finishBatch = function() {
+  if (!this._operation) {
+    return;
+  }
+
+  var strokeFill = this._strokeFillOrder;
+
+  for (var i = 0, il = strokeFill.length; i < il; i++) {
+    if (strokeFill[i] === 'F') {
+      this._context.closePath();
+    }
+    this._context[ this._strokeFillMapping[ strokeFill[i] ] ]();
+  }
+
+  this._operation = null;
+  this._strokeFillOrder = null;
+};
+
+proto.setFont = function(size, face) {
+  if (typeof size !== undefined || typeof face !== undefined) {
+    size = size || this._state.fontSize;
+    face = face || this._state.fontFace;
+    if (this._state.fontSize !== size || this._state.fontFace !== face) {
+      this._state.fontSize = size;
+      this._state.fontFace = face;
+      this._context.font = size +'px '+ face;
+      return true;
+    }
+  }
+};
+
+
+
+
+/***
+prop = props[i];
+// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+//
+// color parse (and probably other props) depends on canvas implementation so direct
+// comparasions with context contents can't be done.
+// use an extra object to store current state
+// * chrome 35.0.1916.153:
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+// * ff 29.0.1
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+***/
+
+},{}],2:[function(_dereq_,module,exports){
+
 var Core = module.exports = {};
 
 // TODO: http get - should be improved
@@ -18,7 +214,7 @@ Core.load = function(url, callback) {
   return req;
 };
 
-},{}],2:[function(_dereq_,module,exports){
+},{}],3:[function(_dereq_,module,exports){
 
 var Events = module.exports = function() {
   this._listeners = {};
@@ -44,7 +240,7 @@ proto.emit = function(type, payload) {
   }
 };
 
-},{}],3:[function(_dereq_,module,exports){
+},{}],4:[function(_dereq_,module,exports){
 
 var Geometry = module.exports = {};
 
@@ -175,7 +371,7 @@ function getLargestPart(featureParts) {
   return maxPart;
 }
 
-},{}],4:[function(_dereq_,module,exports){
+},{}],5:[function(_dereq_,module,exports){
 
 var Geometry = _dereq_('./geometry');
 
@@ -296,7 +492,7 @@ if (typeof L !== 'undefined') {
   });
 }
 
-},{"./geometry":3,"./profiler":7,"./tile":14}],5:[function(_dereq_,module,exports){
+},{"./geometry":4,"./profiler":8,"./tile":15}],6:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -331,7 +527,7 @@ VECNIK.Profiler    = _dereq_('./profiler');
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./core/core":1,"./geometry":3,"./layer":4,"./profiler":7,"./provider/cartodb":8,"./reader/geojson":10,"./renderer":11,"./shader":12,"./shader.layer":13}],6:[function(_dereq_,module,exports){
+},{"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./reader/geojson":11,"./renderer":12,"./shader":13,"./shader.layer":14}],7:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
@@ -415,7 +611,7 @@ MercatorProjection.prototype.latLonToTilePoint = function(lat, lon, tileX, tileY
   return new Point(Math.round(pixelCoordinate.x-tilePixelPos.x), Math.round(pixelCoordinate.y-tilePixelPos.y));
 };
 
-},{"./tile":14}],7:[function(_dereq_,module,exports){
+},{"./tile":15}],8:[function(_dereq_,module,exports){
 /*
 # metrics profiler
 
@@ -561,7 +757,7 @@ Profiler.metric = function(name) {
 module.exports = Profiler;
 
 
-},{}],8:[function(_dereq_,module,exports){
+},{}],9:[function(_dereq_,module,exports){
 var CartoDB = _dereq_('./cartodb.sql');
 var Projection = _dereq_('../mercator');
 var Format = _dereq_('../reader/geojson');
@@ -607,7 +803,7 @@ proto.update = function(options) {
   }
 };
 
-},{"../mercator":6,"../reader/geojson":10,"./cartodb.sql":9}],9:[function(_dereq_,module,exports){
+},{"../mercator":7,"../reader/geojson":11,"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
 
 var CartoDB = module.exports = {};
 
@@ -706,7 +902,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env; // +' LIMIT 100';
 };
 
-},{}],10:[function(_dereq_,module,exports){
+},{}],11:[function(_dereq_,module,exports){
 var Core = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
 var Projection = _dereq_('../mercator');
@@ -847,7 +1043,7 @@ Reader.convertForWorker = function(collection, tileCoords) {
   return _convertAndReproject(collection, projection, tileCoords);
 };
 
-},{"../core/core":1,"../geometry":3,"../mercator":6}],11:[function(_dereq_,module,exports){
+},{"../core/core":2,"../geometry":4,"../mercator":7}],12:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Geometry = _dereq_('./geometry');
@@ -887,39 +1083,6 @@ function drawPolygon(context, coordinates) {
   }
 };
 
-// checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
-
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setStyle(context, prop, value) {
-  if (typeof value === undefined) {
-    return false;
-  }
-  context.defaults = context.defaults || {};
-  if (context.defaults[prop] !== value) {
-    context[prop] = (context.defaults[prop] = value);
-  }
-  return true;
-}
-
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setFont(context, size, face) {
-  if (typeof size === undefined && typeof face === undefined) {
-    return false;
-  }
-  context.defaults = context.defaults || {};
-  size = size || context.defaults.fontSize;
-  face = face || context.defaults.fontFace;
-
-  if (context.defaults.fontSize !== size || context.defaults.fontFace !== face) {
-    context.defaults.fontSize = size;
-    context.defaults.fontFace = face;
-    context.font = size +'px '+ face;
-  }
-
-  return true;
-}
-
-
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -943,7 +1106,7 @@ proto.getShader = function() {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(tile, context, collection, mapContext) {
+proto.render = function(tile, canvas, collection, mapContext) {
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
@@ -954,9 +1117,9 @@ proto.render = function(tile, context, collection, mapContext) {
     strokeAndFill,
     i, il, r, rl, s, sl,
     feature, coordinates,
-		pos, posX, posY;
+		pos;
 
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  canvas.clear();
 
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
@@ -976,18 +1139,12 @@ proto.render = function(tile, context, collection, mapContext) {
         switch (shadingType) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
-
-              drawMarker(context, posX, posY, style.markerSize);
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'fillStyle', style.markerFill);
-              context.fill();
-              if (style.markerStrokeStyle) {
-                setStyle(context, 'strokeStyle', style.markerStrokeStyle);
-                setStyle(context, 'lineWidth', style.markerLineWidth);
-                context.stroke();
-              }
+              canvas.drawCircle(
+                pos.x-tileCoords.x * 256,
+                pos.y-tileCoords.y * 256,
+                style.markerSize,
+                style.markerFill, style.markerStrokeStyle, style.markerLineWidth
+              );
             }
           break;
 
@@ -996,44 +1153,42 @@ proto.render = function(tile, context, collection, mapContext) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-              context.beginPath();
-              drawLine(context, coordinates);
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'strokeStyle', style.strokeStyle);
-              setStyle(context, 'lineWidth', style.lineWidth);
-              context.stroke();
+              canvas.drawLine(
+                coordinates,
+                style.strokeStyle,
+                style.lineWidth
+              );
             }
           break;
 
           case Shader.POLYGON:
             if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
-              context.beginPath();
-              drawPolygon(context, coordinates);
-              context.closePath();
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'strokeStyle', style.strokeStyle);
-              setStyle(context, 'lineWidth', style.lineWidth);
-              setStyle(context, 'fillStyle', style.polygonFill);
-              strokeAndFill[0] && context[ strokeAndFill[0] ]();
-              strokeAndFill[1] && context[ strokeAndFill[1] ]();
+              canvas.drawPolygon(
+                coordinates,
+                style.polygonFill,
+                style.strokeStyle,
+                style.lineWidth
+              );
+              // TODO: set stroke/fill order
+              //strokeAndFill[0] && context[ strokeAndFill[0] ]();
+              //strokeAndFill[1] && context[ strokeAndFill[1] ]();
             }
           break;
 
           case Shader.TEXT:
+            // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
-              setFont(context, style.fontSize, style.fontFace);
-              setStyle(context, 'textAlign', style.textAlign);
-
-              if (style.textStrokeStyle) {
-                setStyle(context, 'strokeStyle', style.textStrokeStyle);
-                setStyle(context, 'lineWidth', style.textLineWidth);
-                context.strokeText(style.textContent, posX, posY);
-              }
-
-              setStyle(context, 'fillStyle', style.textFill);
-              context.fillText(style.textContent, posX, posY);
+              canvas.setFont(style.fontSize, style.fontFace);
+console.log('TEXT STYLE', style);
+              canvas.drawText(
+                style.textContent,
+                pos.x-tileCoords.x * 256,
+                pos.y-tileCoords.y * 256,
+                style.textAlign,
+                style.textFill,
+                style.textStrokeStyle,
+                style.textLineWidth
+              );
             }
           break;
         }
@@ -1042,23 +1197,7 @@ proto.render = function(tile, context, collection, mapContext) {
   }
 };
 
-// TODO: solve labels closely beyond tile border
-
-/***
-prop = props[i];
-// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-//
-// color parse (and probably other props) depends on canvas implementation so direct
-// comparasions with context contents can't be done.
-// use an extra object to store current state
-// * chrome 35.0.1916.153:
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
-// * ff 29.0.1
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
-***/
-},{"./geometry":3,"./shader":12}],12:[function(_dereq_,module,exports){
+},{"./geometry":4,"./shader":13}],13:[function(_dereq_,module,exports){
 
 var Shader = module.exports = function(style) {
   this._layers = [];
@@ -1122,7 +1261,7 @@ proto.getLayers = function() {
   return this._layers;
 };
 
-},{"./shader.layer":13}],13:[function(_dereq_,module,exports){
+},{"./shader.layer":14}],14:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Events = _dereq_('./core/events');
@@ -1251,39 +1390,16 @@ var Int2RGB = function(input) {
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
 
-},{"./core/events":2,"./shader":12}],14:[function(_dereq_,module,exports){
+},{"./core/events":3,"./shader":13}],15:[function(_dereq_,module,exports){
 
 var ShaderLayer = _dereq_('./shader.layer');
-
-function createCanvas() {
-  var
-    canvas = document.createElement('CANVAS'),
-    context = canvas.getContext('2d');
-
-  canvas.width  = Tile.SIZE;
-  canvas.height = Tile.SIZE;
-  context.mozImageSmoothingEnabled = false;
-  context.webkitImageSmoothingEnabled = false;
-
-  // TODO: allow these to be handled in Renderer / CartoCSS
-  context.lineCap = 'round';
-  context.lineJoin = 'round';
-
-  return canvas;
-}
+var Canvas = _dereq_('./canvas');
 
 var Tile = module.exports = function(options) {
   options = options || {};
 
-  var
-    canvas = this._canvas = createCanvas(),
-    hitCanvas = this._hitCanvas = createCanvas();
-
-  this._context = canvas.getContext('2d');
-  this._hitContext = hitCanvas.getContext('2d');
-
-  canvas.style.width  = canvas.width  +'px';
-  canvas.style.height = canvas.height +'px';
+  this._canvas = new Canvas({ size: Tile.SIZE }),
+  this._hitCanvas = new Canvas({ size: Tile.SIZE });
 
   this._layer = options.layer;
   this._renderer = options.renderer;
@@ -1302,17 +1418,12 @@ Tile.SIZE = 256;
 var proto = Tile.prototype;
 
 
-
 proto.getDomElement = function() {
-  return this._canvas;
+  return this._canvas.getDomElement();
 };
 
 proto.getLayer = function() {
   return this._layer;
-};
-
-proto.getContext = function() {
-  return this._context;
 };
 
 proto.getCoords = function() {
@@ -1320,7 +1431,7 @@ proto.getCoords = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this, this._context, this._data, {
+  this._renderer.render(this, this._canvas, this._data, {
     zoom: this._coords.z
   });
 };
@@ -1332,13 +1443,13 @@ proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
   this._renderer.setShader(currentShader.hitShader('cartodb_id'));
-  this._renderer.render(this, this._hitContext, this._data, {
+  this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
 
   // restore shader
   this._renderer.setShader(currentShader);
-  return this._hitContext.getImageData(0, 0, hitCanvas.width, hitCanvas.height).data;
+  return this._hitCanvas.getData();
 };
 
 /**
@@ -1361,6 +1472,6 @@ proto.featureAt = function(x, y) {
   return null;
 };
 
-},{"./shader.layer":13}]},{},[5])
-(5)
+},{"./canvas":1,"./shader.layer":14}]},{},[6])
+(6)
 });

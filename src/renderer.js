@@ -37,38 +37,6 @@ function drawPolygon(context, coordinates) {
   }
 };
 
-// checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
-
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setStyle(context, prop, value) {
-  if (typeof value === undefined) {
-    return;
-  }
-  context.defaults = context.defaults || {};
-  if (context.defaults[prop] !== value) {
-    context[prop] = (context.defaults[prop] = value);
-    return true;
-  }
-}
-
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setFont(context, size, face) {
-  if (typeof size === undefined && typeof face === undefined) {
-    return;
-  }
-  context.defaults = context.defaults || {};
-  size = size || context.defaults.fontSize;
-  face = face || context.defaults.fontFace;
-
-  if (context.defaults.fontSize !== size || context.defaults.fontFace !== face) {
-    context.defaults.fontSize = size;
-    context.defaults.fontFace = face;
-    context.font = size +'px '+ face;
-    return true;
-  }
-}
-
-
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -92,7 +60,7 @@ proto.getShader = function() {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(tile, context, collection, mapContext) {
+proto.render = function(tile, canvas, collection, mapContext) {
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
@@ -103,9 +71,9 @@ proto.render = function(tile, context, collection, mapContext) {
     strokeAndFill,
     i, il, r, rl, s, sl,
     feature, coordinates,
-		pos, posX, posY;
+		pos;
 
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  canvas.clear();
 
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
@@ -125,18 +93,12 @@ proto.render = function(tile, context, collection, mapContext) {
         switch (shadingType) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
-
-              drawMarker(context, posX, posY, style.markerSize);
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'fillStyle', style.markerFill);
-              context.fill();
-              if (style.markerStrokeStyle) {
-                setStyle(context, 'strokeStyle', style.markerStrokeStyle);
-                setStyle(context, 'lineWidth', style.markerLineWidth);
-                context.stroke();
-              }
+              canvas.drawCircle(
+                pos.x-tileCoords.x * 256,
+                pos.y-tileCoords.y * 256,
+                style.markerSize,
+                style.markerFill, style.markerStrokeStyle, style.markerLineWidth
+              );
             }
           break;
 
@@ -145,44 +107,42 @@ proto.render = function(tile, context, collection, mapContext) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-              context.beginPath();
-              drawLine(context, coordinates);
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'strokeStyle', style.strokeStyle);
-              setStyle(context, 'lineWidth', style.lineWidth);
-              context.stroke();
+              canvas.drawLine(
+                coordinates,
+                style.strokeStyle,
+                style.lineWidth
+              );
             }
           break;
 
           case Shader.POLYGON:
             if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
-              context.beginPath();
-              drawPolygon(context, coordinates);
-              context.closePath();
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'strokeStyle', style.strokeStyle);
-              setStyle(context, 'lineWidth', style.lineWidth);
-              setStyle(context, 'fillStyle', style.polygonFill);
-              strokeAndFill[0] && context[ strokeAndFill[0] ]();
-              strokeAndFill[1] && context[ strokeAndFill[1] ]();
+              canvas.drawPolygon(
+                coordinates,
+                style.polygonFill,
+                style.strokeStyle,
+                style.lineWidth
+              );
+              // TODO: set stroke/fill order
+              //strokeAndFill[0] && context[ strokeAndFill[0] ]();
+              //strokeAndFill[1] && context[ strokeAndFill[1] ]();
             }
           break;
 
           case Shader.TEXT:
+            // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
-              setFont(context, style.fontSize, style.fontFace);
-              setStyle(context, 'textAlign', style.textAlign);
-
-              if (style.textStrokeStyle) {
-                setStyle(context, 'strokeStyle', style.textStrokeStyle);
-                setStyle(context, 'lineWidth', style.textLineWidth);
-                context.strokeText(style.textContent, posX, posY);
-              }
-
-              setStyle(context, 'fillStyle', style.textFill);
-              context.fillText(style.textContent, posX, posY);
+              canvas.setFont(style.fontSize, style.fontFace);
+console.log('TEXT STYLE', style);
+              canvas.drawText(
+                style.textContent,
+                pos.x-tileCoords.x * 256,
+                pos.y-tileCoords.y * 256,
+                style.textAlign,
+                style.textFill,
+                style.textStrokeStyle,
+                style.textLineWidth
+              );
             }
           break;
         }
@@ -190,20 +150,3 @@ proto.render = function(tile, context, collection, mapContext) {
     }
   }
 };
-
-// TODO: solve labels closely beyond tile border
-
-/***
-prop = props[i];
-// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-//
-// color parse (and probably other props) depends on canvas implementation so direct
-// comparasions with context contents can't be done.
-// use an extra object to store current state
-// * chrome 35.0.1916.153:
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
-// * ff 29.0.1
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
-***/
