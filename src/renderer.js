@@ -37,6 +37,8 @@ function drawPolygon(context, coordinates) {
   }
 };
 
+// checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
+
 // TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
 function setStyle(context, prop, value) {
   if (typeof value === undefined) {
