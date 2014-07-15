@@ -2,6 +2,32 @@
 var Shader = require('./shader');
 var Events = require('./core/events');
 
+var propertyMapping = {
+  'marker-width': 'markerSize',
+  'marker-fill': 'markerFill',
+  'marker-line-color': 'markerStrokeStyle',
+  'marker-line-width': 'markerLineWidth',
+  'marker-color': 'markerFill',
+  'point-color': 'markerFill',
+  'marker-opacity': 'markerAlpha', // does that exist?
+
+  'line-color': 'strokeStyle',
+  'line-width': 'lineWidth',
+  'line-opacity': 'lineAlpha',
+
+  'polygon-fill': 'polygonFill',
+  'polygon-opacity': 'polygonAlpha',
+
+  'text-face-name': 'fontFace',
+  'text-size': 'fontSize',
+  'text-fill': 'textFill',
+  'text-opacity': 'textAlpha',
+  'text-halo-fill': 'textStrokeStyle',
+  'text-halo-radius': 'textLineWidth',
+  'text-align': 'textAlign',
+  'text-name': 'textContent'
+};
+
 var ShaderLayer = module.exports = function(shader, shadingOrder) {
   Events.prototype.constructor.call(this);
   this._compiled = {};
@@ -27,8 +53,11 @@ proto.compile = function(shader) {
       return shader;
     };
   }
-  for (var prop in shader) {
-    this._compiled[prop] = shader[prop];
+  var property;
+  for (var attr in shader) {
+    if (property = propertyMapping[attr]) {
+      this._compiled[property] = shader[attr];
+    }
   }
   this.emit('change');
 };
@@ -41,21 +70,20 @@ proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
   var
     style = {},
-    shader = this._compiled,
+    compiled = this._compiled,
     // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
-    props = Object.keys(shader),
+    props = Object.keys(compiled),
     prop, val;
 
   for (var i = 0, len = props.length; i < len; ++i) {
     prop = props[i];
-    val = shader[prop];
+    val = compiled[prop];
+
     if (typeof val === 'function') {
       val = val(featureProperties, mapContext);
     }
     style[prop] = val;
   }
-
-  style['marker-fill'] = style['marker-fill'] || style['marker-color'];
 
   return style;
 },
@@ -70,10 +98,10 @@ proto.getShadingOrder = function() {
  */
 proto.hitShader = function(keyAttribute) {
   var hit = this.clone();
-  // replace all fillStyle and strokeStyle props to use a custom
+  // replace all polygonFillStyle and strokeStyle props to use a custom
   // color
   for(var k in hit._compiled) {
-    if (k === 'polygon-fill' || k === 'line-color') {
+    if (k === 'polygonFill' || k === 'strokeStyle') {
       //var p = hit._compiled[k];
       hit._compiled[k] = function(featureProperties, mapContext) {
         return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';

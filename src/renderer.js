@@ -123,23 +123,23 @@ proto.render = function(tile, context, collection, mapContext) {
         style = shaderLayer.getStyle(feature.properties, mapContext);
         switch (shadingType) {
           case Shader.POINT:
-            if ((pos = layer.getCentroid(feature)) && style['marker-width'] && style['marker-fill']) {
+            if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
               posX = pos.x-tileCoords.x * 256;
               posY = pos.y-tileCoords.y * 256;
 
-              drawMarker(context, posX, posY, style['marker-width']);
+              drawMarker(context, posX, posY, style.markerSize);
               // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'fillStyle', style['marker-fill']);
+              setStyle(context, 'fillStyle', style.markerFill);
               context.fill();
-              if (setStyle(context, 'strokeStyle', style['marker-line-color'])) {
-                setStyle(context, 'lineWidth', style['marker-line-width']);
+              if (setStyle(context, 'strokeStyle', style.markerStrokeStyle)) {
+                setStyle(context, 'lineWidth', style.markerLineWidth);
                 context.stroke();
               }
             }
           break;
 
           case Shader.LINE:
-            if (style['line-color']) {
+            if (style.strokeStyle) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
@@ -147,46 +147,46 @@ proto.render = function(tile, context, collection, mapContext) {
               drawLine(context, coordinates);
               // TODO: fix logic of stroke/fill once per pass
               // 'line-opacity': 'globalAlpha',
-              setStyle(context, 'strokeStyle', style['line-color']);
-              setStyle(context, 'lineWidth', style['line-width']);
+              setStyle(context, 'strokeStyle', style.strokeStyle);
+              setStyle(context, 'lineWidth', style.lineWidth);
               context.stroke();
             }
           break;
 
           case Shader.POLYGON:
             // QUESTION: should we try to draw lines and points as well here?
-            if (feature.type === Geometry.POLYGON && (style['line-color'] || style['polygon-fill'])) {
+            if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
               context.beginPath();
               drawPolygon(context, coordinates);
               context.closePath();
               // TODO: fix logic of stroke/fill once per pass
               // 'line-opacity': 'globalAlpha',
               // 'polygon-opacity': 'globalAlpha',
-              setStyle(context, 'strokeStyle', style['line-color']);
-              setStyle(context, 'lineWidth', style['line-width']);
-              setStyle(context, 'fillStyle', style['polygon-fill']);
+              setStyle(context, 'strokeStyle', style.strokeStyle);
+              setStyle(context, 'lineWidth', style.lineWidth);
+              setStyle(context, 'fillStyle', style.polygonFill);
               strokeAndFill[0] && context[ strokeAndFill[0] ]();
               strokeAndFill[1] && context[ strokeAndFill[1] ]();
             }
           break;
 
           case Shader.TEXT:
-            if ((pos = layer.getCentroid(feature)) && style['text-name']) {
+            if ((pos = layer.getCentroid(feature)) && style.textContent) {
               posX = pos.x-tileCoords.x * 256;
               posY = pos.y-tileCoords.y * 256;
               // TODO: check, whether to do outline at all
               // 'text-opacity': 'globalAlpha',
               // context.font = 'bold 11px sans-serif';
-              setFont(context, style['text-size'], style['text-face-name']);
-              setStyle(context, 'textAlign', style['text-align']);
+              setFont(context, style.fontSize, style.fontFace);
+              setStyle(context, 'textAlign', style.textAlign);
 
-              if (setStyle(context, 'strokeStyle', style['text-halo-fill'])) {
-                setStyle(context, 'lineWidth', style['text-halo-radius']);
-                context.strokeText(style['text-name'], posX, posY);
+              if (setStyle(context, 'strokeStyle', style.textStrokeStyle)) {
+                setStyle(context, 'lineWidth', style.textLineWidth);
+                context.strokeText(style.textContent, posX, posY);
               }
 
-              setStyle(context, 'fillStyle', style['text-fill']);
-              context.fillText(style['text-name'], posX, posY);
+              setStyle(context, 'fillStyle', style.textFill);
+              context.fillText(style.textContent, posX, posY);
             }
           break;
         }
