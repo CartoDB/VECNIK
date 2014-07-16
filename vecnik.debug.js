@@ -44,74 +44,43 @@ proto.getData = function() {
 };
 
 
-proto.drawCircle = function(x, y, size, fill, stroke, lineWidth, strokeFillOrder) {
-  if ((!fill && !stroke) || !size) {
-    return;
-  }
-
-  this.setStrokeStyle(stroke, lineWidth);
-  this.setFillStyle(fill);
-
+proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
-
   this._context.arc(x, y, size, 0, Math.PI*2);
 };
 
-proto.drawLine = function(coordinates, stroke, lineWidth) {
-  if (!stroke) {
-    return;
-  }
-
-  this.setStrokeStyle(stroke, lineWidth);
-
+proto.drawLine = function(coordinates) {
   this._beginBatch('line', 'S');
-
   var context = this._context;
   context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
+  for (var i = 2, il = coordinates.length-1; i < il; i+=2) {
     context.lineTo(coordinates[i], coordinates[i+1]);
   }
 };
 
-proto.drawPolygon = function(coordinates, fill, stroke, lineWidth, strokeFillOrder) {
-  if (!fill && !stroke) {
-    return;
-  }
-
-  this.setStrokeStyle(stroke, lineWidth);
-  this.setFillStyle(fill);
-
+proto.drawPolygon = function(coordinates, strokeFillOrder) {
   this._beginBatch('polygon', strokeFillOrder);
 
   var j, jl;
   var context = this._context;
   for (var i = 0, il = coordinates.length; i < il; i++) {
     context.moveTo(coordinates[i][0], coordinates[i][1]);
-    for (j = 2, jl = coordinates[i].length-2; j < jl; j+=2) {
+    for (j = 2, jl = coordinates[i].length-1; j < jl; j+=2) {
       context.lineTo(coordinates[i][j], coordinates[i][j+1]);
     }
-    context.lineTo(coordinates[i][0], coordinates[i][1]);
   }
 };
 
-proto.drawText = function(text, x, y, align, fill, stroke, lineWidth) {
-  if (!text || !(fill && stroke)) {
-    return;
-  }
-
+proto.drawText = function(text, x, y, align, stroke) {
   this._finishBatch();
-
-  var context = this._context;
 
   this.setStyle('textAlign', align);
 
   if (stroke) {
-    this.setStrokeStyle(stroke, lineWidth);
-    context.strokeText(text, x, y);
+    this._context.strokeText(text, x, y);
   }
 
-  this.setFillStyle(fill);
-  context.fillText(text, x, y);
+  this._context.fillText(text, x, y);
 };
 
 // TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
@@ -124,14 +93,6 @@ proto.setStyle = function(prop, value) {
   }
 };
 
-proto.setFillStyle = function(fill) {
-  this.setStyle('fillStyle', fill);
-};
-
-proto.setStrokeStyle = function(stroke, lineWidth) {
-  this.setStyle('strokeStyle', stroke);
-  this.setStyle('lineWidth', lineWidth);
-};
 
 proto._strokeFillMapping = {
   S: 'stroke',
@@ -158,9 +119,6 @@ proto._finishBatch = function() {
   var strokeFillOrder = this._strokeFillOrder;
 
   for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
-    if (strokeFillOrder[i] === 'F') {
-      this._context.closePath();
-    }
     this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
@@ -1112,8 +1070,6 @@ proto.getShader = function() {
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
 proto.render = function(tile, canvas, collection, mapContext) {
-  console.log('RENDERER: begin render');
-
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
@@ -1139,7 +1095,6 @@ proto.render = function(tile, canvas, collection, mapContext) {
     symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
-//console.log('RENDERER: begin feature');
         feature = collection[i];
         coordinates = feature.coordinates;
 
@@ -1147,13 +1102,12 @@ proto.render = function(tile, canvas, collection, mapContext) {
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              canvas.drawCircle(
-                pos.x-tileCoords.x * 256,
-                pos.y-tileCoords.y * 256,
-                style.markerSize,
-                style.markerFill, style.markerStrokeStyle, style.markerLineWidth,
-                strokeFillOrder
-              );
+
+              canvas.setStyle('strokeStyle', style.markerStrokeStyle);
+              canvas.setStyle('lineWidth',   style.markerLineWidth);
+              canvas.setStyle('fillStyle',   style.markerFill);
+
+              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
             }
           break;
 
@@ -1162,23 +1116,22 @@ proto.render = function(tile, canvas, collection, mapContext) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-              canvas.drawLine(
-                coordinates,
-                style.strokeStyle,
-                style.lineWidth
-              );
+
+              canvas.setStyle('strokeStyle', style.strokeStyle);
+              canvas.setStyle('lineWidth',   style.LineWidth);
+
+              canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
             if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
-              canvas.drawPolygon(
-                coordinates,
-                style.polygonFill,
-                style.strokeStyle,
-                style.lineWidth,
-                strokeFillOrder
-              );
+
+              canvas.setStyle('strokeStyle', style.polygonStrokeStyle);
+              canvas.setStyle('lineWidth',   style.polygonLineWidth);
+              canvas.setStyle('fillStyle',   style.polygonFill);
+
+              canvas.drawPolygon(coordinates, strokeFillOrder);
             }
           break;
 
@@ -1186,15 +1139,11 @@ proto.render = function(tile, canvas, collection, mapContext) {
             // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
-              canvas.drawText(
-                style.textContent,
-                pos.x-tileCoords.x * 256,
-                pos.y-tileCoords.y * 256,
-                style.textAlign,
-                style.textFill,
-                style.textStrokeStyle,
-                style.textLineWidth
-              );
+              canvas.setStyle('strokeStyle', style.textStrokeStyle);
+              canvas.setStyle('lineWidth',   style.textLineWidth);
+              canvas.setStyle('fillStyle',   style.textFill);
+
+              canvas.drawText(style.textContent, pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }

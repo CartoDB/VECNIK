@@ -93,13 +93,12 @@ proto.render = function(tile, canvas, collection, mapContext) {
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              canvas.drawCircle(
-                pos.x-tileCoords.x * 256,
-                pos.y-tileCoords.y * 256,
-                style.markerSize,
-                style.markerFill, style.markerStrokeStyle, style.markerLineWidth,
-                strokeFillOrder
-              );
+
+              canvas.setStyle('strokeStyle', style.markerStrokeStyle);
+              canvas.setStyle('lineWidth',   style.markerLineWidth);
+              canvas.setStyle('fillStyle',   style.markerFill);
+
+              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
             }
           break;
 
@@ -108,23 +107,22 @@ proto.render = function(tile, canvas, collection, mapContext) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-              canvas.drawLine(
-                coordinates,
-                style.strokeStyle,
-                style.lineWidth
-              );
+
+              canvas.setStyle('strokeStyle', style.strokeStyle);
+              canvas.setStyle('lineWidth',   style.LineWidth);
+
+              canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
             if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
-              canvas.drawPolygon(
-                coordinates,
-                style.polygonFill,
-                style.strokeStyle,
-                style.lineWidth,
-                strokeFillOrder
-              );
+
+              canvas.setStyle('strokeStyle', style.polygonStrokeStyle);
+              canvas.setStyle('lineWidth',   style.polygonLineWidth);
+              canvas.setStyle('fillStyle',   style.polygonFill);
+
+              canvas.drawPolygon(coordinates, strokeFillOrder);
             }
           break;
 
@@ -132,15 +130,11 @@ proto.render = function(tile, canvas, collection, mapContext) {
             // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
-              canvas.drawText(
-                style.textContent,
-                pos.x-tileCoords.x * 256,
-                pos.y-tileCoords.y * 256,
-                style.textAlign,
-                style.textFill,
-                style.textStrokeStyle,
-                style.textLineWidth
-              );
+              canvas.setStyle('strokeStyle', style.textStrokeStyle);
+              canvas.setStyle('lineWidth',   style.textLineWidth);
+              canvas.setStyle('fillStyle',   style.textFill);
+
+              canvas.drawText(style.textContent, pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }

@@ -43,74 +43,43 @@ proto.getData = function() {
 };
 
 
-proto.drawCircle = function(x, y, size, fill, stroke, lineWidth, strokeFillOrder) {
-  if ((!fill && !stroke) || !size) {
-    return;
-  }
-
-  this.setStrokeStyle(stroke, lineWidth);
-  this.setFillStyle(fill);
-
+proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
-
   this._context.arc(x, y, size, 0, Math.PI*2);
 };
 
-proto.drawLine = function(coordinates, stroke, lineWidth) {
-  if (!stroke) {
-    return;
-  }
-
-  this.setStrokeStyle(stroke, lineWidth);
-
+proto.drawLine = function(coordinates) {
   this._beginBatch('line', 'S');
-
   var context = this._context;
   context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
+  for (var i = 2, il = coordinates.length-1; i < il; i+=2) {
     context.lineTo(coordinates[i], coordinates[i+1]);
   }
 };
 
-proto.drawPolygon = function(coordinates, fill, stroke, lineWidth, strokeFillOrder) {
-  if (!fill && !stroke) {
-    return;
-  }
-
-  this.setStrokeStyle(stroke, lineWidth);
-  this.setFillStyle(fill);
-
+proto.drawPolygon = function(coordinates, strokeFillOrder) {
   this._beginBatch('polygon', strokeFillOrder);
 
   var j, jl;
   var context = this._context;
   for (var i = 0, il = coordinates.length; i < il; i++) {
     context.moveTo(coordinates[i][0], coordinates[i][1]);
-    for (j = 2, jl = coordinates[i].length-2; j < jl; j+=2) {
+    for (j = 2, jl = coordinates[i].length-1; j < jl; j+=2) {
       context.lineTo(coordinates[i][j], coordinates[i][j+1]);
     }
-    context.lineTo(coordinates[i][0], coordinates[i][1]);
   }
 };
 
-proto.drawText = function(text, x, y, align, fill, stroke, lineWidth) {
-  if (!text || !(fill && stroke)) {
-    return;
-  }
-
+proto.drawText = function(text, x, y, align, stroke) {
   this._finishBatch();
-
-  var context = this._context;
 
   this.setStyle('textAlign', align);
 
   if (stroke) {
-    this.setStrokeStyle(stroke, lineWidth);
-    context.strokeText(text, x, y);
+    this._context.strokeText(text, x, y);
   }
 
-  this.setFillStyle(fill);
-  context.fillText(text, x, y);
+  this._context.fillText(text, x, y);
 };
 
 // TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
@@ -123,14 +92,6 @@ proto.setStyle = function(prop, value) {
   }
 };
 
-proto.setFillStyle = function(fill) {
-  this.setStyle('fillStyle', fill);
-};
-
-proto.setStrokeStyle = function(stroke, lineWidth) {
-  this.setStyle('strokeStyle', stroke);
-  this.setStyle('lineWidth', lineWidth);
-};
 
 proto._strokeFillMapping = {
   S: 'stroke',
@@ -157,9 +118,6 @@ proto._finishBatch = function() {
   var strokeFillOrder = this._strokeFillOrder;
 
   for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
-    if (strokeFillOrder[i] === 'F') {
-      this._context.closePath();
-    }
     this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
