@@ -4,15 +4,15 @@ var Geometry = require('./geometry');
 
 function getStrokeFillOrder(shadingOrder) {
   var
-    shadingType,
-    res = [];
+    symbolizer,
+    res = '';
   for (var i = 0, il = shadingOrder.length; i < il; i++) {
-    shadingType = shadingOrder[i];
-    if (shadingType === Shader.POLYGON) {
-      res.push('fill');
+    symbolizer = shadingOrder[i];
+    if (symbolizer === Shader.POLYGON) {
+      res += 'F';
     }
-    if (shadingType === Shader.LINE) {
-      res.push('stroke');
+    if (symbolizer === Shader.LINE) {
+      res += 'S';
     }
   }
   return res;
@@ -37,37 +37,6 @@ function drawPolygon(context, coordinates) {
   }
 };
 
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setStyle(context, prop, value) {
-  if (typeof value === undefined) {
-    return false;
-  }
-  context.defaults = context.defaults || {};
-  if (context.defaults[prop] !== value) {
-    context[prop] = (context.defaults[prop] = value);
-  }
-  return true;
-}
-
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setFont(context, size, face) {
-  if (typeof size === undefined && typeof face === undefined) {
-    return false;
-  }
-  context.defaults = context.defaults || {};
-  size = size || context.defaults.fontSize;
-  face = face || context.defaults.fontFace;
-
-  if (context.defaults.fontSize !== size || context.defaults.fontFace !== face) {
-    context.defaults.fontSize = size;
-    context.defaults.fontFace = face;
-    context.font = size +'px '+ face;
-  }
-
-  return true;
-}
-
-
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -91,102 +60,81 @@ proto.getShader = function() {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(tile, context, collection, mapContext) {
+proto.render = function(tile, canvas, collection, mapContext) {
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
     layers = this._shader.getLayers(),
     collection,
     shaderLayer, style,
-    shadingOrder, shadingType,
-    strokeAndFill,
+    shadingOrder, symbolizer,
+    strokeFillOrder,
     i, il, r, rl, s, sl,
     feature, coordinates,
-		pos, posX, posY;
+		pos;
 
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  canvas.clear();
 
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
-    strokeAndFill = getStrokeFillOrder(shadingOrder);
+    strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     // features are sorted according to their geometry type first
     // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-      shadingType = shadingOrder[r];
+    symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
         coordinates = feature.coordinates;
 
         style = shaderLayer.getStyle(feature.properties, mapContext);
-        switch (shadingType) {
+        switch (symbolizer) {
           case Shader.POINT:
-            if ((pos = layer.getCentroid(feature)) && style['marker-width'] && style['marker-fill']) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
+            if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
 
-              drawMarker(context, posX, posY, style['marker-width']);
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'fillStyle', style['marker-fill']);
-              context.fill();
-              if (setStyle(context, 'strokeStyle', style['marker-line-color'])) {
-                setStyle(context, 'lineWidth', style['marker-line-width']);
-                context.stroke();
-              }
+              canvas.setStyle('strokeStyle', style.markerStrokeStyle);
+              canvas.setStyle('lineWidth',   style.markerLineWidth);
+              canvas.setStyle('fillStyle',   style.markerFill);
+
+              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
             }
           break;
 
           case Shader.LINE:
-            if (style['line-color']) {
+            if (style.strokeStyle) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-              context.beginPath();
-              drawLine(context, coordinates);
-              // TODO: fix logic of stroke/fill once per pass
-              // 'line-opacity': 'globalAlpha',
-              setStyle(context, 'strokeStyle', style['line-color']);
-              setStyle(context, 'lineWidth', style['line-width']);
-              context.stroke();
+
+              canvas.setStyle('strokeStyle', style.strokeStyle);
+              canvas.setStyle('lineWidth',   style.LineWidth);
+
+              canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
-            // QUESTION: should we try to draw lines and points as well here?
-            if (feature.type === Geometry.POLYGON && (style['line-color'] || style['polygon-fill'])) {
-              context.beginPath();
-              drawPolygon(context, coordinates);
-              context.closePath();
-              // TODO: fix logic of stroke/fill once per pass
-              // 'line-opacity': 'globalAlpha',
-              // 'polygon-opacity': 'globalAlpha',
-              setStyle(context, 'strokeStyle', style['line-color']);
-              setStyle(context, 'lineWidth', style['line-width']);
-              setStyle(context, 'fillStyle', style['polygon-fill']);
-              strokeAndFill[0] && context[ strokeAndFill[0] ]();
-              strokeAndFill[1] && context[ strokeAndFill[1] ]();
+            if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
+
+              canvas.setStyle('strokeStyle', style.polygonStrokeStyle);
+              canvas.setStyle('lineWidth',   style.polygonLineWidth);
+              canvas.setStyle('fillStyle',   style.polygonFill);
+
+              canvas.drawPolygon(coordinates, strokeFillOrder);
             }
           break;
 
           case Shader.TEXT:
-            if ((pos = layer.getCentroid(feature)) && style['text-name']) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
-              // TODO: check, whether to do outline at all
-              // 'text-opacity': 'globalAlpha',
-              // context.font = 'bold 11px sans-serif';
-              setFont(context, style['text-size'], style['text-face-name']);
-              setStyle(context, 'textAlign', style['text-align']);
+            // TODO: solve labels closely beyond tile border
+            if ((pos = layer.getCentroid(feature)) && style.textContent) {
+              canvas.setFont(style.fontSize, style.fontFace);
+              canvas.setStyle('strokeStyle', style.textStrokeStyle);
+              canvas.setStyle('lineWidth',   style.textLineWidth);
+              canvas.setStyle('fillStyle',   style.textFill);
 
-              if (setStyle(context, 'strokeStyle', style['text-halo-fill'])) {
-                setStyle(context, 'lineWidth', style['text-halo-radius']);
-                context.strokeText(style['text-name'], posX, posY);
-              }
-
-              setStyle(context, 'fillStyle', style['text-fill']);
-              context.fillText(style['text-name'], posX, posY);
+              canvas.drawText(style.textContent, pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }
@@ -194,20 +142,3 @@ proto.render = function(tile, context, collection, mapContext) {
     }
   }
 };
-
-// TODO: solve labels closely beyond tile border
-
-/***
-prop = props[i];
-// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-//
-// color parse (and probably other props) depends on canvas implementation so direct
-// comparasions with context contents can't be done.
-// use an extra object to store current state
-// * chrome 35.0.1916.153:
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
-// * ff 29.0.1
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
-***/

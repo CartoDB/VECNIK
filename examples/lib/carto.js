@@ -5322,7 +5322,7 @@ CartoCSS.prototype = {
         layer.frames = [];
         layer.zoom = tree.Zoom.all;
         var props = def.toJS();
-if (this.options.debug) console.log("props", props);
+        console.log("props", props);
         for(var v in props) {
           var lyr = layer[v] = layer[v] || {
             constant: false,
@@ -5341,7 +5341,7 @@ if (this.options.debug) console.log("props", props);
       }
 
       var ordered_layers = [];
-if (this.options.debug) console.log(layers);
+      console.log(layers);
 
       var done = {};
       for(var i = 0; i < defs.length; ++i) {
@@ -5388,10 +5388,11 @@ carto.RendererJS = function (options) {
 carto.RendererJS.prototype.render = function render(cartocss, callback) {
   tree.Reference.setVersion(this.options.mapnik_version);
   return new CartoCSS(cartocss, this.options);
-};
+}
 
 if (typeof(module) !== 'undefined') {
   module.exports = carto.RendererJS;
 }
+
 
 })(require('../carto'));

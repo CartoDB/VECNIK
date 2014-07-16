@@ -1,5 +1,164 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.VECNIK=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 
+// TODO: stroke/fill order
+// var shadingOrder, strokeAndFill;
+// strokeAndFill = getStrokeFillOrder(shadingOrder);
+
+var Canvas = module.exports = function(options) {
+  options = options || {};
+
+  var
+    canvas  = this._canvas  = document.createElement('CANVAS'),
+    context = this._context = canvas.getContext('2d');
+
+  canvas.width  = options.width  || options.size || 0;
+  canvas.height = options.height || options.size || 0;
+  canvas.style.width  = canvas.width  +'px';
+  canvas.style.height = canvas.height +'px';
+
+  context.mozImageSmoothingEnabled    = false;
+  context.webkitImageSmoothingEnabled = false;
+
+  context.lineCap  = 'round';
+  context.lineJoin = 'round';
+
+  this._state = {};
+};
+
+var proto = Canvas.prototype;
+
+proto.getDomElement = function() {
+  return this._canvas;
+};
+
+proto.getContext = function() {
+  return this._context;
+};
+
+proto.clear = function() {
+  this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+};
+
+proto.getData = function() {
+  return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
+};
+
+
+proto.drawCircle = function(x, y, size, strokeFillOrder) {
+  this._beginBatch('circle', strokeFillOrder);
+  this._context.arc(x, y, size, 0, Math.PI*2);
+};
+
+proto.drawLine = function(coordinates) {
+  this._beginBatch('line', 'S');
+  var context = this._context;
+  context.moveTo(coordinates[0], coordinates[1]);
+  for (var i = 2, il = coordinates.length-1; i < il; i+=2) {
+    context.lineTo(coordinates[i], coordinates[i+1]);
+  }
+};
+
+proto.drawPolygon = function(coordinates, strokeFillOrder) {
+  this._beginBatch('polygon', strokeFillOrder);
+
+  var j, jl;
+  var context = this._context;
+  for (var i = 0, il = coordinates.length; i < il; i++) {
+    context.moveTo(coordinates[i][0], coordinates[i][1]);
+    for (j = 2, jl = coordinates[i].length-1; j < jl; j+=2) {
+      context.lineTo(coordinates[i][j], coordinates[i][j+1]);
+    }
+  }
+};
+
+proto.drawText = function(text, x, y, align, stroke) {
+  this._finishBatch();
+
+  this.setStyle('textAlign', align);
+
+  if (stroke) {
+    this._context.strokeText(text, x, y);
+  }
+
+  this._context.fillText(text, x, y);
+};
+
+// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
+proto.setStyle = function(prop, value) {
+  // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
+  if (typeof value !== undefined && this._state[prop] !== value) {
+    // finish previous stroke/fill operations, if any
+    this._finishBatch();
+    this._context[prop] = (this._state[prop] = value);
+  }
+};
+
+
+proto._strokeFillMapping = {
+  S: 'stroke',
+  F: 'fill'
+};
+
+proto._beginBatch = function(operation, strokeFillOrder) {
+// if (operation === 'polygon') console.log('BATCH', strokeFillOrder, this._state.fillStyle);
+
+  if (this._operation === operation && this._strokeFillOrder === strokeFillOrder) {
+    return;
+  }
+  this._finishBatch();
+  this._operation = operation;
+  this._strokeFillOrder = strokeFillOrder;
+  this._context.beginPath();
+};
+
+proto._finishBatch = function() {
+  if (!this._operation) {
+    return;
+  }
+
+  var strokeFillOrder = this._strokeFillOrder;
+
+  for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
+    this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
+  }
+
+  this._operation = null;
+  this._strokeFillOrder = null;
+};
+
+proto.setFont = function(size, face) {
+  if (typeof size !== undefined || typeof face !== undefined) {
+    size = size || this._state.fontSize;
+    face = face || this._state.fontFace;
+    if (this._state.fontSize !== size || this._state.fontFace !== face) {
+      this._state.fontSize = size;
+      this._state.fontFace = face;
+      this._context.font = size +'px '+ face;
+      return true;
+    }
+  }
+};
+
+
+
+
+/***
+prop = props[i];
+// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+//
+// color parse (and probably other props) depends on canvas implementation so direct
+// comparasions with context contents can't be done.
+// use an extra object to store current state
+// * chrome 35.0.1916.153:
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+// * ff 29.0.1
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+***/
+
+},{}],2:[function(_dereq_,module,exports){
+
 var Core = module.exports = {};
 
 // TODO: http get - should be improved
@@ -18,7 +177,7 @@ Core.load = function(url, callback) {
   return req;
 };
 
-},{}],2:[function(_dereq_,module,exports){
+},{}],3:[function(_dereq_,module,exports){
 
 var Events = module.exports = function() {
   this._listeners = {};
@@ -44,7 +203,7 @@ proto.emit = function(type, payload) {
   }
 };
 
-},{}],3:[function(_dereq_,module,exports){
+},{}],4:[function(_dereq_,module,exports){
 
 var Geometry = module.exports = {};
 
@@ -175,7 +334,7 @@ function getLargestPart(featureParts) {
   return maxPart;
 }
 
-},{}],4:[function(_dereq_,module,exports){
+},{}],5:[function(_dereq_,module,exports){
 
 var Geometry = _dereq_('./geometry');
 
@@ -296,7 +455,7 @@ if (typeof L !== 'undefined') {
   });
 }
 
-},{"./geometry":3,"./profiler":7,"./tile":14}],5:[function(_dereq_,module,exports){
+},{"./geometry":4,"./profiler":8,"./tile":15}],6:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -331,7 +490,7 @@ VECNIK.Profiler    = _dereq_('./profiler');
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./core/core":1,"./geometry":3,"./layer":4,"./profiler":7,"./provider/cartodb":8,"./reader/geojson":10,"./renderer":11,"./shader":12,"./shader.layer":13}],6:[function(_dereq_,module,exports){
+},{"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./reader/geojson":11,"./renderer":12,"./shader":13,"./shader.layer":14}],7:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
@@ -415,7 +574,7 @@ MercatorProjection.prototype.latLonToTilePoint = function(lat, lon, tileX, tileY
   return new Point(Math.round(pixelCoordinate.x-tilePixelPos.x), Math.round(pixelCoordinate.y-tilePixelPos.y));
 };
 
-},{"./tile":14}],7:[function(_dereq_,module,exports){
+},{"./tile":15}],8:[function(_dereq_,module,exports){
 /*
 # metrics profiler
 
@@ -561,7 +720,7 @@ Profiler.metric = function(name) {
 module.exports = Profiler;
 
 
-},{}],8:[function(_dereq_,module,exports){
+},{}],9:[function(_dereq_,module,exports){
 var CartoDB = _dereq_('./cartodb.sql');
 var Projection = _dereq_('../mercator');
 var Format = _dereq_('../reader/geojson');
@@ -607,7 +766,7 @@ proto.update = function(options) {
   }
 };
 
-},{"../mercator":6,"../reader/geojson":10,"./cartodb.sql":9}],9:[function(_dereq_,module,exports){
+},{"../mercator":7,"../reader/geojson":11,"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
 
 var CartoDB = module.exports = {};
 
@@ -706,7 +865,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env; // +' LIMIT 100';
 };
 
-},{}],10:[function(_dereq_,module,exports){
+},{}],11:[function(_dereq_,module,exports){
 var Core = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
 var Projection = _dereq_('../mercator');
@@ -847,22 +1006,22 @@ Reader.convertForWorker = function(collection, tileCoords) {
   return _convertAndReproject(collection, projection, tileCoords);
 };
 
-},{"../core/core":1,"../geometry":3,"../mercator":6}],11:[function(_dereq_,module,exports){
+},{"../core/core":2,"../geometry":4,"../mercator":7}],12:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Geometry = _dereq_('./geometry');
 
 function getStrokeFillOrder(shadingOrder) {
   var
-    shadingType,
-    res = [];
+    symbolizer,
+    res = '';
   for (var i = 0, il = shadingOrder.length; i < il; i++) {
-    shadingType = shadingOrder[i];
-    if (shadingType === Shader.POLYGON) {
-      res.push('fill');
+    symbolizer = shadingOrder[i];
+    if (symbolizer === Shader.POLYGON) {
+      res += 'F';
     }
-    if (shadingType === Shader.LINE) {
-      res.push('stroke');
+    if (symbolizer === Shader.LINE) {
+      res += 'S';
     }
   }
   return res;
@@ -887,37 +1046,6 @@ function drawPolygon(context, coordinates) {
   }
 };
 
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setStyle(context, prop, value) {
-  if (typeof value === undefined) {
-    return false;
-  }
-  context.defaults = context.defaults || {};
-  if (context.defaults[prop] !== value) {
-    context[prop] = (context.defaults[prop] = value);
-  }
-  return true;
-}
-
-// TODO: context.defaults is the ugliest thing ever. keeping this until renderer is an instance per context
-function setFont(context, size, face) {
-  if (typeof size === undefined && typeof face === undefined) {
-    return false;
-  }
-  context.defaults = context.defaults || {};
-  size = size || context.defaults.fontSize;
-  face = face || context.defaults.fontFace;
-
-  if (context.defaults.fontSize !== size || context.defaults.fontFace !== face) {
-    context.defaults.fontSize = size;
-    context.defaults.fontFace = face;
-    context.font = size +'px '+ face;
-  }
-
-  return true;
-}
-
-
 
 var Renderer = module.exports = function(options) {
   options = options || {};
@@ -941,102 +1069,81 @@ proto.getShader = function() {
 // render the specified collection in the contenxt
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
-proto.render = function(tile, context, collection, mapContext) {
+proto.render = function(tile, canvas, collection, mapContext) {
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
     layers = this._shader.getLayers(),
     collection,
     shaderLayer, style,
-    shadingOrder, shadingType,
-    strokeAndFill,
+    shadingOrder, symbolizer,
+    strokeFillOrder,
     i, il, r, rl, s, sl,
     feature, coordinates,
-		pos, posX, posY;
+		pos;
 
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  canvas.clear();
 
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
-    strokeAndFill = getStrokeFillOrder(shadingOrder);
+    strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     // features are sorted according to their geometry type first
     // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-      shadingType = shadingOrder[r];
+    symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
         coordinates = feature.coordinates;
 
         style = shaderLayer.getStyle(feature.properties, mapContext);
-        switch (shadingType) {
+        switch (symbolizer) {
           case Shader.POINT:
-            if ((pos = layer.getCentroid(feature)) && style['marker-width'] && style['marker-fill']) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
+            if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
 
-              drawMarker(context, posX, posY, style['marker-width']);
-              // TODO: fix logic of stroke/fill once per pass
-              setStyle(context, 'fillStyle', style['marker-fill']);
-              context.fill();
-              if (setStyle(context, 'strokeStyle', style['marker-line-color'])) {
-                setStyle(context, 'lineWidth', style['marker-line-width']);
-                context.stroke();
-              }
+              canvas.setStyle('strokeStyle', style.markerStrokeStyle);
+              canvas.setStyle('lineWidth',   style.markerLineWidth);
+              canvas.setStyle('fillStyle',   style.markerFill);
+
+              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
             }
           break;
 
           case Shader.LINE:
-            if (style['line-color']) {
+            if (style.strokeStyle) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-              context.beginPath();
-              drawLine(context, coordinates);
-              // TODO: fix logic of stroke/fill once per pass
-              // 'line-opacity': 'globalAlpha',
-              setStyle(context, 'strokeStyle', style['line-color']);
-              setStyle(context, 'lineWidth', style['line-width']);
-              context.stroke();
+
+              canvas.setStyle('strokeStyle', style.strokeStyle);
+              canvas.setStyle('lineWidth',   style.LineWidth);
+
+              canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
-            // QUESTION: should we try to draw lines and points as well here?
-            if (feature.type === Geometry.POLYGON && (style['line-color'] || style['polygon-fill'])) {
-              context.beginPath();
-              drawPolygon(context, coordinates);
-              context.closePath();
-              // TODO: fix logic of stroke/fill once per pass
-              // 'line-opacity': 'globalAlpha',
-              // 'polygon-opacity': 'globalAlpha',
-              setStyle(context, 'strokeStyle', style['line-color']);
-              setStyle(context, 'lineWidth', style['line-width']);
-              setStyle(context, 'fillStyle', style['polygon-fill']);
-              strokeAndFill[0] && context[ strokeAndFill[0] ]();
-              strokeAndFill[1] && context[ strokeAndFill[1] ]();
+            if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
+
+              canvas.setStyle('strokeStyle', style.polygonStrokeStyle);
+              canvas.setStyle('lineWidth',   style.polygonLineWidth);
+              canvas.setStyle('fillStyle',   style.polygonFill);
+
+              canvas.drawPolygon(coordinates, strokeFillOrder);
             }
           break;
 
           case Shader.TEXT:
-            if ((pos = layer.getCentroid(feature)) && style['text-name']) {
-              posX = pos.x-tileCoords.x * 256;
-              posY = pos.y-tileCoords.y * 256;
-              // TODO: check, whether to do outline at all
-              // 'text-opacity': 'globalAlpha',
-              // context.font = 'bold 11px sans-serif';
-              setFont(context, style['text-size'], style['text-face-name']);
-              setStyle(context, 'textAlign', style['text-align']);
+            // TODO: solve labels closely beyond tile border
+            if ((pos = layer.getCentroid(feature)) && style.textContent) {
+              canvas.setFont(style.fontSize, style.fontFace);
+              canvas.setStyle('strokeStyle', style.textStrokeStyle);
+              canvas.setStyle('lineWidth',   style.textLineWidth);
+              canvas.setStyle('fillStyle',   style.textFill);
 
-              if (setStyle(context, 'strokeStyle', style['text-halo-fill'])) {
-                setStyle(context, 'lineWidth', style['text-halo-radius']);
-                context.strokeText(style['text-name'], posX, posY);
-              }
-
-              setStyle(context, 'fillStyle', style['text-fill']);
-              context.fillText(style['text-name'], posX, posY);
+              canvas.drawText(style.textContent, pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }
@@ -1045,23 +1152,7 @@ proto.render = function(tile, context, collection, mapContext) {
   }
 };
 
-// TODO: solve labels closely beyond tile border
-
-/***
-prop = props[i];
-// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-//
-// color parse (and probably other props) depends on canvas implementation so direct
-// comparasions with context contents can't be done.
-// use an extra object to store current state
-// * chrome 35.0.1916.153:
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
-// * ff 29.0.1
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
-***/
-},{"./geometry":3,"./shader":12}],12:[function(_dereq_,module,exports){
+},{"./geometry":4,"./shader":13}],13:[function(_dereq_,module,exports){
 
 var Shader = module.exports = function(style) {
   this._layers = [];
@@ -1125,10 +1216,36 @@ proto.getLayers = function() {
   return this._layers;
 };
 
-},{"./shader.layer":13}],13:[function(_dereq_,module,exports){
+},{"./shader.layer":14}],14:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Events = _dereq_('./core/events');
+
+var propertyMapping = {
+  'marker-width': 'markerSize',
+  'marker-fill': 'markerFill',
+  'marker-line-color': 'markerStrokeStyle',
+  'marker-line-width': 'markerLineWidth',
+  'marker-color': 'markerFill',
+  'point-color': 'markerFill',
+  'marker-opacity': 'markerAlpha', // does that exist?
+
+  'line-color': 'strokeStyle',
+  'line-width': 'lineWidth',
+  'line-opacity': 'lineAlpha',
+
+  'polygon-fill': 'polygonFill',
+  'polygon-opacity': 'polygonAlpha',
+
+  'text-face-name': 'fontFace',
+  'text-size': 'fontSize',
+  'text-fill': 'textFill',
+  'text-opacity': 'textAlpha',
+  'text-halo-fill': 'textStrokeStyle',
+  'text-halo-radius': 'textLineWidth',
+  'text-align': 'textAlign',
+  'text-name': 'textContent'
+};
 
 var ShaderLayer = module.exports = function(shader, shadingOrder) {
   Events.prototype.constructor.call(this);
@@ -1155,8 +1272,11 @@ proto.compile = function(shader) {
       return shader;
     };
   }
-  for (var prop in shader) {
-    this._compiled[prop] = shader[prop];
+  var property;
+  for (var attr in shader) {
+    if (property = propertyMapping[attr]) {
+      this._compiled[property] = shader[attr];
+    }
   }
   this.emit('change');
 };
@@ -1169,21 +1289,20 @@ proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
   var
     style = {},
-    shader = this._compiled,
+    compiled = this._compiled,
     // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
-    props = Object.keys(shader),
+    props = Object.keys(compiled),
     prop, val;
 
   for (var i = 0, len = props.length; i < len; ++i) {
     prop = props[i];
-    val = shader[prop];
+    val = compiled[prop];
+
     if (typeof val === 'function') {
       val = val(featureProperties, mapContext);
     }
     style[prop] = val;
   }
-
-  style['marker-fill'] = style['marker-fill'] || style['marker-color'];
 
   return style;
 },
@@ -1198,10 +1317,10 @@ proto.getShadingOrder = function() {
  */
 proto.hitShader = function(keyAttribute) {
   var hit = this.clone();
-  // replace all fillStyle and strokeStyle props to use a custom
+  // replace all polygonFillStyle and strokeStyle props to use a custom
   // color
   for(var k in hit._compiled) {
-    if (k === 'polygon-fill' || k === 'line-color') {
+    if (k === 'polygonFill' || k === 'strokeStyle') {
       //var p = hit._compiled[k];
       hit._compiled[k] = function(featureProperties, mapContext) {
         return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
@@ -1226,39 +1345,16 @@ var Int2RGB = function(input) {
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
 
-},{"./core/events":2,"./shader":12}],14:[function(_dereq_,module,exports){
+},{"./core/events":3,"./shader":13}],15:[function(_dereq_,module,exports){
 
 var ShaderLayer = _dereq_('./shader.layer');
-
-function createCanvas() {
-  var
-    canvas = document.createElement('CANVAS'),
-    context = canvas.getContext('2d');
-
-  canvas.width  = Tile.SIZE;
-  canvas.height = Tile.SIZE;
-  context.mozImageSmoothingEnabled = false;
-  context.webkitImageSmoothingEnabled = false;
-
-  // TODO: allow these to be handled in Renderer / CartoCSS
-  context.lineCap = 'round';
-  context.lineJoin = 'round';
-
-  return canvas;
-}
+var Canvas = _dereq_('./canvas');
 
 var Tile = module.exports = function(options) {
   options = options || {};
 
-  var
-    canvas = this._canvas = createCanvas(),
-    hitCanvas = this._hitCanvas = createCanvas();
-
-  this._context = canvas.getContext('2d');
-  this._hitContext = hitCanvas.getContext('2d');
-
-  canvas.style.width  = canvas.width  +'px';
-  canvas.style.height = canvas.height +'px';
+  this._canvas = new Canvas({ size: Tile.SIZE }),
+  this._hitCanvas = new Canvas({ size: Tile.SIZE });
 
   this._layer = options.layer;
   this._renderer = options.renderer;
@@ -1277,17 +1373,12 @@ Tile.SIZE = 256;
 var proto = Tile.prototype;
 
 
-
 proto.getDomElement = function() {
-  return this._canvas;
+  return this._canvas.getDomElement();
 };
 
 proto.getLayer = function() {
   return this._layer;
-};
-
-proto.getContext = function() {
-  return this._context;
 };
 
 proto.getCoords = function() {
@@ -1295,7 +1386,7 @@ proto.getCoords = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this, this._context, this._data, {
+  this._renderer.render(this, this._canvas, this._data, {
     zoom: this._coords.z
   });
 };
@@ -1307,13 +1398,13 @@ proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
   this._renderer.setShader(currentShader.hitShader('cartodb_id'));
-  this._renderer.render(this, this._hitContext, this._data, {
+  this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
 
   // restore shader
   this._renderer.setShader(currentShader);
-  return this._hitContext.getImageData(0, 0, hitCanvas.width, hitCanvas.height).data;
+  return this._hitCanvas.getData();
 };
 
 /**
@@ -1336,6 +1427,6 @@ proto.featureAt = function(x, y) {
   return null;
 };
 
-},{"./shader.layer":13}]},{},[5])
-(5)
+},{"./canvas":1,"./shader.layer":14}]},{},[6])
+(6)
 });

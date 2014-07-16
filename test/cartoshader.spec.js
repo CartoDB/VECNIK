@@ -19,11 +19,11 @@ var shader, canvas, ctx;
     var hit = shader.hitShader('id');
 
     var style = hit.getStyle({ id: 0 });
-    equal(style['polygon-fill'], 'rgb(1,0,0)');
+    equal(style.polygonFill, 'rgb(1,0,0)');
 
     style = hit.getStyle({ id: 1 });
-    equal(style['polygon-fill'], 'rgb(2,0,0)');
+    equal(style.polygonFill, 'rgb(2,0,0)');
 
     style = hit.getStyle({ id: 256 });
-    equal(style['polygon-fill'], 'rgb(1,1,0)');
+    equal(style.polygonFill, 'rgb(1,1,0)');
   });
