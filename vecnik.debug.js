@@ -105,6 +105,7 @@ proto._beginBatch = function(operation, strokeFillOrder) {
   if (this._operation === operation && this._strokeFillOrder === strokeFillOrder) {
     return;
   }
+
   this._finishBatch();
   this._operation = operation;
   this._strokeFillOrder = strokeFillOrder;
@@ -477,20 +478,23 @@ if (typeof L !== 'undefined') {
 }(self || window || global));
 
 var VECNIK = _dereq_('./core/core');
-VECNIK.CartoDB     = { API: _dereq_('./provider/cartodb') };
+
+VECNIK.Geometry    = _dereq_('./geometry');
+VECNIK.Canvas      = _dereq_('./canvas');
 VECNIK.CartoShader = _dereq_('./shader');
 VECNIK.CartoShaderLayer = _dereq_('./shader.layer');
 VECNIK.Renderer    = _dereq_('./renderer');
+
+VECNIK.CartoDB     = { API: _dereq_('./provider/cartodb') };
 VECNIK.Layer       = _dereq_('./layer');
 // TODO: worker should use whatever reader the user defined
 VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
-VECNIK.Geometry    = _dereq_('./geometry');
 VECNIK.Profiler    = _dereq_('./profiler');
 
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./reader/geojson":11,"./renderer":12,"./shader":13,"./shader.layer":14}],7:[function(_dereq_,module,exports){
+},{"./canvas":1,"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./reader/geojson":11,"./renderer":12,"./shader":13,"./shader.layer":14}],7:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
@@ -1027,26 +1031,6 @@ function getStrokeFillOrder(shadingOrder) {
   return res;
 }
 
-function drawMarker(context, x, y, size) {
-  // TODO: manage image sprites
-  // TODO: precache render to a canvas
-  context.arc(x, y, size, 0, Math.PI*2);
-}
-
-function drawLine(context, coordinates) {
-  context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
-    context.lineTo(coordinates[i], coordinates[i+1]);
-  }
-};
-
-function drawPolygon(context, coordinates) {
-  for (var i = 0, il = coordinates.length; i < il; i++) {
-    drawLine(context, coordinates[i]);
-  }
-};
-
-
 var Renderer = module.exports = function(options) {
   options = options || {};
   if (!options.shader) {
@@ -1084,13 +1068,13 @@ proto.render = function(tile, canvas, collection, mapContext) {
 
   canvas.clear();
 
+  // for render order see https://gist.github.com/javisantana/7843f292ecf47f74a27d
+
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
-    // features are sorted according to their geometry type first
-    // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
     symbolizer = shadingOrder[r];
 
