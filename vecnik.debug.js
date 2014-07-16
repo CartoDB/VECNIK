@@ -43,15 +43,8 @@ proto.getData = function() {
   return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
 };
 
-proto._drawLineSegments = function(coordinates) {
-  var context = this._context;
-  context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
-    context.lineTo(coordinates[i], coordinates[i+1]);
-  }
-};
 
-proto.drawCircle = function(x, y, size, fill, stroke, lineWidth) {
+proto.drawCircle = function(x, y, size, fill, stroke, lineWidth, strokeFillOrder) {
   if ((!fill && !stroke) || !size) {
     return;
   }
@@ -59,7 +52,7 @@ proto.drawCircle = function(x, y, size, fill, stroke, lineWidth) {
   this.setStrokeStyle(stroke, lineWidth);
   this.setFillStyle(fill);
 
-  this._beginBatch('circle', 'SF');
+  this._beginBatch('circle', strokeFillOrder);
 
   this._context.arc(x, y, size, 0, Math.PI*2);
 };
@@ -73,10 +66,14 @@ proto.drawLine = function(coordinates, stroke, lineWidth) {
 
   this._beginBatch('line', 'S');
 
-  this._drawLineSegments(coordinates);
+  var context = this._context;
+  context.moveTo(coordinates[0], coordinates[1]);
+  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
+    context.lineTo(coordinates[i], coordinates[i+1]);
+  }
 };
 
-proto.drawPolygon = function(coordinates, fill, stroke, lineWidth) {
+proto.drawPolygon = function(coordinates, fill, stroke, lineWidth, strokeFillOrder) {
   if (!fill && !stroke) {
     return;
   }
@@ -84,10 +81,16 @@ proto.drawPolygon = function(coordinates, fill, stroke, lineWidth) {
   this.setStrokeStyle(stroke, lineWidth);
   this.setFillStyle(fill);
 
-  this._beginBatch('polygon', 'SF');
+  this._beginBatch('polygon', strokeFillOrder);
 
+  var j, jl;
+  var context = this._context;
   for (var i = 0, il = coordinates.length; i < il; i++) {
-    this._drawLineSegments(coordinates[i]);
+    context.moveTo(coordinates[i][0], coordinates[i][1]);
+    for (j = 2, jl = coordinates[i].length-2; j < jl; j+=2) {
+      context.lineTo(coordinates[i][j], coordinates[i][j+1]);
+    }
+    context.lineTo(coordinates[i][0], coordinates[i][1]);
   }
 };
 
@@ -136,12 +139,14 @@ proto._strokeFillMapping = {
 };
 
 proto._beginBatch = function(operation, strokeFillOrder) {
+// if (operation === 'polygon') console.log('BATCH', strokeFillOrder, this._state.fillStyle);
+
   if (this._operation === operation && this._strokeFillOrder === strokeFillOrder) {
     return;
   }
   this._finishBatch();
   this._operation = operation;
-  this._strokeFillOrder = strokeFillOrder || 'S';
+  this._strokeFillOrder = strokeFillOrder;
   this._context.beginPath();
 };
 
@@ -150,13 +155,13 @@ proto._finishBatch = function() {
     return;
   }
 
-  var strokeFill = this._strokeFillOrder;
+  var strokeFillOrder = this._strokeFillOrder;
 
-  for (var i = 0, il = strokeFill.length; i < il; i++) {
-    if (strokeFill[i] === 'F') {
+  for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
+    if (strokeFillOrder[i] === 'F') {
       this._context.closePath();
     }
-    this._context[ this._strokeFillMapping[ strokeFill[i] ] ]();
+    this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
   this._operation = null;
@@ -1050,15 +1055,15 @@ var Geometry = _dereq_('./geometry');
 
 function getStrokeFillOrder(shadingOrder) {
   var
-    shadingType,
-    res = [];
+    symbolizer,
+    res = '';
   for (var i = 0, il = shadingOrder.length; i < il; i++) {
-    shadingType = shadingOrder[i];
-    if (shadingType === Shader.POLYGON) {
-      res.push('fill');
+    symbolizer = shadingOrder[i];
+    if (symbolizer === Shader.POLYGON) {
+      res += 'F';
     }
-    if (shadingType === Shader.LINE) {
-      res.push('stroke');
+    if (symbolizer === Shader.LINE) {
+      res += 'S';
     }
   }
   return res;
@@ -1107,14 +1112,16 @@ proto.getShader = function() {
 // mapContext contains the data needed for rendering related to the
 // map state, for the moment only zoom
 proto.render = function(tile, canvas, collection, mapContext) {
+  console.log('RENDERER: begin render');
+
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
     layers = this._shader.getLayers(),
     collection,
     shaderLayer, style,
-    shadingOrder, shadingType,
-    strokeAndFill,
+    shadingOrder, symbolizer,
+    strokeFillOrder,
     i, il, r, rl, s, sl,
     feature, coordinates,
 		pos;
@@ -1124,26 +1131,28 @@ proto.render = function(tile, canvas, collection, mapContext) {
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
-    strokeAndFill = getStrokeFillOrder(shadingOrder);
+    strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     // features are sorted according to their geometry type first
     // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-      shadingType = shadingOrder[r];
+    symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
+//console.log('RENDERER: begin feature');
         feature = collection[i];
         coordinates = feature.coordinates;
 
         style = shaderLayer.getStyle(feature.properties, mapContext);
-        switch (shadingType) {
+        switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
               canvas.drawCircle(
                 pos.x-tileCoords.x * 256,
                 pos.y-tileCoords.y * 256,
                 style.markerSize,
-                style.markerFill, style.markerStrokeStyle, style.markerLineWidth
+                style.markerFill, style.markerStrokeStyle, style.markerLineWidth,
+                strokeFillOrder
               );
             }
           break;
@@ -1167,11 +1176,9 @@ proto.render = function(tile, canvas, collection, mapContext) {
                 coordinates,
                 style.polygonFill,
                 style.strokeStyle,
-                style.lineWidth
+                style.lineWidth,
+                strokeFillOrder
               );
-              // TODO: set stroke/fill order
-              //strokeAndFill[0] && context[ strokeAndFill[0] ]();
-              //strokeAndFill[1] && context[ strokeAndFill[1] ]();
             }
           break;
 
@@ -1179,7 +1186,6 @@ proto.render = function(tile, canvas, collection, mapContext) {
             // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
-console.log('TEXT STYLE', style);
               canvas.drawText(
                 style.textContent,
                 pos.x-tileCoords.x * 256,

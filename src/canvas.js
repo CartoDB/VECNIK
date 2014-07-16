@@ -42,15 +42,8 @@ proto.getData = function() {
   return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
 };
 
-proto._drawLineSegments = function(coordinates) {
-  var context = this._context;
-  context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
-    context.lineTo(coordinates[i], coordinates[i+1]);
-  }
-};
 
-proto.drawCircle = function(x, y, size, fill, stroke, lineWidth) {
+proto.drawCircle = function(x, y, size, fill, stroke, lineWidth, strokeFillOrder) {
   if ((!fill && !stroke) || !size) {
     return;
   }
@@ -58,7 +51,7 @@ proto.drawCircle = function(x, y, size, fill, stroke, lineWidth) {
   this.setStrokeStyle(stroke, lineWidth);
   this.setFillStyle(fill);
 
-  this._beginBatch('circle', 'SF');
+  this._beginBatch('circle', strokeFillOrder);
 
   this._context.arc(x, y, size, 0, Math.PI*2);
 };
@@ -72,10 +65,14 @@ proto.drawLine = function(coordinates, stroke, lineWidth) {
 
   this._beginBatch('line', 'S');
 
-  this._drawLineSegments(coordinates);
+  var context = this._context;
+  context.moveTo(coordinates[0], coordinates[1]);
+  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
+    context.lineTo(coordinates[i], coordinates[i+1]);
+  }
 };
 
-proto.drawPolygon = function(coordinates, fill, stroke, lineWidth) {
+proto.drawPolygon = function(coordinates, fill, stroke, lineWidth, strokeFillOrder) {
   if (!fill && !stroke) {
     return;
   }
@@ -83,10 +80,16 @@ proto.drawPolygon = function(coordinates, fill, stroke, lineWidth) {
   this.setStrokeStyle(stroke, lineWidth);
   this.setFillStyle(fill);
 
-  this._beginBatch('polygon', 'SF');
+  this._beginBatch('polygon', strokeFillOrder);
 
+  var j, jl;
+  var context = this._context;
   for (var i = 0, il = coordinates.length; i < il; i++) {
-    this._drawLineSegments(coordinates[i]);
+    context.moveTo(coordinates[i][0], coordinates[i][1]);
+    for (j = 2, jl = coordinates[i].length-2; j < jl; j+=2) {
+      context.lineTo(coordinates[i][j], coordinates[i][j+1]);
+    }
+    context.lineTo(coordinates[i][0], coordinates[i][1]);
   }
 };
 
@@ -135,12 +138,14 @@ proto._strokeFillMapping = {
 };
 
 proto._beginBatch = function(operation, strokeFillOrder) {
+// if (operation === 'polygon') console.log('BATCH', strokeFillOrder, this._state.fillStyle);
+
   if (this._operation === operation && this._strokeFillOrder === strokeFillOrder) {
     return;
   }
   this._finishBatch();
   this._operation = operation;
-  this._strokeFillOrder = strokeFillOrder || 'S';
+  this._strokeFillOrder = strokeFillOrder;
   this._context.beginPath();
 };
 
@@ -149,13 +154,13 @@ proto._finishBatch = function() {
     return;
   }
 
-  var strokeFill = this._strokeFillOrder;
+  var strokeFillOrder = this._strokeFillOrder;
 
-  for (var i = 0, il = strokeFill.length; i < il; i++) {
-    if (strokeFill[i] === 'F') {
+  for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
+    if (strokeFillOrder[i] === 'F') {
       this._context.closePath();
     }
-    this._context[ this._strokeFillMapping[ strokeFill[i] ] ]();
+    this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
   this._operation = null;
