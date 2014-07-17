@@ -23,15 +23,15 @@ proto.createHitShader = function(key) {
 };
 
 proto.update = function(style) {
-  // TODO: improve var naming
+  // requiring this late in order to avoid circular reference shader <-> shader.layer
+  var ShaderLayer = require('./shader.layer');
+
+  // TODO: rethink var naming
   var
     shader = new carto.RendererJS().render(style),
     layer, layerShader, sh, p;
 
   if (shader && shader.layers) {
-    // requiring this late in order to avoid circular reference shader <-> shader.layer
-    var ShaderLayer = require('./shader.layer');
-
     for (var i = 0, il = shader.layers.length; i < il; i++) {
       layer = shader.layers[i];
 

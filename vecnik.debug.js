@@ -380,7 +380,7 @@ if (typeof L !== 'undefined') {
         var key = self._tileCoordsToKey(tile);
         var tile_x = pos.x - 256*tile.x;
         var tile_y = pos.y - 256*tile.y;
-        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
+//        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
       });
 
       L.TileLayer.prototype.onAdd.call(this, map);
@@ -1160,15 +1160,15 @@ proto.createHitShader = function(key) {
 };
 
 proto.update = function(style) {
-  // TODO: improve var naming
+  // requiring this late in order to avoid circular reference shader <-> shader.layer
+  var ShaderLayer = _dereq_('./shader.layer');
+
+  // TODO: rethink var naming
   var
     shader = new carto.RendererJS().render(style),
     layer, layerShader, sh, p;
 
   if (shader && shader.layers) {
-    // requiring this late in order to avoid circular reference shader <-> shader.layer
-    var ShaderLayer = _dereq_('./shader.layer');
-
     for (var i = 0, il = shader.layers.length; i < il; i++) {
       layer = shader.layers[i];
 
