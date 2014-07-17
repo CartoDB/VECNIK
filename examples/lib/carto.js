@@ -2497,7 +2497,7 @@ carto.Parser = function Parser(env) {
                     f, filters = new tree.Filterset(),
                     z, zooms = [],
                     frame_offset = tree.FrameOffset.none;
-                    segments = 0, conditions = 0;
+                    var segments = 0, conditions = 0, fo;
 
                 while (
                         (e = $(this.element)) ||

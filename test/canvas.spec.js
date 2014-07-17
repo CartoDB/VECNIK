@@ -1,77 +1,80 @@
 
 module('canvas');
 
-var canvas;
-var finishCalled = false;
+(function() {
 
-QUnit.testStart(function() {
-  canvas = new VECNIK.Canvas({ size: 50 });
+  var canvas, finishCalled = false;
 
-  var canvas_finishBatch = canvas._finishBatch;
+  QUnit.testStart(function() {
+    canvas = new VECNIK.Canvas({ size: 50 });
 
-  canvas._finishBatch = function() {
-    finishCalled = true;
-    canvas_finishBatch.call(canvas);
-  };
-});
+    var canvas_finishBatch = canvas._finishBatch;
 
-test('batch operation should restart when style changes',  function() {
-  var operation = 'test';
-  var strokeFillOrder = 'S';
+    canvas._finishBatch = function() {
+      finishCalled = true;
+      canvas_finishBatch.call(canvas);
+    };
+  });
 
-  canvas.setStyle('strokeStyle', '#ffffff');
+  test('batch operation should restart when style changes',  function() {
+    var operation = 'test';
+    var strokeFillOrder = 'S';
 
-  canvas._finishBatch();
-  canvas._beginBatch(operation, strokeFillOrder);
-  equal(canvas._operation, operation);
+    canvas.setStyle('strokeStyle', '#ffffff');
 
-  canvas.setStyle('strokeStyle', '#ff0000');
-  equal(canvas._operation, null);
+    canvas._finishBatch();
+    canvas._beginBatch(operation, strokeFillOrder);
+    equal(canvas._operation, operation);
 
-  canvas._finishBatch();
-  canvas.setStyle('strokeStyle', 'rgba(0, 0, 0, 0.1)');
-  canvas._beginBatch(operation, strokeFillOrder);
-  canvas.setStyle('strokeStyle', 'rgba(0, 0, 0, 0.1)');
-  equal(canvas._operation, operation);
+    canvas.setStyle('strokeStyle', '#ff0000');
+    equal(canvas._operation, null);
 
-  canvas.setStyle('strokeStyle', '#ff0000');
-  equal(canvas._operation, null);
-});
+    canvas._finishBatch();
+    canvas.setStyle('strokeStyle', 'rgba(0, 0, 0, 0.1)');
+    canvas._beginBatch(operation, strokeFillOrder);
+    canvas.setStyle('strokeStyle', 'rgba(0, 0, 0, 0.1)');
+    equal(canvas._operation, operation);
 
-test('batch operation should restart when stroke/fill order changes',  function() {
-  var operation = 'test';
+    canvas.setStyle('strokeStyle', '#ff0000');
+    equal(canvas._operation, null);
+  });
 
-  canvas._beginBatch(operation, 'F');
+  test('batch operation should restart when stroke/fill order changes',  function() {
+    var operation = 'test';
 
-  finishCalled = false;
+    canvas._beginBatch(operation, 'F');
 
-  canvas._beginBatch(operation, 'F');
-  equal(finishCalled, false);
+    finishCalled = false;
 
-  canvas._beginBatch(operation, 'S');
-  equal(finishCalled, true);
+    canvas._beginBatch(operation, 'F');
+    equal(finishCalled, false);
 
-  finishCalled = false;
+    canvas._beginBatch(operation, 'S');
+    equal(finishCalled, true);
 
-  canvas._beginBatch(operation, 'FS');
-  equal(finishCalled, true);
-});
+    finishCalled = false;
 
-test('batch operation should restart when geometry type changes',  function() {
-  var strokeFillOrder = 'S';
+    canvas._beginBatch(operation, 'FS');
+    equal(finishCalled, true);
+  });
 
-  canvas._beginBatch('polygon', strokeFillOrder);
+  test('batch operation should restart when geometry type changes',  function() {
+    var strokeFillOrder = 'S';
 
-  finishCalled = false;
+    canvas._beginBatch('polygon', strokeFillOrder);
 
-  canvas._beginBatch('polygon', strokeFillOrder);
-  equal(finishCalled, false);
+    finishCalled = false;
 
-  canvas._beginBatch('line', strokeFillOrder);
-  equal(finishCalled, true);
+    canvas._beginBatch('polygon', strokeFillOrder);
+    equal(finishCalled, false);
 
-  finishCalled = false;
+    canvas._beginBatch('line', strokeFillOrder);
+    equal(finishCalled, true);
 
-  canvas._beginBatch('point', strokeFillOrder);
-  equal(finishCalled, true);
-});
+    finishCalled = false;
+
+    canvas._beginBatch('point', strokeFillOrder);
+    equal(finishCalled, true);
+  });
+
+}());
