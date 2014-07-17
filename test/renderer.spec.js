@@ -1,74 +1,131 @@
 
-module('cartoshader');
-var shader, canvas, ctx;
+module('renderer');
 
-  QUnit.testStart(function( details ) {
-    canvas = document.createElement('canvas');
-    ctx = canvas.getContext('2d')
-    shader = new VECNIK.CartoShader({
-      'point-color': '#ffffff',
-      'line-color': function(data) {
-        return data.color;
+(function() {
+
+  var tile, canvas, collection,
+    circleDone = 0, lineDone = 0, polygonDone = 0, textDone = 0;
+
+  QUnit.testStart(function(details) {
+    tile = {
+      getLayer: function() {
+        return {
+          getCentroid: function() {
+            return { x:0, y:0 };
+          }
+        };
       },
-      'line-width': 1,
-      'polygon-fill': '#0000ff'
+      getCoords: function() {
+        return { x:0, y:0, z:0 };
+      }
+    };
+
+    canvas = {
+      clear: function() {},
+      setStyle: function() {},
+      drawCircle: function() {
+        circleDone++;
+      },
+      drawLine: function() {
+        lineDone++;
+      },
+      drawPolygon: function() {
+        polygonDone++;
+      },
+
+      setFont: function() {},
+      drawText: function() {
+        textDone++;
+      }
+    };
+
+    collection = [
+      { type: VECNIK.Geometry.POINT,   groupId: 'id-'+ VECNIK.Geometry.POINT,   coordinates: [0,1], properties: {}},
+      { type: VECNIK.Geometry.LINE,    groupId: 'id-'+ VECNIK.Geometry.LINE,    coordinates: [[0,1], [2,3]], properties: {}},
+      { type: VECNIK.Geometry.POLYGON, groupId: 'id-'+ VECNIK.Geometry.POLYGON, coordinates: [[[0,1], [2,3], [0,1]]], properties: {}}
+    ];
+  });
+  var tile, canvas, collection, operationsDone = { circle:0, line:0, polygon:0, text:0 };
+
+  test('should render as text', function() {
+    var renderer = new VECNIK.Renderer({
+      shader: new VECNIK.CartoShader(
+        '#layer {\n'+
+        '  text-name: test;\n'+
+        '}'
+      )
     });
+
+    textDone = 0; polygonDone = 0; lineDone = 0; circleDone = 0;
+    renderer.render(tile, canvas, collection, {});
+    equal(textDone, 3);
+    equal(polygonDone, 0);
+    equal(lineDone, 0);
+    equal(circleDone, 0);
   });
 
+  test('should render as polygon', function() {
+    var renderer = new VECNIK.Renderer({
+      shader: new VECNIK.CartoShader(
+        '#layer {\n'+
+        '  polygon-fill: #000;\n'+
+        '}'
+      )
+    });
+    textDone = 0; polygonDone = 0; lineDone = 0; circleDone = 0;
+    renderer.render(tile, canvas, collection, {});
+    equal(textDone, 0);
+    equal(polygonDone, 1);
+    equal(lineDone, 0);
+    equal(circleDone, 0);
+  });
 
-//  test('apply should return true when style was changed',  function() {
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), true);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: 'rgba(0, 0, 0, 0.1)' })), true);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: 'rgba(0, 0, 0, 0.1)' })), false);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), true);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), false);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#fff000' })), true);
-//  });
+  test('should render as line', function() {
+    var renderer = new VECNIK.Renderer({
+      shader: new VECNIK.CartoShader(
+        '#layer {\n'+
+        '  line-color: #fff;\n'+
+        '}'
+      )
+    });
+    textDone = 0; polygonDone = 0; lineDone = 0; circleDone = 0;
+    renderer.render(tile, canvas, collection, {});
+    equal(textDone, 0);
+    equal(polygonDone, 0);
+    equal(lineDone, 3);
+    equal(circleDone, 0);
+  });
 
-//  test('should tell when geometry should be rendered', function() {
-//    var c = new VECNIK.CartoShaderLayer({
-//      'line-color': '#fff'
-//    });
-//    var st = c.evalStyle({});
-//    equal(c.needsRender('line', st), true);
-//    equal(c.needsRender('line', st), true);
-//    equal(c.needsRender('line', st), true);
-//    equal(c.needsRender('polygon', st), true);
-//    equal(c.needsRender('markers', st), true);
-//
-//    c = new VECNIK.CartoShaderLayer({
-//      'polygon-fill': '#fff'
-//    });
-//    var st = c.evalStyle({});
-//    equal(c.needsRender('line', st), false);
-//    equal(c.needsRender('markers', st), false);
-//    equal(c.needsRender('polygon', st), true);
-//    equal(c.needsRender('markers', st), false);
-//
-//    c = new VECNIK.CartoShaderLayer({
-//      'marker-width': 10
-//    });
-//    st = c.evalStyle({});
-//    equal(c.needsRender('markers', st), true);
-//
-//    c = new VECNIK.CartoShaderLayer({
-//      'line-color': function(data) {
-//        if (data.value > 1) {
-//          return '#fff';
-//        }
-//      }
-//    });
-//    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
-//    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
-//
-//    c = new VECNIK.CartoShaderLayer({
-//      'line-color': function(data, ctx) {
-//        if (ctx.zoom > 1) {
-//          return '#fff';
-//        }
-//      }
-//    });
-//    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
-//    equal(c.needsRender('line', c.evalStyle({ value: 0 }, { zoom: 1 })), false);
-//    equal(c.needsRender('line', c.evalStyle({ value: 0 }, { zoom: 2 })), true);
-//  });
+  test('should render as circle', function() {
+    var renderer = new VECNIK.Renderer({
+      shader: new VECNIK.CartoShader(
+        '#layer {\n'+
+        '  marker-fill: #ffcc00;\n'+
+        '  marker-width: 10px;\n'+
+        '}'
+      )
+    });
+    textDone = 0; polygonDone = 0; lineDone = 0; circleDone = 0;
+    renderer.render(tile, canvas, collection, {});
+    equal(textDone, 0);
+    equal(polygonDone, 0);
+    equal(lineDone, 0);
+    equal(circleDone, 3);
+  });
+
+  test('should not render at all', function() {
+    var renderer = new VECNIK.Renderer({
+      shader: new VECNIK.CartoShader(
+        '#layer {\n'+
+        '}'
+      )
+    });
+    textDone = 0; polygonDone = 0; lineDone = 0; circleDone = 0;
+    renderer.render(tile, canvas, collection, {});
+    equal(textDone, 0);
+    equal(polygonDone, 0);
+    equal(lineDone, 0);
+    equal(circleDone, 0);
+  });
+
+}());

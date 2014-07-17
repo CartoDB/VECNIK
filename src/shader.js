@@ -14,32 +14,24 @@ module.exports.POINT   = 'markers';
 module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
-proto.clone = function() {
+proto.createHitShader = function(key) {
   var s = new Shader();
   for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone());
-  }
-  return s;
-};
-
-proto.hitShader = function(attr) {
-  var s = new Shader();
-  for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone().hitShader(attr));
+    s._layers.push(this._layers[i].createHitShaderLayer(key));
   }
   return s;
 };
 
 proto.update = function(style) {
-  // TODO: improve var naming
+  // requiring this late in order to avoid circular reference shader <-> shader.layer
+  var ShaderLayer = require('./shader.layer');
+
+  // TODO: rethink var naming
   var
     shader = new carto.RendererJS().render(style),
     layer, layerShader, sh, p;
 
   if (shader && shader.layers) {
-    // requiring this late in order to avoid circular reference shader <-> shader.layer
-    var ShaderLayer = require('./shader.layer');
-
     for (var i = 0, il = shader.layers.length; i < il; i++) {
       layer = shader.layers[i];
 

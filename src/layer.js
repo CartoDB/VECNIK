@@ -34,16 +34,15 @@ if (typeof L !== 'undefined') {
 
     onAdd: function(map) {
       var self = this;
-      //var proj = VECNIK.MercatorProjection()
       map.on('mousemove', function (e) {
-//        var pos = map.project(e.latlng);
-//        var tile = {
-//          x: (pos.x/256)|0,
-//          y: (pos.y/256)|0
-//        };
-//        var key = self._tileCoordsToKey(tile);
-//        var tile_x = pos.x - 256*tile.x;
-//        var tile_y = pos.y - 256*tile.y;
+        var pos = map.project(e.latlng);
+        var tile = {
+          x: (pos.x/256)|0,
+          y: (pos.y/256)|0
+        };
+        var key = self._tileCoordsToKey(tile);
+        var tile_x = pos.x - 256*tile.x;
+        var tile_y = pos.y - 256*tile.y;
 //        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
       });
 
@@ -71,14 +70,34 @@ if (typeof L !== 'undefined') {
 
     redraw: function(forceReload) {
       if (!!forceReload) {
+        this._centroidPositions = {};
         L.TileLayer.prototype.redraw.call(this);
         return;
       }
+
       var timer = Profiler.metric('tiles.render.time').start();
-      this._centroidPositions = {};
+
+      // get viewport tile bounds in order to render immediately, when visible
+      var bounds = this._map.getPixelBounds(),
+        tileSize = this._getTileSize(),
+        tileBounds = L.bounds(
+          bounds.min.divideBy(tileSize).floor(),
+          bounds.max.divideBy(tileSize).floor());
+
+// var start = Date.now();
+      var renderQueue = [];
       for (var key in this._tileObjects) {
-        this._tileObjects[key].render();
+        if (tileBounds.contains(this._keyToTileCoords(key))) {
+          this._tileObjects[key].render();
+        } else {
+          renderQueue.push(this._tileObjects[key]);
+        }
       }
+// console.log('RENDER PASS', Date.now()-start);
+      for (var i = 0, il = renderQueue.length; i < il; i++) {
+        renderQueue[i].render();
+      }
+
       timer.end();
     },
 

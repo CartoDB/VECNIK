@@ -21,8 +21,6 @@ test('Should load GeoJSON and return formatted objects', function() {
 //  // callback is called
   };
 
-
-
 });
 
 ***/

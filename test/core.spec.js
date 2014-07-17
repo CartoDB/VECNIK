@@ -1,16 +1,17 @@
 
 module('core');
 
-QUnit.testStart(function() {});
+(function() {
 
-test('Geometry types need to be defined in VECNIK.Geometry.*', function() {
-  equal(VECNIK.Geometry.POINT, 'Point');
-  equal(VECNIK.Geometry.LINE, 'LineString');
-  equal(VECNIK.Geometry.POLYGON, 'Polygon');
-});
+  QUnit.testStart(function() {});
 
-//asyncTest('XHR', 1, function() {
-  //VECNIK.load('test.json', function(res) {
-    //equal(res, {test:123});
-  //});
-//});
+  // doesn't work from command line but browser is fine
+  asyncTest('XHR', function() {
+    var expectedRes = JSON.stringify({ test: 123 });
+    VECNIK.load('test.json', function(res) {
+      equal(JSON.stringify(res), expectedRes);
+      start();
+    });
+  });
+
+}());

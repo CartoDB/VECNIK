@@ -18,26 +18,6 @@ function getStrokeFillOrder(shadingOrder) {
   return res;
 }
 
-function drawMarker(context, x, y, size) {
-  // TODO: manage image sprites
-  // TODO: precache render to a canvas
-  context.arc(x, y, size, 0, Math.PI*2);
-}
-
-function drawLine(context, coordinates) {
-  context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
-    context.lineTo(coordinates[i], coordinates[i+1]);
-  }
-};
-
-function drawPolygon(context, coordinates) {
-  for (var i = 0, il = coordinates.length; i < il; i++) {
-    drawLine(context, coordinates[i]);
-  }
-};
-
-
 var Renderer = module.exports = function(options) {
   options = options || {};
   if (!options.shader) {
@@ -75,13 +55,13 @@ proto.render = function(tile, canvas, collection, mapContext) {
 
   canvas.clear();
 
+  // for render order see https://gist.github.com/javisantana/7843f292ecf47f74a27d
+
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
-    // features are sorted according to their geometry type first
-    // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
     symbolizer = shadingOrder[r];
 

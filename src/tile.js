@@ -49,7 +49,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.hitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });

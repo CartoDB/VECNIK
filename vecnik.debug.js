@@ -371,16 +371,15 @@ if (typeof L !== 'undefined') {
 
     onAdd: function(map) {
       var self = this;
-      //var proj = VECNIK.MercatorProjection()
       map.on('mousemove', function (e) {
-//        var pos = map.project(e.latlng);
-//        var tile = {
-//          x: (pos.x/256)|0,
-//          y: (pos.y/256)|0
-//        };
-//        var key = self._tileCoordsToKey(tile);
-//        var tile_x = pos.x - 256*tile.x;
-//        var tile_y = pos.y - 256*tile.y;
+        var pos = map.project(e.latlng);
+        var tile = {
+          x: (pos.x/256)|0,
+          y: (pos.y/256)|0
+        };
+        var key = self._tileCoordsToKey(tile);
+        var tile_x = pos.x - 256*tile.x;
+        var tile_y = pos.y - 256*tile.y;
 //        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
       });
 
@@ -388,6 +387,7 @@ if (typeof L !== 'undefined') {
     },
 
     _removeTile: function(key) {
+console.log('removing', key)
       delete this._tileObjects[key];
       L.TileLayer.prototype._removeTile.call(this, key);
     },
@@ -408,14 +408,34 @@ if (typeof L !== 'undefined') {
 
     redraw: function(forceReload) {
       if (!!forceReload) {
+        this._centroidPositions = {};
         L.TileLayer.prototype.redraw.call(this);
         return;
       }
+
       var timer = Profiler.metric('tiles.render.time').start();
-      this._centroidPositions = {};
+
+      // get viewport tile bounds in order to render immediately, when visible
+      var bounds = this._map.getPixelBounds(),
+        tileSize = this._getTileSize(),
+        tileBounds = L.bounds(
+          bounds.min.divideBy(tileSize).floor(),
+          bounds.max.divideBy(tileSize).floor());
+
+// var start = Date.now();
+      var renderQueue = [];
       for (var key in this._tileObjects) {
-        this._tileObjects[key].render();
+        if (tileBounds.contains(this._keyToTileCoords(key))) {
+          this._tileObjects[key].render();
+        } else {
+          renderQueue.push(this._tileObjects[key]);
+        }
       }
+// console.log('RENDER PASS', Date.now()-start);
+      for (var i = 0, il = renderQueue.length; i < il; i++) {
+        renderQueue[i].render();
+      }
+
       timer.end();
     },
 
@@ -477,20 +497,23 @@ if (typeof L !== 'undefined') {
 }(self || window || global));
 
 var VECNIK = _dereq_('./core/core');
-VECNIK.CartoDB     = { API: _dereq_('./provider/cartodb') };
+
+VECNIK.Geometry    = _dereq_('./geometry');
+VECNIK.Canvas      = _dereq_('./canvas');
 VECNIK.CartoShader = _dereq_('./shader');
 VECNIK.CartoShaderLayer = _dereq_('./shader.layer');
 VECNIK.Renderer    = _dereq_('./renderer');
+
+VECNIK.CartoDB     = { API: _dereq_('./provider/cartodb') };
 VECNIK.Layer       = _dereq_('./layer');
 // TODO: worker should use whatever reader the user defined
 VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
-VECNIK.Geometry    = _dereq_('./geometry');
 VECNIK.Profiler    = _dereq_('./profiler');
 
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./reader/geojson":11,"./renderer":12,"./shader":13,"./shader.layer":14}],7:[function(_dereq_,module,exports){
+},{"./canvas":1,"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./reader/geojson":11,"./renderer":12,"./shader":13,"./shader.layer":14}],7:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
@@ -1027,26 +1050,6 @@ function getStrokeFillOrder(shadingOrder) {
   return res;
 }
 
-function drawMarker(context, x, y, size) {
-  // TODO: manage image sprites
-  // TODO: precache render to a canvas
-  context.arc(x, y, size, 0, Math.PI*2);
-}
-
-function drawLine(context, coordinates) {
-  context.moveTo(coordinates[0], coordinates[1]);
-  for (var i = 2, il = coordinates.length-2; i < il; i+=2) {
-    context.lineTo(coordinates[i], coordinates[i+1]);
-  }
-};
-
-function drawPolygon(context, coordinates) {
-  for (var i = 0, il = coordinates.length; i < il; i++) {
-    drawLine(context, coordinates[i]);
-  }
-};
-
-
 var Renderer = module.exports = function(options) {
   options = options || {};
   if (!options.shader) {
@@ -1084,13 +1087,13 @@ proto.render = function(tile, canvas, collection, mapContext) {
 
   canvas.clear();
 
+  // for render order see https://gist.github.com/javisantana/7843f292ecf47f74a27d
+
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
-    // features are sorted according to their geometry type first
-    // see https://gist.github.com/javisantana/7843f292ecf47f74a27d
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
     symbolizer = shadingOrder[r];
 
@@ -1169,32 +1172,24 @@ module.exports.POINT   = 'markers';
 module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
-proto.clone = function() {
+proto.createHitShader = function(key) {
   var s = new Shader();
   for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone());
-  }
-  return s;
-};
-
-proto.hitShader = function(attr) {
-  var s = new Shader();
-  for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone().hitShader(attr));
+    s._layers.push(this._layers[i].createHitShaderLayer(key));
   }
   return s;
 };
 
 proto.update = function(style) {
-  // TODO: improve var naming
+  // requiring this late in order to avoid circular reference shader <-> shader.layer
+  var ShaderLayer = _dereq_('./shader.layer');
+
+  // TODO: rethink var naming
   var
     shader = new carto.RendererJS().render(style),
     layer, layerShader, sh, p;
 
   if (shader && shader.layers) {
-    // requiring this late in order to avoid circular reference shader <-> shader.layer
-    var ShaderLayer = _dereq_('./shader.layer');
-
     for (var i = 0, il = shader.layers.length; i < il; i++) {
       layer = shader.layers[i];
 
@@ -1315,15 +1310,14 @@ proto.getShadingOrder = function() {
  * return a shader clone ready for hit test.
  * @keyAttribute: string with the attribute used as key (usually the feature id)
  */
-proto.hitShader = function(keyAttribute) {
+proto.createHitShaderLayer = function(key) {
   var hit = this.clone();
-  // replace all polygonFillStyle and strokeStyle props to use a custom
-  // color
-  for(var k in hit._compiled) {
+  // replace all kind of fill and stroke props to use a custom color
+  // TODO: review properties used
+  for (var k in hit._compiled) {
     if (k === 'polygonFill' || k === 'strokeStyle') {
-      //var p = hit._compiled[k];
       hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
+        return 'rgb(' + Int2RGB(featureProperties[key] + 1).join(',') + ')';
       };
     }
   }
@@ -1397,7 +1391,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.hitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
