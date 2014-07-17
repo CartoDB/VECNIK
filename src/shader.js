@@ -14,18 +14,10 @@ module.exports.POINT   = 'markers';
 module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
-proto.clone = function() {
+proto.createHitShader = function(key) {
   var s = new Shader();
   for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone());
-  }
-  return s;
-};
-
-proto.hitShader = function(attr) {
-  var s = new Shader();
-  for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone().hitShader(attr));
+    s._layers.push(this._layers[i].createHitShaderLayer(key));
   }
   return s;
 };

@@ -96,15 +96,14 @@ proto.getShadingOrder = function() {
  * return a shader clone ready for hit test.
  * @keyAttribute: string with the attribute used as key (usually the feature id)
  */
-proto.hitShader = function(keyAttribute) {
+proto.createHitShaderLayer = function(key) {
   var hit = this.clone();
-  // replace all polygonFillStyle and strokeStyle props to use a custom
-  // color
-  for(var k in hit._compiled) {
+  // replace all kind of fill and stroke props to use a custom color
+  // TODO: review properties used
+  for (var k in hit._compiled) {
     if (k === 'polygonFill' || k === 'strokeStyle') {
-      //var p = hit._compiled[k];
       hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
+        return 'rgb(' + Int2RGB(featureProperties[key] + 1).join(',') + ')';
       };
     }
   }

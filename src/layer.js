@@ -34,16 +34,15 @@ if (typeof L !== 'undefined') {
 
     onAdd: function(map) {
       var self = this;
-      //var proj = VECNIK.MercatorProjection()
       map.on('mousemove', function (e) {
-//        var pos = map.project(e.latlng);
-//        var tile = {
-//          x: (pos.x/256)|0,
-//          y: (pos.y/256)|0
-//        };
-//        var key = self._tileCoordsToKey(tile);
-//        var tile_x = pos.x - 256*tile.x;
-//        var tile_y = pos.y - 256*tile.y;
+        var pos = map.project(e.latlng);
+        var tile = {
+          x: (pos.x/256)|0,
+          y: (pos.y/256)|0
+        };
+        var key = self._tileCoordsToKey(tile);
+        var tile_x = pos.x - 256*tile.x;
+        var tile_y = pos.y - 256*tile.y;
 //        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
       });
 

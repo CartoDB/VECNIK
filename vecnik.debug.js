@@ -105,7 +105,6 @@ proto._beginBatch = function(operation, strokeFillOrder) {
   if (this._operation === operation && this._strokeFillOrder === strokeFillOrder) {
     return;
   }
-
   this._finishBatch();
   this._operation = operation;
   this._strokeFillOrder = strokeFillOrder;
@@ -372,17 +371,16 @@ if (typeof L !== 'undefined') {
 
     onAdd: function(map) {
       var self = this;
-      //var proj = VECNIK.MercatorProjection()
       map.on('mousemove', function (e) {
-//        var pos = map.project(e.latlng);
-//        var tile = {
-//          x: (pos.x/256)|0,
-//          y: (pos.y/256)|0
-//        };
-//        var key = self._tileCoordsToKey(tile);
-//        var tile_x = pos.x - 256*tile.x;
-//        var tile_y = pos.y - 256*tile.y;
-//        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
+        var pos = map.project(e.latlng);
+        var tile = {
+          x: (pos.x/256)|0,
+          y: (pos.y/256)|0
+        };
+        var key = self._tileCoordsToKey(tile);
+        var tile_x = pos.x - 256*tile.x;
+        var tile_y = pos.y - 256*tile.y;
+        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
       });
 
       L.TileLayer.prototype.onAdd.call(this, map);
@@ -1153,18 +1151,10 @@ module.exports.POINT   = 'markers';
 module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
-proto.clone = function() {
+proto.createHitShader = function(key) {
   var s = new Shader();
   for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone());
-  }
-  return s;
-};
-
-proto.hitShader = function(attr) {
-  var s = new Shader();
-  for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].clone().hitShader(attr));
+    s._layers.push(this._layers[i].createHitShaderLayer(key));
   }
   return s;
 };
@@ -1299,15 +1289,14 @@ proto.getShadingOrder = function() {
  * return a shader clone ready for hit test.
  * @keyAttribute: string with the attribute used as key (usually the feature id)
  */
-proto.hitShader = function(keyAttribute) {
+proto.createHitShaderLayer = function(key) {
   var hit = this.clone();
-  // replace all polygonFillStyle and strokeStyle props to use a custom
-  // color
-  for(var k in hit._compiled) {
+  // replace all kind of fill and stroke props to use a custom color
+  // TODO: review properties used
+  for (var k in hit._compiled) {
     if (k === 'polygonFill' || k === 'strokeStyle') {
-      //var p = hit._compiled[k];
       hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[keyAttribute] + 1).join(',') + ')';
+        return 'rgb(' + Int2RGB(featureProperties[key] + 1).join(',') + ')';
       };
     }
   }
@@ -1381,7 +1370,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.hitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
