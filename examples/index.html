@@ -98,17 +98,6 @@ function $(query) {
   return document.querySelector(query);
 }
 
-function afterKeyUp(el, callback) {
-  var timer, oldValue = '';
-  el.addEventListener('keyup', function() {
-    if (oldValue === el.value) {
-      return;
-    }
-    clearTimeout(timer);
-    timer = setTimeout(callback, 2000);
-  });
-}
-
 var provider, shader, vlayer;
 
 function updateProvider() {
@@ -139,16 +128,35 @@ function updateMap() {
 
 document.addEventListener('DOMContentLoaded', function() {
   userControl = $('#user');
-  afterKeyUp(userControl, updateProvider);
+  userControl.addEventListener('keyup', function(e) {
+    if (e.keyCode === 13) {
+      updateProvider();
+    }
+  });
 
   tableControl = $('#table');
-  afterKeyUp(tableControl, updateProvider);
+  tableControl.addEventListener('keyup', function(e) {
+    if (e.keyCode === 13) {
+      updateProvider();
+    }
+  });
 
   columnsControl = $('#columns');
-  afterKeyUp(columnsControl, updateProvider);
+  columnsControl.addEventListener('keyup', function(e) {
+    if (e.keyCode === 13) {
+      updateProvider();
+    }
+  });
 
   cartocssControl = $('#cartocss');
-  afterKeyUp(cartocssControl, updateShader);
+  var timer, oldValue = '';
+  cartocssControl.addEventListener('keyup', function() {
+    if (oldValue === cartocssControl.value) {
+      return;
+    }
+    clearTimeout(timer);
+    timer = setTimeout(updateShader, 150);
+  });
 
   State.init(defaultState);
 

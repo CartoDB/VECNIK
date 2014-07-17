@@ -387,6 +387,7 @@ if (typeof L !== 'undefined') {
     },
 
     _removeTile: function(key) {
+console.log('removing', key)
       delete this._tileObjects[key];
       L.TileLayer.prototype._removeTile.call(this, key);
     },
@@ -407,14 +408,34 @@ if (typeof L !== 'undefined') {
 
     redraw: function(forceReload) {
       if (!!forceReload) {
+        this._centroidPositions = {};
         L.TileLayer.prototype.redraw.call(this);
         return;
       }
+
       var timer = Profiler.metric('tiles.render.time').start();
-      this._centroidPositions = {};
+
+      // get viewport tile bounds in order to render immediately, when visible
+      var bounds = this._map.getPixelBounds(),
+        tileSize = this._getTileSize(),
+        tileBounds = L.bounds(
+          bounds.min.divideBy(tileSize).floor(),
+          bounds.max.divideBy(tileSize).floor());
+
+// var start = Date.now();
+      var renderQueue = [];
       for (var key in this._tileObjects) {
-        this._tileObjects[key].render();
+        if (tileBounds.contains(this._keyToTileCoords(key))) {
+          this._tileObjects[key].render();
+        } else {
+          renderQueue.push(this._tileObjects[key]);
+        }
       }
+// console.log('RENDER PASS', Date.now()-start);
+      for (var i = 0, il = renderQueue.length; i < il; i++) {
+        renderQueue[i].render();
+      }
+
       timer.end();
     },
 
