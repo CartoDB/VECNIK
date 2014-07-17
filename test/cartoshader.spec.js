@@ -1,24 +1,16 @@
 
 module('cartoshader');
 
-var shader;
+var shaderLayer;
 
 QUnit.testStart(function(details) {
-  shader = new VECNIK.CartoShader(
-    '#layer {\n'+
-    '  polygon-fill: rgba(0, 0, 0, 0.3);\n'+
-    '  line-color: white;\n'+
-    '  line-width: 4;\n'+
-    '  [numfloors > 10] {\n'+
-    '    polygon-fill: rgba(255, 0, 0, 0.7);\n'+
-    '  }\n'+
-    '}'
-  );
+  shaderLayer = new VECNIK.CartoShaderLayer({
+    'polygon-fill': '#ffcc00'
+  });
 });
 
 test('create an interactivity shader', function() {
-  var hitShader = shader.createHitShader('id');
-  var hitLayer = hitShader.getLayers()[0];
+  var hitLayer = shaderLayer.createHitShaderLayer('id');
   var style;
 
   style = hitLayer.getStyle({ id: 0 });

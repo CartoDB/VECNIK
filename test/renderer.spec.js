@@ -1,31 +1,59 @@
 
-module('cartoshader');
-var shader, canvas, ctx;
+module('renderer');
 
-  QUnit.testStart(function( details ) {
-    canvas = document.createElement('canvas');
-    ctx = canvas.getContext('2d')
-    shader = new VECNIK.CartoShader({
-      'point-color': '#ffffff',
-      'line-color': function(data) {
-        return data.color;
-      },
-      'line-width': 1,
-      'polygon-fill': '#0000ff'
-    });
-  });
+var renderer;
 
+QUnit.testStart(function(details) {
+  var shader = new VECNIK.CartoShader(
+    '#layer::polygon {\n'+
+    '  polygon-fill: #000;\n'+
+    '}\n\n'+
+    '#layer::line {\n'+
+    '  line-color: #fff;\n'+
+    '}\n\n'+
+    '#layer::text {\n'+
+    '  text-name: test;\n'+
+    '}\n\n'+
+    '#layer::marker {\n'+
+    '  marker-width: 10px;\n'+
+    '}'
+  );
 
-//  test('apply should return true when style was changed',  function() {
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), true);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: 'rgba(0, 0, 0, 0.1)' })), true);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: 'rgba(0, 0, 0, 0.1)' })), false);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), true);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#ff0000' })), false);
-//    equal(shader.apply(ctx, shader.evalStyle({ color: '#fff000' })), true);
-//  });
+  renderer = new VECNIK.Renderer({ shader: shader });
+});
 
-//  test('should tell when geometry should be rendered', function() {
+test('should tell when geometry should be rendered', function() {
+  var tile = {
+    getLayer: function() {
+      return {
+        getCentroid: function() {
+          return { x:0, y:0 };
+        }
+      };
+    },
+    getCoords: function() {
+      return { x:0, y:0, z:0 };
+    }
+  };
+
+  var canvas = {
+    clear: function() {},
+    setStyle: function() {},
+    drawCircle: function() {},
+    drawLine: function() {},
+    drawPolygon: function() {},
+    setFont: function() {},
+    drawText: function() {}
+  };
+
+  var collection = [
+    { type: VECNIK.Geometry.POINT,   groupId: 'id-'+ VECNIK.Geometry.POINT,   coordinates: [0,1], properties: {}},
+    { type: VECNIK.Geometry.LINE,    groupId: 'id-'+ VECNIK.Geometry.LINE,    coordinates: [[0,1], [2,3]], properties: {}},
+    { type: VECNIK.Geometry.POLYGON, groupId: 'id-'+ VECNIK.Geometry.POLYGON, coordinates: [[[0,1], [2,3], [0,1]]], properties: {}}
+  ];
+
+  renderer.render(tile, canvas, collection, {});
+
 //    var c = new VECNIK.CartoShaderLayer({
 //      'line-color': '#fff'
 //    });
@@ -35,7 +63,7 @@ var shader, canvas, ctx;
 //    equal(c.needsRender('line', st), true);
 //    equal(c.needsRender('polygon', st), true);
 //    equal(c.needsRender('markers', st), true);
-//
+
 //    c = new VECNIK.CartoShaderLayer({
 //      'polygon-fill': '#fff'
 //    });
@@ -44,13 +72,13 @@ var shader, canvas, ctx;
 //    equal(c.needsRender('markers', st), false);
 //    equal(c.needsRender('polygon', st), true);
 //    equal(c.needsRender('markers', st), false);
-//
+
 //    c = new VECNIK.CartoShaderLayer({
 //      'marker-width': 10
 //    });
 //    st = c.evalStyle({});
 //    equal(c.needsRender('markers', st), true);
-//
+
 //    c = new VECNIK.CartoShaderLayer({
 //      'line-color': function(data) {
 //        if (data.value > 1) {
@@ -60,7 +88,7 @@ var shader, canvas, ctx;
 //    });
 //    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
 //    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
-//
+
 //    c = new VECNIK.CartoShaderLayer({
 //      'line-color': function(data, ctx) {
 //        if (ctx.zoom > 1) {
@@ -71,4 +99,4 @@ var shader, canvas, ctx;
 //    equal(c.needsRender('line', c.evalStyle({ value: 0 })), false);
 //    equal(c.needsRender('line', c.evalStyle({ value: 0 }, { zoom: 1 })), false);
 //    equal(c.needsRender('line', c.evalStyle({ value: 0 }, { zoom: 2 })), true);
-//  });
+});
