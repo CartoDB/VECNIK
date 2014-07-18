@@ -26,12 +26,62 @@ TODO: link here to cartocss reference
 - rendering things like polygon strokes
 
 
+## CartoShader Interface
+
+CartoShader like any other shader should stick to follwing interface.
+It's basically a defined set of style properties, thats close to Canvas and close to CartoCSS but generic.
 
 
+| CartoCSS property | Shader interface | (Canvas equivalent) |
+| --- | --- | --- |
+
+| Point related |
+| --- | --- | --- |
+
+| marker-width | markerSize | {radius} for arc() |
+| marker-fill | markerFill | fillStyle |
+| marker-line-color | markerStrokeStyle | strokeStyle |
+| marker-line-width | markerLineWidth | lineWidth |
+| marker-color | markerFill | fillStyle |
+| point-color | markerFill | fillStyle |
+| marker-opacity (?) | markerAlpha | {none yet} |
+
+| --- | --- | --- |
+| Line related |
+| --- | --- | --- |
+
+| line-color | strokeStyle | strokeStyle |
+| line-width | lineWidth | lineWidth |
+| line-opacity | lineAlpha | {none yet} |
+
+| --- | --- | --- |
+| Polygon related |
+| --- | --- | --- |
+
+| polygon-fill | polygonFill | fillStyle |
+| polygon-opacity | polygonAlpha | {none yet} |
+
+| --- | --- | --- |
+| Text related |
+| --- | --- | --- |
+
+| text-face-name | fontFace | font |
+| text-size | fontSize | font |
+| text-fill | textFill | fillStyle |
+| text-opacity | textAlpha | {none yet} |
+| text-halo-fill | textStrokeStyle | strokeStyle |
+| text-halo-radius | textLineWidth | lineWidth |
+| text-align | textAlign | textAlign |
+| text-name | textContent | {text} for strokeText() |
 
 
+## Rendering conditions
 
+What style properties are required in order to droaw what kind of geometry?
 
-
+- POINT: markerSize, markerFill
+- LINE: strokeStyle
+- POLYGON: strokeStyle or polygonFill, geometry of type POLYGON
+- TEXT: textContent
 
 (*) Mapnik does not support CartoCSS directly but it does indirectly through XML.

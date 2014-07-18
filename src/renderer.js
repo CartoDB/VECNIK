@@ -57,6 +57,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
 
   // for render order see https://gist.github.com/javisantana/7843f292ecf47f74a27d
 
+//var start = Date.now();
+
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
@@ -121,4 +123,5 @@ proto.render = function(tile, canvas, collection, mapContext) {
       }
     }
   }
+//console.log('RENDER TILE', Date.now()-start);
 };

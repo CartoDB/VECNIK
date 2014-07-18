@@ -387,7 +387,6 @@ if (typeof L !== 'undefined') {
     },
 
     _removeTile: function(key) {
-console.log('removing', key)
       delete this._tileObjects[key];
       L.TileLayer.prototype._removeTile.call(this, key);
     },
@@ -422,7 +421,6 @@ console.log('removing', key)
           bounds.min.divideBy(tileSize).floor(),
           bounds.max.divideBy(tileSize).floor());
 
-// var start = Date.now();
       var renderQueue = [];
       for (var key in this._tileObjects) {
         if (tileBounds.contains(this._keyToTileCoords(key))) {
@@ -431,9 +429,16 @@ console.log('removing', key)
           renderQueue.push(this._tileObjects[key]);
         }
       }
-// console.log('RENDER PASS', Date.now()-start);
-      for (var i = 0, il = renderQueue.length; i < il; i++) {
-        renderQueue[i].render();
+
+      // render invisible tiles afterwards + a bit later in order to stay responsive
+      if (renderQueue.length) {
+        var interval = setInterval(function() {
+          renderQueue[renderQueue.length-1].render();
+          renderQueue.pop();
+          if (!renderQueue.length) {
+            clearInterval(interval);
+          }
+        }, 250);
       }
 
       timer.end();
@@ -1089,6 +1094,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
 
   // for render order see https://gist.github.com/javisantana/7843f292ecf47f74a27d
 
+//var start = Date.now();
+
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
@@ -1153,6 +1160,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
       }
     }
   }
+//console.log('RENDER TILE', Date.now()-start);
 };
 
 },{"./geometry":4,"./shader":13}],13:[function(_dereq_,module,exports){
