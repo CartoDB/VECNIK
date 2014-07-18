@@ -1,19 +1,20 @@
 
 var CartoDB = module.exports = {};
 
-CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
+CartoDB.SQL = function(projection, table, x, y, zoom, options) {
 
-  opts = opts || {
+  options = options || {
     ENABLE_SIMPLIFY: true,
     ENABLE_CLIPPING: true,
     ENABLE_SNAPPING: true,
     ENABLE_FIXING:   true
   };
 
-  var bbox = projection.tileBBox(x, y, zoom, opts.bufferSize);
+  var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
-  var id_column = 'cartodb_id';
+  var id_column = options.idColumn || 'cartodb_id'; // though we dont't like the id column to be set manually,
+                                                    // it allows us to have a different id column for OSM access
   var TILE_SIZE = 256;
   var tile_pixel_width = TILE_SIZE;
   var tile_pixel_height = TILE_SIZE;
@@ -36,14 +37,14 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
   //console.log('-- TOLERANCE: ' + tolerance);
 
   // simplify
-  if (opts.ENABLE_SIMPLIFY) {
+  if (options.ENABLE_SIMPLIFY) {
     geom_column = 'ST_Simplify('+ geom_column +', '+ tolerance +')';
     // may change type
     geom_column = 'ST_CollectionExtract('+ geom_column +', ST_Dimension('+ geom_column_orig +') + 1)';
   }
 
   // snap to a pixel grid
-  if (opts.ENABLE_SNAPPING ) {
+  if (options.ENABLE_SNAPPING ) {
     geom_column = 'ST_SnapToGrid('+ geom_column +', '+ pixel_geo_maxsize +')';
     // may change type
     geom_column = 'ST_CollectionExtract('+ geom_column +', ST_Dimension('+ geom_column_orig +') + 1)';
@@ -54,8 +55,14 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
     bbox[0].lon +','+ bbox[0].lat +','+
     bbox[1].lon +','+ bbox[1].lat +', 4326)';
 
+  var filter = 'the_geom && '+ sql_env;
+
+  if (options.filter) {
+    filter += ' AND '+ options.filter;
+  }
+
   // clip
-  if (opts.ENABLE_CLIPPING) {
+  if (options.ENABLE_CLIPPING) {
     // This is a slightly enlarged version of the query bounding box
 
     // var sql_env_exp = '('+ sql_env +')';
@@ -68,7 +75,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
     geom_column = 'ST_Snap('+ geom_column +', '+ sql_env_exp +', '+ pixel_geo_maxsize +')';
 
     // Make valid (both ST_Snap and ST_SnapToGrid and ST_Expand
-    if (opts.ENABLE_FIXING) {
+    if (options.ENABLE_FIXING) {
       // NOTE: up to PostGIS-2.0.0 beta5 ST_MakeValid did not accept
       //       points nor GeometryCollection objects
       geom_column = 'CASE WHEN ST_Dimension('+
@@ -84,14 +91,14 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
   }
 
   var columns = id_column +','+ geom_column +' as the_geom';
-  if (opts.columns) {
-    columns += ','+ opts.columns.join(',') +' ';
+  if (options.columns) {
+    columns += ','+ options.columns.join(',') +' ';
   }
 
   // profiling only
-  if (opts.COUNT_ONLY) {
+  if (options.COUNT_ONLY) {
     columns = x +' AS x, '+ y +' AS y, SUM(st_npoints('+ geom_column +')) AS the_geom';
   }
 
-  return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env; // +' LIMIT 100';
+  return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter; // +' LIMIT 100';
 };

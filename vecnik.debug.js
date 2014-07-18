@@ -369,21 +369,42 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
+    _currentFeatureId: null,
+
     onAdd: function(map) {
       var self = this;
+
       map.on('mousemove', function (e) {
+        if (!self.options.interaction) {
+          return;
+        }
+
         var pos = map.project(e.latlng);
-        var tile = {
-          x: (pos.x/256)|0,
-          y: (pos.y/256)|0
-        };
+        var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
         var key = self._tileCoordsToKey(tile);
-        var tile_x = pos.x - 256*tile.x;
-        var tile_y = pos.y - 256*tile.y;
-//        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
+        var tileX = pos.x - 256*tile.x;
+        var tileY = pos.y - 256*tile.y;
+        var groupId = self._tileObjects[key].featureAt(tileX, tileY);
+
+        if (groupId === self._currentFeatureId) {
+          return;
+        }
+
+        if (groupId !== null) {
+          if (self._currentFeatureId !== null) {
+            self.fireEvent('featureOut', { id: self._currentFeatureId });
+          }
+
+          self.fireEvent('featureOver', { id: groupId });
+        }
+
+        self._currentFeatureId = groupId;
+
+        // TODO: check for suitable feature
+        self.fireEvent('featureClick', { id: groupId });
       });
 
-      L.TileLayer.prototype.onAdd.call(this, map);
+      return L.TileLayer.prototype.onAdd.call(this, map);
     },
 
     _removeTile: function(key) {
@@ -409,7 +430,7 @@ if (typeof L !== 'undefined') {
       if (!!forceReload) {
         this._centroidPositions = {};
         L.TileLayer.prototype.redraw.call(this);
-        return;
+        return this;
       }
 
       var timer = Profiler.metric('tiles.render.time').start();
@@ -442,6 +463,8 @@ if (typeof L !== 'undefined') {
       }
 
       timer.end();
+
+      return this;
     },
 
     getCentroid: function(feature) {
@@ -453,14 +476,14 @@ if (typeof L !== 'undefined') {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this.getFeatureParts(feature.groupId);
+      var featureParts = this._getFeatureParts(feature.groupId);
       if (pos = Geometry.getCentroid(featureParts)) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
 
-    getFeatureParts: function(groupId) {
+    _getFeatureParts: function(groupId) {
       var
         tileObject,
         feature, f, fl,
@@ -476,6 +499,11 @@ if (typeof L !== 'undefined') {
         }
       }
       return featureParts;
+    },
+
+    setInteraction: function(flag) {
+      this.options.interaction = !!flag;
+      return this;
     }
   });
 }
@@ -798,19 +826,20 @@ proto.update = function(options) {
 
 var CartoDB = module.exports = {};
 
-CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
+CartoDB.SQL = function(projection, table, x, y, zoom, options) {
 
-  opts = opts || {
+  options = options || {
     ENABLE_SIMPLIFY: true,
     ENABLE_CLIPPING: true,
     ENABLE_SNAPPING: true,
     ENABLE_FIXING:   true
   };
 
-  var bbox = projection.tileBBox(x, y, zoom, opts.bufferSize);
+  var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
-  var id_column = 'cartodb_id';
+  var id_column = options.idColumn || 'cartodb_id'; // though we dont't like the id column to be set manually,
+                                                    // it allows us to have a different id column for OSM access
   var TILE_SIZE = 256;
   var tile_pixel_width = TILE_SIZE;
   var tile_pixel_height = TILE_SIZE;
@@ -833,14 +862,14 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
   //console.log('-- TOLERANCE: ' + tolerance);
 
   // simplify
-  if (opts.ENABLE_SIMPLIFY) {
+  if (options.ENABLE_SIMPLIFY) {
     geom_column = 'ST_Simplify('+ geom_column +', '+ tolerance +')';
     // may change type
     geom_column = 'ST_CollectionExtract('+ geom_column +', ST_Dimension('+ geom_column_orig +') + 1)';
   }
 
   // snap to a pixel grid
-  if (opts.ENABLE_SNAPPING ) {
+  if (options.ENABLE_SNAPPING ) {
     geom_column = 'ST_SnapToGrid('+ geom_column +', '+ pixel_geo_maxsize +')';
     // may change type
     geom_column = 'ST_CollectionExtract('+ geom_column +', ST_Dimension('+ geom_column_orig +') + 1)';
@@ -851,8 +880,14 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
     bbox[0].lon +','+ bbox[0].lat +','+
     bbox[1].lon +','+ bbox[1].lat +', 4326)';
 
+  var filter = 'the_geom && '+ sql_env;
+
+  if (options.filter) {
+    filter += ' AND '+ options.filter;
+  }
+
   // clip
-  if (opts.ENABLE_CLIPPING) {
+  if (options.ENABLE_CLIPPING) {
     // This is a slightly enlarged version of the query bounding box
 
     // var sql_env_exp = '('+ sql_env +')';
@@ -865,7 +900,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
     geom_column = 'ST_Snap('+ geom_column +', '+ sql_env_exp +', '+ pixel_geo_maxsize +')';
 
     // Make valid (both ST_Snap and ST_SnapToGrid and ST_Expand
-    if (opts.ENABLE_FIXING) {
+    if (options.ENABLE_FIXING) {
       // NOTE: up to PostGIS-2.0.0 beta5 ST_MakeValid did not accept
       //       points nor GeometryCollection objects
       geom_column = 'CASE WHEN ST_Dimension('+
@@ -881,16 +916,16 @@ CartoDB.SQL = function(projection, table, x, y, zoom, opts) {
   }
 
   var columns = id_column +','+ geom_column +' as the_geom';
-  if (opts.columns) {
-    columns += ','+ opts.columns.join(',') +' ';
+  if (options.columns) {
+    columns += ','+ options.columns.join(',') +' ';
   }
 
   // profiling only
-  if (opts.COUNT_ONLY) {
+  if (options.COUNT_ONLY) {
     columns = x +' AS x, '+ y +' AS y, SUM(st_npoints('+ geom_column +')) AS the_geom';
   }
 
-  return 'SELECT '+ columns +' FROM '+ table +' WHERE the_geom && '+ sql_env; // +' LIMIT 100';
+  return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter; // +' LIMIT 100';
 };
 
 },{}],11:[function(_dereq_,module,exports){
