@@ -49,22 +49,26 @@ if (typeof L !== 'undefined') {
         var tileY = pos.y - 256*tile.y;
         var groupId = self._tileObjects[key].featureAt(tileX, tileY);
 
-        if (groupId === self._currentFeatureId) {
+        // TODO: check for whole matching feature
+
+        if (groupId && groupId === self._currentFeatureId) {
+          self.fireEvent('featureOver', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
           return;
         }
 
-        if (groupId !== null) {
+        if (groupId === null) {
+          self.fireEvent('featureOut', { geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+        } else {
           if (self._currentFeatureId !== null) {
-            self.fireEvent('featureOut', { id: self._currentFeatureId });
+            self.fireEvent('featureLeave', { id: self._currentFeatureId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
           }
 
-          self.fireEvent('featureOver', { id: groupId });
+          self.fireEvent('featureEnter', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
         }
 
         self._currentFeatureId = groupId;
 
-        // TODO: check for suitable feature
-        self.fireEvent('featureClick', { id: groupId });
+        self.fireEvent('featureClick', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
       });
 
       return L.TileLayer.prototype.onAdd.call(this, map);

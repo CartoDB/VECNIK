@@ -54,6 +54,16 @@ html, body {
   top: 235px;
   bottom: 10px;
 }
+
+#tooltip {
+  position: absolute;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 100;
+}
 </style>
 
 <script src="lib/state.js"></script>
@@ -214,10 +224,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   vlayer.addTo(map)
     .on('featureOver', function(e) {
-      console.log('OVER', e.id);
+      var tooltip = $('#tooltip');
+      tooltip.style.display = 'block';
+      tooltip.innerText     = e.id;
+      tooltip.style.left    = e.x +'px';
+      tooltip.style.top     = e.y +'px';
     })
     .on('featureOut', function(e) {
-      console.log('OUT', e.id);
+      $('#tooltip').style.display = 'none';
     });
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);
 
@@ -234,5 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <input type="text" class="control" id="columns" placeholder="columns:">
 <input type="text" class="control" id="filter" placeholder="filter:">
 <textarea class="control" id="cartocss"></textarea>
+
+<div id="tooltip"></div>
 </body>
 </html>

@@ -386,22 +386,26 @@ if (typeof L !== 'undefined') {
         var tileY = pos.y - 256*tile.y;
         var groupId = self._tileObjects[key].featureAt(tileX, tileY);
 
-        if (groupId === self._currentFeatureId) {
+        // TODO: check for whole matching feature
+
+        if (groupId && groupId === self._currentFeatureId) {
+          self.fireEvent('featureOver', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
           return;
         }
 
-        if (groupId !== null) {
+        if (groupId === null) {
+          self.fireEvent('featureOut', { geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+        } else {
           if (self._currentFeatureId !== null) {
-            self.fireEvent('featureOut', { id: self._currentFeatureId });
+            self.fireEvent('featureLeave', { id: self._currentFeatureId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
           }
 
-          self.fireEvent('featureOver', { id: groupId });
+          self.fireEvent('featureEnter', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
         }
 
         self._currentFeatureId = groupId;
 
-        // TODO: check for suitable feature
-        self.fireEvent('featureClick', { id: groupId });
+        self.fireEvent('featureClick', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
       });
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -807,6 +811,9 @@ proto.load = function(tileCoords, callback) {
 proto.update = function(options) {
   this._options = options;
   this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
+
+// this is how cdn would be handled
+//  this._baseUrl = 'http://3.ashbu.cartocdn.com/' + options.user +'/api/v1/sql';
 
   if (this._options.ENABLE_SIMPLIFY === undefined) {
     this._options.ENABLE_SIMPLIFY = true;
@@ -1434,7 +1441,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader('id')); // usually 'cartodb_id' here, it's another hack to make OSM work
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
