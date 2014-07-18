@@ -29,6 +29,9 @@ proto.update = function(options) {
   this._options = options;
   this._baseUrl = 'http://'+ options.user +'.cartodb.com/api/v2/sql';
 
+// this is how cdn would be handled
+//  this._baseUrl = 'http://3.ashbu.cartocdn.com/' + options.user +'/api/v1/sql';
+
   if (this._options.ENABLE_SIMPLIFY === undefined) {
     this._options.ENABLE_SIMPLIFY = true;
   }

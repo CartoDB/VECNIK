@@ -46,9 +46,23 @@ html, body {
   top: 155px;
 }
 
-#cartocss {
+#filter {
   top: 195px;
+}
+
+#cartocss {
+  top: 235px;
   bottom: 10px;
+}
+
+#tooltip {
+  position: absolute;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 100;
 }
 </style>
 
@@ -61,9 +75,10 @@ html, body {
 var
   map,
   defaultState = {
-    user: 'pluto',
-    table: 'mn_mappluto_13v1',
-    columns: 'numfloors',
+    user: 'osm',
+    table: 'planet',
+    columns: 'tags->\'height\' AS height',
+    filter: 'tags @> \'building=>yes\'',
     lat: 40.735291,
     lon: -73.990731,
     zoom: 16,
@@ -92,6 +107,7 @@ var
   userControl,
   tableControl,
   columnsControl,
+  filterControl,
   cartocssControl;
 
 function $(query) {
@@ -104,11 +120,14 @@ function updateProvider() {
   State.set('user', userControl.value);
   State.set('table', tableControl.value);
   State.set('columns', columnsControl.value);
+  State.set('filter', filterControl.value);
 
   provider.update({
     user: userControl.value,
     table: tableControl.value,
-    columns: columnsControl.value.replace(/[,; ]+/, ';').split(';')
+    columns: columnsControl.value.split(','),
+    filter: filterControl.value,
+    idColumn: 'id' // hacky solution for OSM
   });
   vlayer.redraw(true);
 }
@@ -148,6 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  filterControl = $('#filter');
+  filterControl.addEventListener('keyup', function(e) {
+    if (e.keyCode === 13) {
+      updateProvider();
+    }
+  });
+
   cartocssControl = $('#cartocss');
   var timer, oldValue = '';
   cartocssControl.addEventListener('keyup', function() {
@@ -175,11 +201,14 @@ document.addEventListener('DOMContentLoaded', function() {
   userControl.value = State.get('user');
   tableControl.value = State.get('table');
   columnsControl.value = State.get('columns');
+  filterControl.value = State.get('filter');
 
   provider = new VECNIK.CartoDB.API({
     user: userControl.value,
     table: tableControl.value,
-    columns: columnsControl.value.replace(/[,; ]+/, ';').split(';'),
+    columns: columnsControl.value.split(','),
+    filter: filterControl.value,
+    idColumn: 'id', // hacky solution for OSM
     debug: false,
     bufferSize: 50
   });
@@ -189,10 +218,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   vlayer = new VECNIK.Layer({
     provider: provider,
-    renderer: new VECNIK.Renderer({ shader: shader })
+    renderer: new VECNIK.Renderer({ shader: shader }),
+    interaction: true
   });
 
-  vlayer.addTo(map);
+  vlayer.addTo(map)
+    .on('featureOver', function(e) {
+      var tooltip = $('#tooltip');
+      tooltip.style.display = 'block';
+      tooltip.innerText     = e.id;
+      tooltip.style.left    = e.x +'px';
+      tooltip.style.top     = e.y +'px';
+    })
+    .on('featureOut', function(e) {
+      $('#tooltip').style.display = 'none';
+    });
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);
 
   map.on('moveend zoomend', updateMap);
@@ -203,9 +243,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <body>
 <div id="map"></div>
 
-<input type="text" class="control" id="user">
-<input type="text" class="control" id="table">
-<input type="text" class="control" id="columns">
+<input type="text" class="control" id="user" placeholder="user:">
+<input type="text" class="control" id="table" placeholder="table:">
+<input type="text" class="control" id="columns" placeholder="columns:">
+<input type="text" class="control" id="filter" placeholder="filter:">
 <textarea class="control" id="cartocss"></textarea>
+
+<div id="tooltip"></div>
 </body>
 </html>

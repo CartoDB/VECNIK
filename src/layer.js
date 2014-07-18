@@ -32,21 +32,46 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
+    _currentFeatureId: null,
+
     onAdd: function(map) {
       var self = this;
+
       map.on('mousemove', function (e) {
+        if (!self.options.interaction) {
+          return;
+        }
+
         var pos = map.project(e.latlng);
-        var tile = {
-          x: (pos.x/256)|0,
-          y: (pos.y/256)|0
-        };
+        var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
         var key = self._tileCoordsToKey(tile);
-        var tile_x = pos.x - 256*tile.x;
-        var tile_y = pos.y - 256*tile.y;
-//        console.log(self._tileObjects[key].featureAt(tile_x, tile_y));
+        var tileX = pos.x - 256*tile.x;
+        var tileY = pos.y - 256*tile.y;
+        var groupId = self._tileObjects[key].featureAt(tileX, tileY);
+
+        // TODO: check for whole matching feature
+
+        if (groupId && groupId === self._currentFeatureId) {
+          self.fireEvent('featureOver', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+          return;
+        }
+
+        if (groupId === null) {
+          self.fireEvent('featureOut', { geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+        } else {
+          if (self._currentFeatureId !== null) {
+            self.fireEvent('featureLeave', { id: self._currentFeatureId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+          }
+
+          self.fireEvent('featureEnter', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+        }
+
+        self._currentFeatureId = groupId;
+
+        self.fireEvent('featureClick', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
       });
 
-      L.TileLayer.prototype.onAdd.call(this, map);
+      return L.TileLayer.prototype.onAdd.call(this, map);
     },
 
     _removeTile: function(key) {
@@ -72,7 +97,7 @@ if (typeof L !== 'undefined') {
       if (!!forceReload) {
         this._centroidPositions = {};
         L.TileLayer.prototype.redraw.call(this);
-        return;
+        return this;
       }
 
       var timer = Profiler.metric('tiles.render.time').start();
@@ -105,6 +130,8 @@ if (typeof L !== 'undefined') {
       }
 
       timer.end();
+
+      return this;
     },
 
     getCentroid: function(feature) {
@@ -116,14 +143,14 @@ if (typeof L !== 'undefined') {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this.getFeatureParts(feature.groupId);
+      var featureParts = this._getFeatureParts(feature.groupId);
       if (pos = Geometry.getCentroid(featureParts)) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
 
-    getFeatureParts: function(groupId) {
+    _getFeatureParts: function(groupId) {
       var
         tileObject,
         feature, f, fl,
@@ -139,6 +166,11 @@ if (typeof L !== 'undefined') {
         }
       }
       return featureParts;
+    },
+
+    setInteraction: function(flag) {
+      this.options.interaction = !!flag;
+      return this;
     }
   });
 }
