@@ -84,7 +84,6 @@ if (typeof L !== 'undefined') {
           bounds.min.divideBy(tileSize).floor(),
           bounds.max.divideBy(tileSize).floor());
 
-// var start = Date.now();
       var renderQueue = [];
       for (var key in this._tileObjects) {
         if (tileBounds.contains(this._keyToTileCoords(key))) {
@@ -93,9 +92,16 @@ if (typeof L !== 'undefined') {
           renderQueue.push(this._tileObjects[key]);
         }
       }
-// console.log('RENDER PASS', Date.now()-start);
-      for (var i = 0, il = renderQueue.length; i < il; i++) {
-        renderQueue[i].render();
+
+      // render invisible tiles afterwards + a bit later in order to stay responsive
+      if (renderQueue.length) {
+        var interval = setInterval(function() {
+          renderQueue[renderQueue.length-1].render();
+          renderQueue.pop();
+          if (!renderQueue.length) {
+            clearInterval(interval);
+          }
+        }, 250);
       }
 
       timer.end();
