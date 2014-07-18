@@ -34,6 +34,7 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 
 | CartoCSS property | Shader interface | (Canvas equivalent) |
 | --- | --- | --- |
+| *POINT RELATED* | | |
 | marker-width | markerSize | {radius} for arc() |
 | marker-fill | markerFill | fillStyle |
 | marker-line-color | markerStrokeStyle | strokeStyle |
@@ -41,14 +42,14 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | marker-color | markerFill | fillStyle |
 | point-color | markerFill | fillStyle |
 | marker-opacity (?) | markerAlpha | {none yet} |
-| --- | --- | --- |
+| *LINE REALATED* | | |
 | line-color | strokeStyle | strokeStyle |
 | line-width | lineWidth | lineWidth |
 | line-opacity | lineAlpha | {none yet} |
-| --- | --- | --- |
+| *POLYGON RELATED* | | |
 | polygon-fill | polygonFill | fillStyle |
 | polygon-opacity | polygonAlpha | {none yet} |
-| --- | --- | --- |
+| *TEXT RELATED* | | |
 | text-face-name | fontFace | font |
 | text-size | fontSize | font |
 | text-fill | textFill | fillStyle |
