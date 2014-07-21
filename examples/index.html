@@ -75,10 +75,13 @@ html, body {
 var
   map,
   defaultState = {
-    user: 'osm',
-    table: 'planet',
-    columns: 'tags->\'height\' AS height',
-    filter: 'tags @> \'building=>yes\'',
+  user: 'pluto',
+  table: 'mn_mappluto_13v1',
+  columns: 'numfloors',
+//  user: 'osm',
+//  table: 'planet',
+//  columns: 'tags->\'height\' AS height',
+//  filter: 'tags @> \'building=>yes\'',
     lat: 40.735291,
     lon: -73.990731,
     zoom: 16,
@@ -126,8 +129,8 @@ function updateProvider() {
     user: userControl.value,
     table: tableControl.value,
     columns: columnsControl.value.split(','),
-    filter: filterControl.value,
-    idColumn: 'id' // hacky solution for OSM
+    filter: filterControl.value //,
+//    idColumn: 'id' // hacky solution for OSM
   });
   vlayer.redraw(true);
 }
@@ -198,17 +201,17 @@ document.addEventListener('DOMContentLoaded', function() {
     map.setZoom(parseInt(State.get('zoom'), 10));
   }
 
-  userControl.value = State.get('user');
-  tableControl.value = State.get('table');
-  columnsControl.value = State.get('columns');
-  filterControl.value = State.get('filter');
+  userControl.value = State.get('user') || '';
+  tableControl.value = State.get('table') || '';
+  columnsControl.value = State.get('columns') || '';
+  filterControl.value = State.get('filter') || '';
 
   provider = new VECNIK.CartoDB.API({
     user: userControl.value,
     table: tableControl.value,
     columns: columnsControl.value.split(','),
     filter: filterControl.value,
-    idColumn: 'id', // hacky solution for OSM
+//    idColumn: 'id', // hacky solution for OSM
     debug: false,
     bufferSize: 50
   });
