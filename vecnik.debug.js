@@ -177,6 +177,8 @@ Core.load = function(url, callback) {
   return req;
 };
 
+// TODO: make this configurable
+Core.ID_COLUMN = 'cartodb_id';
 },{}],3:[function(_dereq_,module,exports){
 
 var Events = module.exports = function() {
@@ -336,6 +338,7 @@ function getLargestPart(featureParts) {
 
 },{}],5:[function(_dereq_,module,exports){
 
+var VECNIK = _dereq_('./core/core');
 var Geometry = _dereq_('./geometry');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
@@ -369,9 +372,7 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
-    _currentGroupId: null,
-
-    _getGroupIdFromPos: function(pos) {
+    _getFeatureFromPos: function(pos) {
       var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
       var key = this._tileCoordsToKey(tile);
       var tileX = pos.x - 256*tile.x;
@@ -379,7 +380,7 @@ if (typeof L !== 'undefined') {
       if (!this._tileObjects[key]) {
         return null;
       }
-      return this._tileObjects[key].featureAt(tileX, tileY);
+      return this._tileObjects[key].getFeatureAt(tileX, tileY);
     },
 
     _getTileFromPos: function(pos) {
@@ -388,22 +389,28 @@ if (typeof L !== 'undefined') {
       return this._tiles[key];
     },
 
+    _hoveredFeature: null,
+    _clickedFeature: null,
+
     onAdd: function(map) {
+      map.on('mouseup', function (e) {
+        this._clickedFeature = null;
+      }, this);
+
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
         }
 
-        var groupId = this._getGroupIdFromPos(map.project(e.latlng));
+        var feature = this._getFeatureFromPos(map.project(e.latlng));
 
-        if (groupId === null) {
+        if (!feature) {
           return;
         }
 
-// console.log('CLICK', groupId);
-
+        this._clickedFeature = feature;
         this.fireEvent('featureClick', {
-          id: groupId,
+          feature: feature,
           geo: e.latlng,
           x: e.originalEvent.x,
           y: e.originalEvent.y
@@ -420,7 +427,8 @@ if (typeof L !== 'undefined') {
         if (tile) {
           tile.style.cursor = 'inherit';
         }
-        var groupId = this._getGroupIdFromPos(pos);
+
+        var feature = this._getFeatureFromPos(pos);
 
         var payload = {
           geo: e.latlng,
@@ -428,8 +436,8 @@ if (typeof L !== 'undefined') {
           y: e.originalEvent.y
         };
 
-        if (groupId && groupId === this._currentGroupId) {
-          payload.id = groupId;
+        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
+          payload.feature = this._hoveredFeature;
           this.fireEvent('featureOver', payload);
           if (tile) {
             tile.style.cursor = 'pointer';
@@ -437,20 +445,21 @@ if (typeof L !== 'undefined') {
           return;
         }
 
-        if (groupId === null) {
-          delete payload.id;
+        if (!feature) {
+          delete payload.feature;
+          this._hoveredFeature = null;
           this.fireEvent('featureOut', payload);
-        } else {
-          if (this._currentGroupId !== null) {
-            payload.id = this._currentGroupId;
-            this.fireEvent('featureLeave', payload);
-          }
-
-          payload.id = groupId;
-          this.fireEvent('featureEnter', payload);
+          return;
         }
 
-        this._currentGroupId = groupId;
+        if (this._hoveredFeature) {
+          payload.feature = this._hoveredFeature;
+          this.fireEvent('featureLeave', payload);
+        }
+
+        payload.feature = feature;
+        this._hoveredFeature = feature;
+        this.fireEvent('featureEnter', payload);
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -553,11 +562,19 @@ if (typeof L !== 'undefined') {
     setInteraction: function(flag) {
       this.options.interaction = !!flag;
       return this;
+    },
+
+    getHoveredFeature: function() {
+      return this._hoveredFeature;
+    },
+
+    getClickedFeature: function() {
+      return this._clickedFeature;
     }
   });
 }
 
-},{"./geometry":4,"./profiler":8,"./tile":15}],6:[function(_dereq_,module,exports){
+},{"./core/core":2,"./geometry":4,"./profiler":8,"./tile":15}],6:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -876,6 +893,8 @@ proto.update = function(options) {
 
 },{"../mercator":7,"../reader/geojson":11,"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
 
+var VECNIK = _dereq_('../core/core');
+
 var CartoDB = module.exports = {};
 
 CartoDB.SQL = function(projection, table, x, y, zoom, options) {
@@ -890,7 +909,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
-  var id_column = options.idColumn || 'cartodb_id'; // though we dont't like the id column to be set manually,
+  var id_column = options.idColumn || VECNIK.ID_COLUMN; // though we dont't like the id column to be set manually,
                                                     // it allows us to have a different id column for OSM access
   var TILE_SIZE = 256;
   var tile_pixel_width = TILE_SIZE;
@@ -980,8 +999,8 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter; // +' LIMIT 100';
 };
 
-},{}],11:[function(_dereq_,module,exports){
-var Core = _dereq_('../core/core');
+},{"../core/core":2}],11:[function(_dereq_,module,exports){
+var VECNIK = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
 var Projection = _dereq_('../mercator');
 
@@ -1032,9 +1051,9 @@ function _convertAndReproject(collection, projection, tileCoords) {
 
     type = feature.geometry.type;
     geoCoords = feature.geometry.coordinates;
-    // TODO: cartodb_id is a custom enhancement, per definition it's feature.id
-    // it's 'groupId' instead of just 'id' as it can occur multiple times for multi-geometriees or geometries cut by tile borders!
-    groupId = feature.id || feature.properties.id || feature.cartodb_id || feature.properties.cartodb_id;
+    // TODO: per definition it should be feature.id
+    // it's named 'groupId' instead of just 'id' as it can occur multiple times for multi-geometries or geometries cut by tile borders!
+    groupId = feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN];
     properties = feature.properties;
 
     switch (type) {
@@ -1102,7 +1121,7 @@ var Reader = module.exports = {};
 Reader.load = function(url, tileCoords, projection, callback) {
 //  if (!Reader.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    Core.load(url, function(collection) {
+    VECNIK.load(url, function(collection) {
       callback(_convertAndReproject(collection, projection, tileCoords));
     });
   } else {
@@ -1189,7 +1208,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-    symbolizer = shadingOrder[r];
+      symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
@@ -1385,6 +1404,15 @@ proto.compile = function(shaderSrc) {
 // contain values involved in the shader
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
+
+  var nameAttachment = this._name.split('::')[1];
+  if (nameAttachment === 'hover' && mapContext.hovered && mapContext.hovered.cartodb_id === featureProperties.cartodb_id) {
+    console.log('HOVER', featureProperties);
+  }
+  if (nameAttachment === 'click' && mapContext.clicked && mapContext.clicked.cartodb_id === featureProperties.cartodb_id) {
+    console.log('CLICK', featureProperties);
+  }
+
   var
     style = {},
     compiled = this._compiled,
@@ -1444,6 +1472,7 @@ ShaderLayer.Int2RGB = Int2RGB;
 
 },{"./core/events":3,"./shader":13}],15:[function(_dereq_,module,exports){
 
+var VECNIK = _dereq_('./core/core');
 var ShaderLayer = _dereq_('./shader.layer');
 var Canvas = _dereq_('./canvas');
 
@@ -1483,9 +1512,16 @@ proto.getCoords = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this, this._canvas, this._data, {
-    zoom: this._coords.z
-  });
+  var
+    mapContext = { zoom: this._coords.z },
+    hovered, clicked;
+  if (hovered = this._layer.getHoveredFeature()) {
+    mapContext.hovered = hovered;
+  }
+  if (clicked = this._layer.getClickedFeature()) {
+    mapContext.clicked = clicked;
+  }
+  this._renderer.render(this, this._canvas, this._data, mapContext);
 };
 
 /**
@@ -1494,7 +1530,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader(VECNIK.ID_COLUMN));
 //  this._renderer.setShader(currentShader.createHitShader('id')); // make OSM work
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
@@ -1509,7 +1545,7 @@ proto._renderHitGrid = function() {
  * returns feature id at position. null for fo feature
  * @pos: point object like {x: X, y: Y }
  */
-proto.featureAt = function(x, y) {
+proto.getFeatureAt = function(x, y) {
   if (!this._hitGrid) {
     this._hitGrid = this._renderHitGrid();
   }
@@ -1519,12 +1555,17 @@ proto.featureAt = function(x, y) {
     this._hitGrid[idx+1],
     this._hitGrid[idx+2]
   );
-  if (id) {
-    return id-1;
+
+  if (!id) {
+    return;
   }
-  return null;
+
+  // TODO: return the real feature
+  var feature = {};
+  feature[VECNIK.ID_COLUMN] = id-1;
+  return feature;
 };
 
-},{"./canvas":1,"./shader.layer":14}]},{},[6])
+},{"./canvas":1,"./core/core":2,"./shader.layer":14}]},{},[6])
 (6)
 });

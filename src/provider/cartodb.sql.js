@@ -1,4 +1,6 @@
 
+var VECNIK = require('../core/core');
+
 var CartoDB = module.exports = {};
 
 CartoDB.SQL = function(projection, table, x, y, zoom, options) {
@@ -13,7 +15,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
-  var id_column = options.idColumn || 'cartodb_id'; // though we dont't like the id column to be set manually,
+  var id_column = options.idColumn || VECNIK.ID_COLUMN; // though we dont't like the id column to be set manually,
                                                     // it allows us to have a different id column for OSM access
   var TILE_SIZE = 256;
   var tile_pixel_width = TILE_SIZE;

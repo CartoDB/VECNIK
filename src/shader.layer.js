@@ -72,6 +72,15 @@ proto.compile = function(shaderSrc) {
 // contain values involved in the shader
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
+
+var nameAttachment = this._name.split('::')[1];
+if (nameAttachment === 'hover' && mapContext.hovered && mapContext.hovered.cartodb_id === featureProperties.cartodb_id) {
+  console.log('HOVER', featureProperties);
+}
+if (nameAttachment === 'click' && mapContext.clicked && mapContext.clicked.cartodb_id === featureProperties.cartodb_id) {
+  console.log('CLICK', featureProperties);
+}
+
   var
     style = {},
     compiled = this._compiled,

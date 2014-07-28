@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
     .on('featureOver', function(e) {
       var tooltip = $('#tooltip');
       tooltip.style.display = 'block';
-      tooltip.innerText     = e.id;
+      tooltip.innerText     = e.feature.cartodb_id;
       tooltip.style.left    = e.x +'px';
       tooltip.style.top     = e.y +'px';
     })

@@ -1,4 +1,5 @@
 
+var VECNIK = require('./core/core');
 var Geometry = require('./geometry');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
@@ -32,9 +33,7 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
-    _currentGroupId: null,
-
-    _getGroupIdFromPos: function(pos) {
+    _getFeatureFromPos: function(pos) {
       var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
       var key = this._tileCoordsToKey(tile);
       var tileX = pos.x - 256*tile.x;
@@ -42,7 +41,7 @@ if (typeof L !== 'undefined') {
       if (!this._tileObjects[key]) {
         return null;
       }
-      return this._tileObjects[key].featureAt(tileX, tileY);
+      return this._tileObjects[key].getFeatureAt(tileX, tileY);
     },
 
     _getTileFromPos: function(pos) {
@@ -51,22 +50,28 @@ if (typeof L !== 'undefined') {
       return this._tiles[key];
     },
 
+    _hoveredFeature: null,
+    _clickedFeature: null,
+
     onAdd: function(map) {
+      map.on('mouseup', function (e) {
+        this._clickedFeature = null;
+      }, this);
+
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
         }
 
-        var groupId = this._getGroupIdFromPos(map.project(e.latlng));
+        var feature = this._getFeatureFromPos(map.project(e.latlng));
 
-        if (groupId === null) {
+        if (!feature) {
           return;
         }
 
-// console.log('CLICK', groupId);
-
+        this._clickedFeature = feature;
         this.fireEvent('featureClick', {
-          id: groupId,
+          feature: feature,
           geo: e.latlng,
           x: e.originalEvent.x,
           y: e.originalEvent.y
@@ -83,7 +88,8 @@ if (typeof L !== 'undefined') {
         if (tile) {
           tile.style.cursor = 'inherit';
         }
-        var groupId = this._getGroupIdFromPos(pos);
+
+        var feature = this._getFeatureFromPos(pos);
 
         var payload = {
           geo: e.latlng,
@@ -91,8 +97,8 @@ if (typeof L !== 'undefined') {
           y: e.originalEvent.y
         };
 
-        if (groupId && groupId === this._currentGroupId) {
-          payload.id = groupId;
+        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
+          payload.feature = this._hoveredFeature;
           this.fireEvent('featureOver', payload);
           if (tile) {
             tile.style.cursor = 'pointer';
@@ -100,20 +106,21 @@ if (typeof L !== 'undefined') {
           return;
         }
 
-        if (groupId === null) {
-          delete payload.id;
+        if (!feature) {
+          delete payload.feature;
+          this._hoveredFeature = null;
           this.fireEvent('featureOut', payload);
-        } else {
-          if (this._currentGroupId !== null) {
-            payload.id = this._currentGroupId;
-            this.fireEvent('featureLeave', payload);
-          }
-
-          payload.id = groupId;
-          this.fireEvent('featureEnter', payload);
+          return;
         }
 
-        this._currentGroupId = groupId;
+        if (this._hoveredFeature) {
+          payload.feature = this._hoveredFeature;
+          this.fireEvent('featureLeave', payload);
+        }
+
+        payload.feature = feature;
+        this._hoveredFeature = feature;
+        this.fireEvent('featureEnter', payload);
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -216,6 +223,14 @@ if (typeof L !== 'undefined') {
     setInteraction: function(flag) {
       this.options.interaction = !!flag;
       return this;
+    },
+
+    getHoveredFeature: function() {
+      return this._hoveredFeature;
+    },
+
+    getClickedFeature: function() {
+      return this._clickedFeature;
     }
   });
 }
