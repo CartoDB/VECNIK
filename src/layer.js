@@ -39,6 +39,9 @@ if (typeof L !== 'undefined') {
       var key = this._tileCoordsToKey(tile);
       var tileX = pos.x - 256*tile.x;
       var tileY = pos.y - 256*tile.y;
+      if (!this._tileObjects[key]) {
+        return null;
+      }
       return this._tileObjects[key].featureAt(tileX, tileY);
     },
 

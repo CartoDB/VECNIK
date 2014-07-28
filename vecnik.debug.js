@@ -376,6 +376,9 @@ if (typeof L !== 'undefined') {
       var key = this._tileCoordsToKey(tile);
       var tileX = pos.x - 256*tile.x;
       var tileY = pos.y - 256*tile.y;
+      if (!this._tileObjects[key]) {
+        return null;
+      }
       return this._tileObjects[key].featureAt(tileX, tileY);
     },
 
@@ -397,7 +400,7 @@ if (typeof L !== 'undefined') {
           return;
         }
 
-console.log('CLICK', groupId)
+// console.log('CLICK', groupId);
 
         this.fireEvent('featureClick', {
           id: groupId,
@@ -1273,30 +1276,34 @@ proto.createHitShader = function(key) {
 };
 
 proto.update = function(style) {
+  var cartoShader = new carto.RendererJS().render(style);
+
+  if (!cartoShader || !cartoShader.layers) {
+    return;
+  }
+
   // requiring this late in order to avoid circular reference shader <-> shader.layer
   var ShaderLayer = _dereq_('./shader.layer');
 
-  // TODO: rethink var naming
-  var
-    shader = new carto.RendererJS().render(style),
-    layer, layerShader, sh, p;
+  var cartoShaderLayer;
+  for (var i = 0, il = cartoShader.layers.length; i < il; i++) {
+    cartoShaderLayer = cartoShader.layers[i];
+    this._layers[i] = new ShaderLayer(
+      cartoShaderLayer.fullName(),
+      this._cloneProperties(cartoShaderLayer.getShader()),
+      cartoShaderLayer.getSymbolizers()
+    );
+  }
+};
 
-  if (shader && shader.layers) {
-    for (var i = 0, il = shader.layers.length; i < il; i++) {
-      layer = shader.layers[i];
-
-      // get shader from cartocss shader
-      layerShader = layer.getShader();
-      sh = {};
-      for (p in layerShader) {
-        if (layerShader[p].style) {
-          sh[p] = layerShader[p].style;
-        }
-      }
-
-      this._layers[i] = new ShaderLayer(sh, layer.getSymbolizers());
+proto._cloneProperties = function(shader) {
+  var cloned = {};
+  for (var prop in shader) {
+    if (shader[prop].style) {
+      cloned[prop] = shader[prop].style;
     }
   }
+  return cloned;
 };
 
 proto.getLayers = function() {
@@ -1334,35 +1341,39 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
-var ShaderLayer = module.exports = function(shader, shadingOrder) {
+var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
+
+  this._name = name || '';
+
   this._compiled = {};
+  this.compile(shaderSrc);
+
   this._shadingOrder = shadingOrder || [
     Shader.POINT,
     Shader.POLYGON,
     Shader.LINE,
     Shader.TEXT
   ];
-  this.compile(shader);
 };
 
 var proto = ShaderLayer.prototype = new Events();
 
 proto.clone = function() {
-  return new ShaderLayer(this._shaderSrc, this._shadingOrder);
+  return new ShaderLayer(this._name, this._shaderSrc, this._shadingOrder);
 };
 
-proto.compile = function(shader) {
-  this._shaderSrc = shader;
-  if (typeof shader === 'string') {
-    shader = function() {
-      return shader;
+proto.compile = function(shaderSrc) {
+  this._shaderSrc = shaderSrc;
+  if (typeof shaderSrc === 'string') {
+    shaderSrc = function() {
+      return shaderSrc;
     };
   }
   var property;
-  for (var attr in shader) {
+  for (var attr in shaderSrc) {
     if (property = propertyMapping[attr]) {
-      this._compiled[property] = shader[attr];
+      this._compiled[property] = shaderSrc[attr];
     }
   }
   this.emit('change');

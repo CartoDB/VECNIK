@@ -28,35 +28,39 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
-var ShaderLayer = module.exports = function(shader, shadingOrder) {
+var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
+
+  this._name = name || '';
+
   this._compiled = {};
+  this.compile(shaderSrc);
+
   this._shadingOrder = shadingOrder || [
     Shader.POINT,
     Shader.POLYGON,
     Shader.LINE,
     Shader.TEXT
   ];
-  this.compile(shader);
 };
 
 var proto = ShaderLayer.prototype = new Events();
 
 proto.clone = function() {
-  return new ShaderLayer(this._shaderSrc, this._shadingOrder);
+  return new ShaderLayer(this._name, this._shaderSrc, this._shadingOrder);
 };
 
-proto.compile = function(shader) {
-  this._shaderSrc = shader;
-  if (typeof shader === 'string') {
-    shader = function() {
-      return shader;
+proto.compile = function(shaderSrc) {
+  this._shaderSrc = shaderSrc;
+  if (typeof shaderSrc === 'string') {
+    shaderSrc = function() {
+      return shaderSrc;
     };
   }
   var property;
-  for (var attr in shader) {
+  for (var attr in shaderSrc) {
     if (property = propertyMapping[attr]) {
-      this._compiled[property] = shader[attr];
+      this._compiled[property] = shaderSrc[attr];
     }
   }
   this.emit('change');
