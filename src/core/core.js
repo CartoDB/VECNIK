@@ -16,3 +16,6 @@ Core.load = function(url, callback) {
   req.send(null);
   return req;
 };
+
+// TODO: make this configurable
+Core.ID_COLUMN = 'cartodb_id';

@@ -177,6 +177,8 @@ Core.load = function(url, callback) {
   return req;
 };
 
+// TODO: make this configurable
+Core.ID_COLUMN = 'cartodb_id';
 },{}],3:[function(_dereq_,module,exports){
 
 var Events = module.exports = function() {
@@ -336,6 +338,7 @@ function getLargestPart(featureParts) {
 
 },{}],5:[function(_dereq_,module,exports){
 
+var VECNIK = _dereq_('./core/core');
 var Geometry = _dereq_('./geometry');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
@@ -369,44 +372,98 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
-    _currentFeatureId: null,
+    _getFeatureFromPos: function(pos) {
+      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var key = this._tileCoordsToKey(tile);
+      var tileX = pos.x - 256*tile.x;
+      var tileY = pos.y - 256*tile.y;
+      if (!this._tileObjects[key]) {
+        return null;
+      }
+      return this._tileObjects[key].getFeatureAt(tileX, tileY);
+    },
+
+    _getTileFromPos: function(pos) {
+      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var key = this._tileCoordsToKey(tile);
+      return this._tiles[key];
+    },
+
+    _hoveredFeature: null,
+    _clickedFeature: null,
 
     onAdd: function(map) {
-      var self = this;
+      map.on('mouseup', function (e) {
+        this._clickedFeature = null;
+      }, this);
+
+      map.on('mousedown', function (e) {
+        if (!this.options.interaction) {
+          return;
+        }
+
+        var feature = this._getFeatureFromPos(map.project(e.latlng));
+
+        if (!feature) {
+          return;
+        }
+
+        this._clickedFeature = feature;
+        this.fireEvent('featureClick', {
+          feature: feature,
+          geo: e.latlng,
+          x: e.originalEvent.x,
+          y: e.originalEvent.y
+        });
+
+this.redraw();
+      }, this);
 
       map.on('mousemove', function (e) {
-        if (!self.options.interaction) {
+        if (!this.options.interaction) {
           return;
         }
 
         var pos = map.project(e.latlng);
-        var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
-        var key = self._tileCoordsToKey(tile);
-        var tileX = pos.x - 256*tile.x;
-        var tileY = pos.y - 256*tile.y;
-        var groupId = self._tileObjects[key].featureAt(tileX, tileY);
+        var tile = this._getTileFromPos(pos);
+        if (tile) {
+          tile.style.cursor = 'inherit';
+        }
 
-        // TODO: check for whole matching feature
+        var feature = this._getFeatureFromPos(pos);
 
-        if (groupId && groupId === self._currentFeatureId) {
-          self.fireEvent('featureOver', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+        var payload = {
+          geo: e.latlng,
+          x: e.originalEvent.x,
+          y: e.originalEvent.y
+        };
+
+        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
+          payload.feature = this._hoveredFeature;
+          this.fireEvent('featureOver', payload);
+          if (tile) {
+            tile.style.cursor = 'pointer';
+          }
           return;
         }
 
-        if (groupId === null) {
-          self.fireEvent('featureOut', { geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
-        } else {
-          if (self._currentFeatureId !== null) {
-            self.fireEvent('featureLeave', { id: self._currentFeatureId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
-          }
-
-          self.fireEvent('featureEnter', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+        if (!feature) {
+          delete payload.feature;
+          this._hoveredFeature = null;
+          this.fireEvent('featureOut', payload);
+          return;
         }
 
-        self._currentFeatureId = groupId;
+        if (this._hoveredFeature) {
+          payload.feature = this._hoveredFeature;
+          this.fireEvent('featureLeave', payload);
+        }
 
-        self.fireEvent('featureClick', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
-      });
+        payload.feature = feature;
+        this._hoveredFeature = feature;
+        this.fireEvent('featureEnter', payload);
+this.redraw();
+      }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
@@ -508,11 +565,19 @@ if (typeof L !== 'undefined') {
     setInteraction: function(flag) {
       this.options.interaction = !!flag;
       return this;
+    },
+
+    getHoveredFeature: function() {
+      return this._hoveredFeature;
+    },
+
+    getClickedFeature: function() {
+      return this._clickedFeature;
     }
   });
 }
 
-},{"./geometry":4,"./profiler":8,"./tile":15}],6:[function(_dereq_,module,exports){
+},{"./core/core":2,"./geometry":4,"./profiler":8,"./tile":15}],6:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -831,6 +896,8 @@ proto.update = function(options) {
 
 },{"../mercator":7,"../reader/geojson":11,"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
 
+var VECNIK = _dereq_('../core/core');
+
 var CartoDB = module.exports = {};
 
 CartoDB.SQL = function(projection, table, x, y, zoom, options) {
@@ -845,7 +912,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
-  var id_column = options.idColumn || 'cartodb_id'; // though we dont't like the id column to be set manually,
+  var id_column = options.idColumn || VECNIK.ID_COLUMN; // though we dont't like the id column to be set manually,
                                                     // it allows us to have a different id column for OSM access
   var TILE_SIZE = 256;
   var tile_pixel_width = TILE_SIZE;
@@ -935,8 +1002,8 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter; // +' LIMIT 100';
 };
 
-},{}],11:[function(_dereq_,module,exports){
-var Core = _dereq_('../core/core');
+},{"../core/core":2}],11:[function(_dereq_,module,exports){
+var VECNIK = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
 var Projection = _dereq_('../mercator');
 
@@ -987,9 +1054,9 @@ function _convertAndReproject(collection, projection, tileCoords) {
 
     type = feature.geometry.type;
     geoCoords = feature.geometry.coordinates;
-    // TODO: cartodb_id is a custom enhancement, per definition it's feature.id
-    // it's 'groupId' instead of just 'id' as it can occur multiple times for multi-geometriees or geometries cut by tile borders!
-    groupId = feature.id || feature.properties.id || feature.cartodb_id || feature.properties.cartodb_id;
+    // TODO: per definition it should be feature.id
+    // it's named 'groupId' instead of just 'id' as it can occur multiple times for multi-geometries or geometries cut by tile borders!
+    groupId = feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN];
     properties = feature.properties;
 
     switch (type) {
@@ -1057,7 +1124,7 @@ var Reader = module.exports = {};
 Reader.load = function(url, tileCoords, projection, callback) {
 //  if (!Reader.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    Core.load(url, function(collection) {
+    VECNIK.load(url, function(collection) {
       callback(_convertAndReproject(collection, projection, tileCoords));
     });
   } else {
@@ -1231,30 +1298,34 @@ proto.createHitShader = function(key) {
 };
 
 proto.update = function(style) {
+  var cartoShader = new carto.RendererJS().render(style);
+
+  if (!cartoShader || !cartoShader.layers) {
+    return;
+  }
+
   // requiring this late in order to avoid circular reference shader <-> shader.layer
   var ShaderLayer = _dereq_('./shader.layer');
 
-  // TODO: rethink var naming
-  var
-    shader = new carto.RendererJS().render(style),
-    layer, layerShader, sh, p;
+  var cartoShaderLayer;
+  for (var i = 0, il = cartoShader.layers.length; i < il; i++) {
+    cartoShaderLayer = cartoShader.layers[i];
+    this._layers[i] = new ShaderLayer(
+      cartoShaderLayer.fullName(),
+      this._cloneProperties(cartoShaderLayer.getShader()),
+      cartoShaderLayer.getSymbolizers()
+    );
+  }
+};
 
-  if (shader && shader.layers) {
-    for (var i = 0, il = shader.layers.length; i < il; i++) {
-      layer = shader.layers[i];
-
-      // get shader from cartocss shader
-      layerShader = layer.getShader();
-      sh = {};
-      for (p in layerShader) {
-        if (layerShader[p].style) {
-          sh[p] = layerShader[p].style;
-        }
-      }
-
-      this._layers[i] = new ShaderLayer(sh, layer.getSymbolizers());
+proto._cloneProperties = function(shader) {
+  var cloned = {};
+  for (var prop in shader) {
+    if (shader[prop].style) {
+      cloned[prop] = shader[prop].style;
     }
   }
+  return cloned;
 };
 
 proto.getLayers = function() {
@@ -1292,35 +1363,39 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
-var ShaderLayer = module.exports = function(shader, shadingOrder) {
+var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
+
+  this._name = name || '';
+
   this._compiled = {};
+  this.compile(shaderSrc);
+
   this._shadingOrder = shadingOrder || [
     Shader.POINT,
     Shader.POLYGON,
     Shader.LINE,
     Shader.TEXT
   ];
-  this.compile(shader);
 };
 
 var proto = ShaderLayer.prototype = new Events();
 
 proto.clone = function() {
-  return new ShaderLayer(this._shaderSrc, this._shadingOrder);
+  return new ShaderLayer(this._name, this._shaderSrc, this._shadingOrder);
 };
 
-proto.compile = function(shader) {
-  this._shaderSrc = shader;
-  if (typeof shader === 'string') {
-    shader = function() {
-      return shader;
+proto.compile = function(shaderSrc) {
+  this._shaderSrc = shaderSrc;
+  if (typeof shaderSrc === 'string') {
+    shaderSrc = function() {
+      return shaderSrc;
     };
   }
   var property;
-  for (var attr in shader) {
+  for (var attr in shaderSrc) {
     if (property = propertyMapping[attr]) {
-      this._compiled[property] = shader[attr];
+      this._compiled[property] = shaderSrc[attr];
     }
   }
   this.emit('change');
@@ -1332,6 +1407,25 @@ proto.compile = function(shader) {
 // contain values involved in the shader
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
+
+  var
+    style = {},
+    nameAttachment = this._name.split('::')[1];
+
+  if (nameAttachment === 'hover') {
+    if (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id) {
+      return style;
+    }
+//console.log('HOVER', featureProperties);
+  }
+
+  if (nameAttachment === 'click') {
+    if (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id) {
+      return style;
+    }
+//console.log('CLICK', featureProperties);
+  }
+
   var
     style = {},
     compiled = this._compiled,
@@ -1391,6 +1485,7 @@ ShaderLayer.Int2RGB = Int2RGB;
 
 },{"./core/events":3,"./shader":13}],15:[function(_dereq_,module,exports){
 
+var VECNIK = _dereq_('./core/core');
 var ShaderLayer = _dereq_('./shader.layer');
 var Canvas = _dereq_('./canvas');
 
@@ -1430,9 +1525,19 @@ proto.getCoords = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this, this._canvas, this._data, {
-    zoom: this._coords.z
-  });
+  var
+    mapContext = { zoom: this._coords.z },
+    hovered, clicked;
+
+  if (hovered = this._layer.getHoveredFeature()) {
+    mapContext.hovered = hovered;
+  }
+
+  if (clicked = this._layer.getClickedFeature()) {
+    mapContext.clicked = clicked;
+  }
+
+  this._renderer.render(this, this._canvas, this._data, mapContext);
 };
 
 /**
@@ -1441,7 +1546,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader(VECNIK.ID_COLUMN));
 //  this._renderer.setShader(currentShader.createHitShader('id')); // make OSM work
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
@@ -1456,7 +1561,7 @@ proto._renderHitGrid = function() {
  * returns feature id at position. null for fo feature
  * @pos: point object like {x: X, y: Y }
  */
-proto.featureAt = function(x, y) {
+proto.getFeatureAt = function(x, y) {
   if (!this._hitGrid) {
     this._hitGrid = this._renderHitGrid();
   }
@@ -1466,12 +1571,17 @@ proto.featureAt = function(x, y) {
     this._hitGrid[idx+1],
     this._hitGrid[idx+2]
   );
-  if (id) {
-    return id-1;
+
+  if (!id) {
+    return;
   }
-  return null;
+
+  // TODO: return the real feature
+  var feature = {};
+  feature[VECNIK.ID_COLUMN] = id-1;
+  return feature;
 };
 
-},{"./canvas":1,"./shader.layer":14}]},{},[6])
+},{"./canvas":1,"./core/core":2,"./shader.layer":14}]},{},[6])
 (6)
 });

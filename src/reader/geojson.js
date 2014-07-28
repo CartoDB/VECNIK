@@ -1,4 +1,4 @@
-var Core = require('../core/core');
+var VECNIK = require('../core/core');
 var Geometry = require('../geometry');
 var Projection = require('../mercator');
 
@@ -49,9 +49,9 @@ function _convertAndReproject(collection, projection, tileCoords) {
 
     type = feature.geometry.type;
     geoCoords = feature.geometry.coordinates;
-    // TODO: cartodb_id is a custom enhancement, per definition it's feature.id
-    // it's 'groupId' instead of just 'id' as it can occur multiple times for multi-geometriees or geometries cut by tile borders!
-    groupId = feature.id || feature.properties.id || feature.cartodb_id || feature.properties.cartodb_id;
+    // TODO: per definition it should be feature.id
+    // it's named 'groupId' instead of just 'id' as it can occur multiple times for multi-geometries or geometries cut by tile borders!
+    groupId = feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN];
     properties = feature.properties;
 
     switch (type) {
@@ -119,7 +119,7 @@ var Reader = module.exports = {};
 Reader.load = function(url, tileCoords, projection, callback) {
 //  if (!Reader.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    Core.load(url, function(collection) {
+    VECNIK.load(url, function(collection) {
       callback(_convertAndReproject(collection, projection, tileCoords));
     });
   } else {

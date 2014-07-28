@@ -1,4 +1,5 @@
 
+var VECNIK = require('./core/core');
 var ShaderLayer = require('./shader.layer');
 var Canvas = require('./canvas');
 
@@ -38,9 +39,19 @@ proto.getCoords = function() {
 };
 
 proto.render = function() {
-  this._renderer.render(this, this._canvas, this._data, {
-    zoom: this._coords.z
-  });
+  var
+    mapContext = { zoom: this._coords.z },
+    hovered, clicked;
+
+  if (hovered = this._layer.getHoveredFeature()) {
+    mapContext.hovered = hovered;
+  }
+
+  if (clicked = this._layer.getClickedFeature()) {
+    mapContext.clicked = clicked;
+  }
+
+  this._renderer.render(this, this._canvas, this._data, mapContext);
 };
 
 /**
@@ -49,7 +60,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader(VECNIK.ID_COLUMN));
 //  this._renderer.setShader(currentShader.createHitShader('id')); // make OSM work
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
@@ -64,7 +75,7 @@ proto._renderHitGrid = function() {
  * returns feature id at position. null for fo feature
  * @pos: point object like {x: X, y: Y }
  */
-proto.featureAt = function(x, y) {
+proto.getFeatureAt = function(x, y) {
   if (!this._hitGrid) {
     this._hitGrid = this._renderHitGrid();
   }
@@ -74,8 +85,13 @@ proto.featureAt = function(x, y) {
     this._hitGrid[idx+1],
     this._hitGrid[idx+2]
   );
-  if (id) {
-    return id-1;
+
+  if (!id) {
+    return;
   }
-  return null;
+
+  // TODO: return the real feature
+  var feature = {};
+  feature[VECNIK.ID_COLUMN] = id-1;
+  return feature;
 };
