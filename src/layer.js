@@ -32,44 +32,66 @@ if (typeof L !== 'undefined') {
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
-    _currentFeatureId: null,
+    _currentGroupId: null,
+
+    _getGroupIdFromLatLng: function(pos) {
+      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var key = this._tileCoordsToKey(tile);
+      var tileX = pos.x - 256*tile.x;
+      var tileY = pos.y - 256*tile.y;
+      return this._tileObjects[key].featureAt(tileX, tileY);
+    },
 
     onAdd: function(map) {
-      var self = this;
-
-      map.on('mousemove', function (e) {
-        if (!self.options.interaction) {
+      map.on('mousedown', function (e) {
+        if (!this.options.interaction) {
           return;
         }
 
-        var pos = map.project(e.latlng);
-        var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
-        var key = self._tileCoordsToKey(tile);
-        var tileX = pos.x - 256*tile.x;
-        var tileY = pos.y - 256*tile.y;
-        var groupId = self._tileObjects[key].featureAt(tileX, tileY);
+        var groupId = this._getGroupIdFromLatLng(map.project(e.latlng));
 
-        // TODO: check for whole matching feature
+        this.fireEvent('featureClick', {
+          id: groupId,
+          geo: e.latlng,
+          x: e.originalEvent.x,
+          y: e.originalEvent.y
+        });
+      }, this);
 
-        if (groupId && groupId === self._currentFeatureId) {
-          self.fireEvent('featureOver', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+      map.on('mousemove', function (e) {
+        if (!this.options.interaction) {
+          return;
+        }
+
+        var groupId = this._getGroupIdFromLatLng(map.project(e.latlng));
+
+        var payload = {
+          geo: e.latlng,
+          x: e.originalEvent.x,
+          y: e.originalEvent.y
+        };
+
+        if (groupId && groupId === this._currentGroupId) {
+          payload.id = groupId;
+          this.fireEvent('featureOver', payload);
           return;
         }
 
         if (groupId === null) {
-          self.fireEvent('featureOut', { geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+          delete payload.id;
+          this.fireEvent('featureOut', payload);
         } else {
-          if (self._currentFeatureId !== null) {
-            self.fireEvent('featureLeave', { id: self._currentFeatureId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+          if (this._currentGroupId !== null) {
+            payload.id = this._currentGroupId;
+            this.fireEvent('featureLeave', payload);
           }
 
-          self.fireEvent('featureEnter', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
+          payload.id = groupId;
+          this.fireEvent('featureEnter', payload);
         }
 
-        self._currentFeatureId = groupId;
-
-        self.fireEvent('featureClick', { id: groupId, geo: e.latlng, x: e.originalEvent.x, y: e.originalEvent.y });
-      });
+        this._currentGroupId = groupId;
+      }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
