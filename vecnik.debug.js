@@ -415,6 +415,8 @@ if (typeof L !== 'undefined') {
           x: e.originalEvent.x,
           y: e.originalEvent.y
         });
+
+this.redraw();
       }, this);
 
       map.on('mousemove', function (e) {
@@ -460,6 +462,7 @@ if (typeof L !== 'undefined') {
         payload.feature = feature;
         this._hoveredFeature = feature;
         this.fireEvent('featureEnter', payload);
+this.redraw();
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -1208,7 +1211,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-      symbolizer = shadingOrder[r];
+    symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
@@ -1405,12 +1408,22 @@ proto.compile = function(shaderSrc) {
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
-  var nameAttachment = this._name.split('::')[1];
-  if (nameAttachment === 'hover' && mapContext.hovered && mapContext.hovered.cartodb_id === featureProperties.cartodb_id) {
-    console.log('HOVER', featureProperties);
+  var
+    style = {},
+    nameAttachment = this._name.split('::')[1];
+
+  if (nameAttachment === 'hover') {
+    if (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id) {
+      return style;
+    }
+//console.log('HOVER', featureProperties);
   }
-  if (nameAttachment === 'click' && mapContext.clicked && mapContext.clicked.cartodb_id === featureProperties.cartodb_id) {
-    console.log('CLICK', featureProperties);
+
+  if (nameAttachment === 'click') {
+    if (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id) {
+      return style;
+    }
+//console.log('CLICK', featureProperties);
   }
 
   var
@@ -1515,12 +1528,15 @@ proto.render = function() {
   var
     mapContext = { zoom: this._coords.z },
     hovered, clicked;
+
   if (hovered = this._layer.getHoveredFeature()) {
     mapContext.hovered = hovered;
   }
+
   if (clicked = this._layer.getClickedFeature()) {
     mapContext.clicked = clicked;
   }
+
   this._renderer.render(this, this._canvas, this._data, mapContext);
 };
 

@@ -76,6 +76,8 @@ if (typeof L !== 'undefined') {
           x: e.originalEvent.x,
           y: e.originalEvent.y
         });
+
+this.redraw();
       }, this);
 
       map.on('mousemove', function (e) {
@@ -121,6 +123,8 @@ if (typeof L !== 'undefined') {
         payload.feature = feature;
         this._hoveredFeature = feature;
         this.fireEvent('featureEnter', payload);
+
+this.redraw();
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
