@@ -34,12 +34,18 @@ if (typeof L !== 'undefined') {
 
     _currentGroupId: null,
 
-    _getGroupIdFromLatLng: function(pos) {
+    _getGroupIdFromPos: function(pos) {
       var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
       var key = this._tileCoordsToKey(tile);
       var tileX = pos.x - 256*tile.x;
       var tileY = pos.y - 256*tile.y;
       return this._tileObjects[key].featureAt(tileX, tileY);
+    },
+
+    _getTileFromPos: function(pos) {
+      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var key = this._tileCoordsToKey(tile);
+      return this._tiles[key];
     },
 
     onAdd: function(map) {
@@ -48,7 +54,13 @@ if (typeof L !== 'undefined') {
           return;
         }
 
-        var groupId = this._getGroupIdFromLatLng(map.project(e.latlng));
+        var groupId = this._getGroupIdFromPos(map.project(e.latlng));
+
+        if (groupId === null) {
+          return;
+        }
+
+// console.log('CLICK', groupId);
 
         this.fireEvent('featureClick', {
           id: groupId,
@@ -63,7 +75,12 @@ if (typeof L !== 'undefined') {
           return;
         }
 
-        var groupId = this._getGroupIdFromLatLng(map.project(e.latlng));
+        var pos = map.project(e.latlng);
+        var tile = this._getTileFromPos(pos);
+        if (tile) {
+          tile.style.cursor = 'inherit';
+        }
+        var groupId = this._getGroupIdFromPos(pos);
 
         var payload = {
           geo: e.latlng,
@@ -74,6 +91,9 @@ if (typeof L !== 'undefined') {
         if (groupId && groupId === this._currentGroupId) {
           payload.id = groupId;
           this.fireEvent('featureOver', payload);
+          if (tile) {
+            tile.style.cursor = 'pointer';
+          }
           return;
         }
 
