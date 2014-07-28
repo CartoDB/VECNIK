@@ -462,6 +462,7 @@ this.redraw();
         payload.feature = feature;
         this._hoveredFeature = feature;
         this.fireEvent('featureEnter', payload);
+
 this.redraw();
       }, this);
 
