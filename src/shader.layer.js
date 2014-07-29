@@ -77,18 +77,13 @@ proto.getStyle = function(featureProperties, mapContext) {
     style = {},
     nameAttachment = this._name.split('::')[1];
 
-  if (nameAttachment === 'hover') {
-    if (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id) {
-      return style;
-    }
-//console.log('HOVER', featureProperties);
+  if (nameAttachment === 'hover' && (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
+    return style;
   }
+//console.log('HOVER', featureProperties);
 
-  if (nameAttachment === 'click') {
-    if (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id) {
-      return style;
-    }
-//console.log('CLICK', featureProperties);
+  if (nameAttachment === 'click' && (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
+    return style;
   }
 
   var

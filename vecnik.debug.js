@@ -393,30 +393,25 @@ if (typeof L !== 'undefined') {
     _clickedFeature: null,
 
     onAdd: function(map) {
-      map.on('mouseup', function (e) {
-        this._clickedFeature = null;
-      }, this);
-
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
         }
 
-        var feature = this._getFeatureFromPos(map.project(e.latlng));
+        this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
 
-        if (!feature) {
-          return;
+        if (this._clickedFeature) {
+          this.fireEvent('featureClick', {
+            feature: this._clickedFeature,
+            geo: e.latlng,
+            x: e.originalEvent.x,
+            y: e.originalEvent.y
+          });
+
+        this.redraw();
         }
 
-        this._clickedFeature = feature;
-        this.fireEvent('featureClick', {
-          feature: feature,
-          geo: e.latlng,
-          x: e.originalEvent.x,
-          y: e.originalEvent.y
-        });
-
-this.redraw();
+        // TODO: only redraw affected tiles
       }, this);
 
       map.on('mousemove', function (e) {
@@ -463,7 +458,8 @@ this.redraw();
         this._hoveredFeature = feature;
         this.fireEvent('featureEnter', payload);
 
-this.redraw();
+        // TODO: only redraw affected tiles
+        //this.redraw();
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -1413,18 +1409,13 @@ proto.getStyle = function(featureProperties, mapContext) {
     style = {},
     nameAttachment = this._name.split('::')[1];
 
-  if (nameAttachment === 'hover') {
-    if (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id) {
-      return style;
-    }
-//console.log('HOVER', featureProperties);
+  if (nameAttachment === 'hover' && (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
+    return style;
   }
+//console.log('HOVER', featureProperties);
 
-  if (nameAttachment === 'click') {
-    if (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id) {
-      return style;
-    }
-//console.log('CLICK', featureProperties);
+  if (nameAttachment === 'click' && (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
+    return style;
   }
 
   var
