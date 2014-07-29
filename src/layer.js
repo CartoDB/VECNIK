@@ -30,6 +30,11 @@ if (typeof L !== 'undefined') {
       this._tileObjects = {};
       this._centroidPositions = {};
 
+      var this_lazyRender = this._lazyRender.bind(this);
+      setInterval(function() {
+        requestAnimationFrame(this_lazyRender);
+      }, 33);
+
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
@@ -69,10 +74,9 @@ if (typeof L !== 'undefined') {
             y: e.originalEvent.y
           });
 
-        this.redraw();
+          // TODO: only redraw affected tiles
+          this.redraw();
         }
-
-        // TODO: only redraw affected tiles
       }, this);
 
       map.on('mousemove', function (e) {
@@ -120,7 +124,7 @@ if (typeof L !== 'undefined') {
         this.fireEvent('featureEnter', payload);
 
         // TODO: only redraw affected tiles
-        //this.redraw();
+        this.redraw();
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -145,7 +149,19 @@ if (typeof L !== 'undefined') {
       return tile.getDomElement();
     },
 
+    _renderQueue: [],
+
+    _lazyRender: function() {
+      if (!this._renderQueue.length) {
+        return;
+      }
+      this._renderQueue[ this._renderQueue.length-1 ].render();
+      this._renderQueue.pop();
+    },
+
     redraw: function(forceReload) {
+      this._renderQueue = [];
+
       if (!!forceReload) {
         this._centroidPositions = {};
         L.TileLayer.prototype.redraw.call(this);
@@ -155,30 +171,16 @@ if (typeof L !== 'undefined') {
       var timer = Profiler.metric('tiles.render.time').start();
 
       // get viewport tile bounds in order to render immediately, when visible
-      var bounds = this._map.getPixelBounds(),
+      var
+        mapBounds = this._map.getPixelBounds(),
         tileSize = this._getTileSize(),
         tileBounds = L.bounds(
-          bounds.min.divideBy(tileSize).floor(),
-          bounds.max.divideBy(tileSize).floor());
+          mapBounds.min.divideBy(tileSize).floor(),
+          mapBounds.max.divideBy(tileSize).floor()
+        );
 
-      var renderQueue = [];
       for (var key in this._tileObjects) {
-        if (tileBounds.contains(this._keyToTileCoords(key))) {
-          this._tileObjects[key].render();
-        } else {
-          renderQueue.push(this._tileObjects[key]);
-        }
-      }
-
-      // render invisible tiles afterwards + a bit later in order to stay responsive
-      if (renderQueue.length) {
-        var interval = setInterval(function() {
-          renderQueue[renderQueue.length-1].render();
-          renderQueue.pop();
-          if (!renderQueue.length) {
-            clearInterval(interval);
-          }
-        }, 250);
+        this._renderQueue[ tileBounds.contains(this._keyToTileCoords(key)) ? 'push' : 'unshift' ](this._tileObjects[key]);
       }
 
       timer.end();
