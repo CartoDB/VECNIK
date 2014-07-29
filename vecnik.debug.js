@@ -352,6 +352,8 @@ if (typeof L !== 'undefined') {
       maxZoom: 22
     },
 
+    _renderQueue: [],
+
     initialize: function(options) {
       // applies to a single tile but we don't want to check on per tile basis
       if (!options.provider) {
@@ -369,6 +371,24 @@ if (typeof L !== 'undefined') {
       this._tileObjects = {};
       this._centroidPositions = {};
 
+      var self = this;
+      var lazyRender = function() {
+        if (self._renderQueue.length) {
+          var
+            key = self._renderQueue[ self._renderQueue.length-1 ],
+            tiles = self._tileObjects[self._map.getZoom()];
+
+          if (tiles[key]) {
+            tiles[key].render();
+          }
+
+          self._renderQueue.pop();
+        }
+      };
+      setInterval(function() {
+        requestAnimationFrame(lazyRender);
+      }, 33);
+
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
@@ -377,16 +397,44 @@ if (typeof L !== 'undefined') {
       var key = this._tileCoordsToKey(tile);
       var tileX = pos.x - 256*tile.x;
       var tileY = pos.y - 256*tile.y;
-      if (!this._tileObjects[key]) {
+      var tiles = this._tileObjects[this._map.getZoom()];
+
+      if (!tiles[key]) {
         return null;
       }
-      return this._tileObjects[key].getFeatureAt(tileX, tileY);
+
+      return tiles[key].getFeatureAt(tileX, tileY);
     },
 
     _getTileFromPos: function(pos) {
       var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
       var key = this._tileCoordsToKey(tile);
       return this._tiles[key];
+    },
+
+    _addToRenderQueue: function(key, withPriority) {
+      var index = this._renderQueue.indexOf(key);
+
+      if (index > -1) {
+        if (withPriority) {
+          // remove earlier duplicate
+          this._renderQueue = this._renderQueue.splice(index, 1);
+        } else {
+          // keep later duplicate and don't do anything
+          return;
+        }
+      }
+
+      this._renderQueue[withPriority ? 'push' : 'unshift'](key);
+    },
+
+    _addAffectedToRenderQueue: function(idColumn) {
+      var tiles = this._tileObjects[this._map.getZoom()];
+      for (var key in tiles) {
+        if (tiles[key].hasFeature(idColumn)) {
+          this._addToRenderQueue(key, true);
+        }
+      }
     },
 
     _hoveredFeature: null,
@@ -396,6 +444,11 @@ if (typeof L !== 'undefined') {
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
+        }
+
+        // render previously highlighted tiles as normal
+        if (this._clickedFeature) {
+          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
 
         this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
@@ -408,10 +461,8 @@ if (typeof L !== 'undefined') {
             y: e.originalEvent.y
           });
 
-        this.redraw();
+          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
-
-        // TODO: only redraw affected tiles
       }, this);
 
       map.on('mousemove', function (e) {
@@ -443,6 +494,11 @@ if (typeof L !== 'undefined') {
         }
 
         if (!feature) {
+          // render previously highlighted tiles as normal
+          if (this._hoveredFeature) {
+            this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+          }
+
           delete payload.feature;
           this._hoveredFeature = null;
           this.fireEvent('featureOut', payload);
@@ -458,15 +514,14 @@ if (typeof L !== 'undefined') {
         this._hoveredFeature = feature;
         this.fireEvent('featureEnter', payload);
 
-        // TODO: only redraw affected tiles
-        //this.redraw();
+        this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
 
     _removeTile: function(key) {
-      delete this._tileObjects[key];
+      delete this._tileObjects[this._map.getZoom()][key];
       L.TileLayer.prototype._removeTile.call(this, key);
     },
 
@@ -478,13 +533,18 @@ if (typeof L !== 'undefined') {
         renderer: this._renderer
       });
 
-      var key = this._tileCoordsToKey(coords);
-      this._tileObjects[key] = tile;
+      var
+        key = this._tileCoordsToKey(coords),
+        zoom = this._map.getZoom();
+
+      (this._tileObjects[zoom] || (this._tileObjects[zoom] = []))[key] = tile;
 
       return tile.getDomElement();
     },
 
     redraw: function(forceReload) {
+      this._renderQueue = [];
+
       if (!!forceReload) {
         this._centroidPositions = {};
         L.TileLayer.prototype.redraw.call(this);
@@ -494,30 +554,17 @@ if (typeof L !== 'undefined') {
       var timer = Profiler.metric('tiles.render.time').start();
 
       // get viewport tile bounds in order to render immediately, when visible
-      var bounds = this._map.getPixelBounds(),
+      var
+        mapBounds = this._map.getPixelBounds(),
         tileSize = this._getTileSize(),
         tileBounds = L.bounds(
-          bounds.min.divideBy(tileSize).floor(),
-          bounds.max.divideBy(tileSize).floor());
+          mapBounds.min.divideBy(tileSize).floor(),
+          mapBounds.max.divideBy(tileSize).floor()
+        ),
+        tiles = this._tileObjects[this._map.getZoom()];
 
-      var renderQueue = [];
-      for (var key in this._tileObjects) {
-        if (tileBounds.contains(this._keyToTileCoords(key))) {
-          this._tileObjects[key].render();
-        } else {
-          renderQueue.push(this._tileObjects[key]);
-        }
-      }
-
-      // render invisible tiles afterwards + a bit later in order to stay responsive
-      if (renderQueue.length) {
-        var interval = setInterval(function() {
-          renderQueue[renderQueue.length-1].render();
-          renderQueue.pop();
-          if (!renderQueue.length) {
-            clearInterval(interval);
-          }
-        }, 250);
+      for (var key in tiles) {
+        this._addToRenderQueue(key, tileBounds.contains(this._keyToTileCoords(key)));
       }
 
       timer.end();
@@ -543,16 +590,17 @@ if (typeof L !== 'undefined') {
 
     _getFeatureParts: function(groupId) {
       var
-        tileObject,
+        tiles = this._tileObjects[this._map.getZoom()],
+        tile,
         feature, f, fl,
         featureParts = [];
 
-      for (var key in this._tileObjects) {
-        tileObject = this._tileObjects[key];
-        for (f = 0, fl = tileObject._data.length; f < fl; f++) {
-          feature = tileObject._data[f];
+      for (var key in tiles) {
+        tile = tiles[key];
+        for (f = 0, fl = tile._data.length; f < fl; f++) {
+          feature = tile._data[f];
           if (feature.groupId === groupId) {
-            featureParts.push({ feature:feature, tileCoords:tileObject.getCoords() });
+            featureParts.push({ feature: feature, tileCoords: tile.getCoords() });
           }
         }
       }
@@ -1572,6 +1620,15 @@ proto.getFeatureAt = function(x, y) {
   var feature = {};
   feature[VECNIK.ID_COLUMN] = id-1;
   return feature;
+};
+
+proto.hasFeature = function(groupId) {
+  for (var i = 0, il = this._data.length; i < il; i++) {
+    if (this._data[i].groupId === groupId) {
+      return true;
+    }
+  }
+  return false;
 };
 
 },{"./canvas":1,"./core/core":2,"./shader.layer":14}]},{},[6])

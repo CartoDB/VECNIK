@@ -95,3 +95,12 @@ proto.getFeatureAt = function(x, y) {
   feature[VECNIK.ID_COLUMN] = id-1;
   return feature;
 };
+
+proto.hasFeature = function(groupId) {
+  for (var i = 0, il = this._data.length; i < il; i++) {
+    if (this._data[i].groupId === groupId) {
+      return true;
+    }
+  }
+  return false;
+};
