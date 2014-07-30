@@ -233,8 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var tooltip = $('#tooltip');
       tooltip.style.display = 'block';
       tooltip.innerText     = e.feature.cartodb_id;
-      tooltip.style.left    = e.x +'px';
-      tooltip.style.top     = e.y +'px';
+      tooltip.style.left    = (e.x+10) +'px';
+      tooltip.style.top     = (e.y+10) +'px';
     })
     .on('featureOut', function(e) {
       $('#tooltip').style.display = 'none';

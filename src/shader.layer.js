@@ -28,6 +28,16 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
+// properties that cause a pointer hit
+var hitProperties = [
+  'markerFill',
+  'markerStrokeStyle',
+  'strokeStyle',
+  'polygonFill' //,
+//  'textFill',
+//  'textStrokeStyle',
+];
+
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
 
@@ -114,14 +124,13 @@ proto.getShadingOrder = function() {
  * return a shader clone ready for hit test.
  * @keyAttribute: string with the attribute used as key (usually the feature id)
  */
-proto.createHitShaderLayer = function(key) {
+proto.createHitShaderLayer = function(idColumn) {
   var hit = this.clone();
   // replace all kind of fill and stroke props to use a custom color
-  // TODO: review properties used
   for (var k in hit._compiled) {
-    if (k === 'polygonFill' || k === 'strokeStyle') {
+    if (~hitProperties.indexOf(k)) {
       hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[key] + 1).join(',') + ')';
+        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
       };
     }
   }

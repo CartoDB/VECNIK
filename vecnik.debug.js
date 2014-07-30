@@ -18,6 +18,7 @@ var Canvas = module.exports = function(options) {
 
   context.mozImageSmoothingEnabled    = false;
   context.webkitImageSmoothingEnabled = false;
+  context.imageSmoothingEnabled       = false;
 
   context.lineCap  = 'round';
   context.lineJoin = 'round';
@@ -43,6 +44,53 @@ proto.getData = function() {
   return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
 };
 
+proto._isSameColor = function(data, a, b) {
+  return (
+    data[a  ] === data[b  ] &&
+    data[a+1] === data[b+1] &&
+    data[a+2] === data[b+2]);
+};
+
+proto.filterArtifacts = function() {
+  var
+    canvas = this._canvas,
+    imgData = this._context.getImageData(0, 0, canvas.width, canvas.height),
+    rowLength = canvas.width,
+    rowNum = canvas.height,
+    data = imgData.data,
+    i;
+
+  for (var r = 0; r < rowNum; r++) {
+    for (var c = 0; c < rowLength; c++) {
+      i = (r*rowLength + c)*4;
+      if (!data[i+3]) {
+        continue;
+      }
+
+      if (data[i+3] < 255) {
+        data[i  ] = 0;
+        data[i+1] = 0;
+        data[i+2] = 0;
+        data[i+3] = 255;
+        continue;
+      }
+
+      if (
+        !this._isSameColor(data, i, i + 4) &&
+        !this._isSameColor(data, i, i - 4) &&
+        !this._isSameColor(data, i, i - rowLength*4) &&
+        !this._isSameColor(data, i, i + rowLength*4)
+      ) {
+        data[i  ] = 0;
+        data[i+1] = 0;
+        data[i+2] = 0;
+        data[i+3] = 255;
+      }
+    }
+  }
+
+  this._context.putImageData(imgData, 0, 0);
+};
 
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
@@ -448,7 +496,7 @@ if (typeof L !== 'undefined') {
 
         // render previously highlighted tiles as normal
         if (this._clickedFeature) {
-          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
+//          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
 
         this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
@@ -461,7 +509,7 @@ if (typeof L !== 'undefined') {
             y: e.originalEvent.y
           });
 
-          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
+//          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
       }, this);
 
@@ -472,10 +520,6 @@ if (typeof L !== 'undefined') {
 
         var pos = map.project(e.latlng);
         var tile = this._getTileFromPos(pos);
-        if (tile) {
-          tile.style.cursor = 'inherit';
-        }
-
         var feature = this._getFeatureFromPos(pos);
 
         var payload = {
@@ -484,38 +528,45 @@ if (typeof L !== 'undefined') {
           y: e.originalEvent.y
         };
 
+        // mouse stays in same feature
         if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
           payload.feature = this._hoveredFeature;
           this.fireEvent('featureOver', payload);
-          if (tile) {
-            tile.style.cursor = 'pointer';
-          }
+// console.log('OVER', payload.feature.cartodb_id)
           return;
         }
 
+        // mouse is outside any feature
         if (!feature) {
-
-          // render previously highlighted tiles as normal
+          // mouse just left a feature
           if (this._hoveredFeature) {
-            this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+//            this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+            if (tile) {
+              tile.style.cursor = 'inherit';
+            }
+            payload.feature = this._hoveredFeature;
+            this.fireEvent('featureLeave', payload);
+console.log('LEAVE', payload.feature.cartodb_id);
+            this._hoveredFeature = null;
+            return;
           }
 
           delete payload.feature;
-          this._hoveredFeature = null;
           this.fireEvent('featureOut', payload);
+console.log('OUT')
           return;
         }
 
-        if (this._hoveredFeature) {
-          payload.feature = this._hoveredFeature;
-          this.fireEvent('featureLeave', payload);
-        }
-
-        payload.feature = feature;
+        // mouse entered another feature
         this._hoveredFeature = feature;
-        this.fireEvent('featureEnter', payload);
-
+        this._renderQueue = [];
         this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        if (tile) {
+          tile.style.cursor = 'pointer';
+        }
+        payload.feature = feature;
+        this.fireEvent('featureEnter', payload);
+console.log('ENTER', payload.feature.cartodb_id)
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -1409,6 +1460,16 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
+// properties that cause a pointer hit
+var hitProperties = [
+  'markerFill',
+  'markerStrokeStyle',
+  'strokeStyle',
+  'polygonFill' //,
+//  'textFill',
+//  'textStrokeStyle',
+];
+
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
 
@@ -1495,14 +1556,13 @@ proto.getShadingOrder = function() {
  * return a shader clone ready for hit test.
  * @keyAttribute: string with the attribute used as key (usually the feature id)
  */
-proto.createHitShaderLayer = function(key) {
+proto.createHitShaderLayer = function(idColumn) {
   var hit = this.clone();
   // replace all kind of fill and stroke props to use a custom color
-  // TODO: review properties used
   for (var k in hit._compiled) {
-    if (k === 'polygonFill' || k === 'strokeStyle') {
+    if (~hitProperties.indexOf(k)) {
       hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[key] + 1).join(',') + ')';
+        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
       };
     }
   }
@@ -1592,6 +1652,8 @@ proto._renderHitGrid = function() {
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
+
+  this._hitCanvas.filterArtifacts();
 
   // restore shader
   this._renderer.setShader(currentShader);
