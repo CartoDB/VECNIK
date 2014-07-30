@@ -43,54 +43,6 @@ proto.getData = function() {
   return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
 };
 
-proto._isSameColor = function(data, a, b) {
-  return (
-    data[a  ] === data[b  ] &&
-    data[a+1] === data[b+1] &&
-    data[a+2] === data[b+2]);
-};
-
-proto.filterArtifacts = function() {
-  var
-    canvas = this._canvas,
-    imgData = this._context.getImageData(0, 0, canvas.width, canvas.height),
-    rowLength = canvas.width,
-    rowNum = canvas.height,
-    data = imgData.data,
-    i;
-
-  for (var r = 0; r < rowNum; r++) {
-    for (var c = 0; c < rowLength; c++) {
-      i = (r*rowLength + c)*4;
-      if (!data[i+3]) {
-        continue;
-      }
-
-      if (data[i+3] < 255) {
-        data[i  ] = 0;
-        data[i+1] = 0;
-        data[i+2] = 0;
-        data[i+3] = 255;
-        continue;
-      }
-
-      if (
-        !this._isSameColor(data, i, i + 4) &&
-        !this._isSameColor(data, i, i - 4) &&
-        !this._isSameColor(data, i, i - rowLength*4) &&
-        !this._isSameColor(data, i, i + rowLength*4)
-      ) {
-        data[i  ] = 0;
-        data[i+1] = 0;
-        data[i+2] = 0;
-        data[i+3] = 255;
-      }
-    }
-  }
-
-  this._context.putImageData(imgData, 0, 0);
-};
-
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
   this._context.arc(x, y, size, 0, Math.PI*2);
@@ -186,7 +138,9 @@ proto.setFont = function(size, face) {
   }
 };
 
-
+proto.finishAll = function() {
+  this._finishBatch();
+};
 
 
 /***

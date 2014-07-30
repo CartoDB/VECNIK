@@ -47,8 +47,6 @@ proto.getData = function() {
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
   this._context.arc(x, y, size, 0, Math.PI*2);
-this._context.stroke();
-this._context.fill();
 };
 
 proto.drawLine = function(coordinates) {
@@ -58,7 +56,6 @@ proto.drawLine = function(coordinates) {
   for (var i = 2, il = coordinates.length-1; i < il; i+=2) {
     context.lineTo(coordinates[i], coordinates[i+1]);
   }
-this._context.stroke();
 };
 
 proto.drawPolygon = function(coordinates, strokeFillOrder) {
@@ -72,8 +69,6 @@ proto.drawPolygon = function(coordinates, strokeFillOrder) {
       context.lineTo(coordinates[i][j], coordinates[i][j+1]);
     }
   }
-this._context.stroke();
-this._context.fill();
 };
 
 proto.drawText = function(text, x, y, align, stroke) {
@@ -108,7 +103,7 @@ proto._beginBatch = function(operation, strokeFillOrder) {
 // if (operation === 'polygon') console.log('BATCH', strokeFillOrder, this._state.fillStyle);
 
   if (this._operation === operation && this._strokeFillOrder === strokeFillOrder) {
-//##    return;
+    return;
   }
   this._finishBatch();
   this._operation = operation;
@@ -124,7 +119,7 @@ proto._finishBatch = function() {
   var strokeFillOrder = this._strokeFillOrder;
 
   for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
-//##    this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
+    this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
   this._operation = null;
@@ -144,7 +139,9 @@ proto.setFont = function(size, face) {
   }
 };
 
-
+proto.finishAll = function() {
+  this._finishBatch();
+};
 
 
 /***
@@ -1264,7 +1261,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-    symbolizer = shadingOrder[r];
+      symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
@@ -1320,6 +1317,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           break;
         }
       }
+      canvas.finishAll();
     }
   }
 //console.log('RENDER TILE', Date.now()-start);
