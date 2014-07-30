@@ -133,10 +133,6 @@ if (typeof L !== 'undefined') {
 
         var pos = map.project(e.latlng);
         var tile = this._getTileFromPos(pos);
-        if (tile) {
-          tile.style.cursor = 'inherit';
-        }
-
         var feature = this._getFeatureFromPos(pos);
 
         var payload = {
@@ -145,37 +141,44 @@ if (typeof L !== 'undefined') {
           y: e.originalEvent.y
         };
 
-        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
+        // mouse stays in same feature
+        if (feature && this._hoveredFeature &&
+          feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]
+        ) {
           payload.feature = this._hoveredFeature;
           this.fireEvent('featureOver', payload);
-          if (tile) {
-            tile.style.cursor = 'pointer';
-          }
           return;
         }
 
-        if (!feature) {
-          // render previously highlighted tiles as normal
-          if (this._hoveredFeature) {
-            this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        // mouse just left a feature
+        if (this._hoveredFeature) {
+          this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+          if (tile) {
+            tile.style.cursor = 'inherit';
           }
-
-          delete payload.feature;
+          payload.feature = this._hoveredFeature;
+          this.fireEvent('featureLeave', payload);
           this._hoveredFeature = null;
+          return;
+        }
+
+        // mouse is outside any feature
+        if (!feature) {
+          delete payload.feature;
           this.fireEvent('featureOut', payload);
           return;
         }
 
-        if (this._hoveredFeature) {
-          payload.feature = this._hoveredFeature;
-          this.fireEvent('featureLeave', payload);
+        // mouse entered another feature
+        this._hoveredFeature = feature;
+        this._renderQueue = [];
+        this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        if (tile) {
+          tile.style.cursor = 'pointer';
         }
 
         payload.feature = feature;
-        this._hoveredFeature = feature;
         this.fireEvent('featureEnter', payload);
-
-        this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);

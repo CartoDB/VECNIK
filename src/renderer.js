@@ -65,7 +65,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-    symbolizer = shadingOrder[r];
+      symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
@@ -121,6 +121,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           break;
         }
       }
+      canvas.finishAll();
     }
   }
 //console.log('RENDER TILE', Date.now()-start);

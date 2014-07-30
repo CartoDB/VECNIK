@@ -17,6 +17,7 @@ var Canvas = module.exports = function(options) {
 
   context.mozImageSmoothingEnabled    = false;
   context.webkitImageSmoothingEnabled = false;
+  context.imageSmoothingEnabled       = false;
 
   context.lineCap  = 'round';
   context.lineJoin = 'round';
@@ -41,7 +42,6 @@ proto.clear = function() {
 proto.getData = function() {
   return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
 };
-
 
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
@@ -138,7 +138,9 @@ proto.setFont = function(size, face) {
   }
 };
 
-
+proto.finishAll = function() {
+  this._finishBatch();
+};
 
 
 /***

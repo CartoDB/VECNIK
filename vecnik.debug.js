@@ -18,6 +18,7 @@ var Canvas = module.exports = function(options) {
 
   context.mozImageSmoothingEnabled    = false;
   context.webkitImageSmoothingEnabled = false;
+  context.imageSmoothingEnabled       = false;
 
   context.lineCap  = 'round';
   context.lineJoin = 'round';
@@ -42,7 +43,6 @@ proto.clear = function() {
 proto.getData = function() {
   return this._context.getImageData(0, 0, this._canvas.width, this._canvas.height).data;
 };
-
 
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
@@ -139,7 +139,9 @@ proto.setFont = function(size, face) {
   }
 };
 
-
+proto.finishAll = function() {
+  this._finishBatch();
+};
 
 
 /***
@@ -472,10 +474,6 @@ if (typeof L !== 'undefined') {
 
         var pos = map.project(e.latlng);
         var tile = this._getTileFromPos(pos);
-        if (tile) {
-          tile.style.cursor = 'inherit';
-        }
-
         var feature = this._getFeatureFromPos(pos);
 
         var payload = {
@@ -484,37 +482,44 @@ if (typeof L !== 'undefined') {
           y: e.originalEvent.y
         };
 
-        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
+        // mouse stays in same feature
+        if (feature && this._hoveredFeature &&
+          feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]
+        ) {
           payload.feature = this._hoveredFeature;
           this.fireEvent('featureOver', payload);
-          if (tile) {
-            tile.style.cursor = 'pointer';
-          }
           return;
         }
 
-        if (!feature) {
-          // render previously highlighted tiles as normal
-          if (this._hoveredFeature) {
-            this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        // mouse just left a feature
+        if (this._hoveredFeature) {
+          this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+          if (tile) {
+            tile.style.cursor = 'inherit';
           }
-
-          delete payload.feature;
+          payload.feature = this._hoveredFeature;
+          this.fireEvent('featureLeave', payload);
           this._hoveredFeature = null;
+          return;
+        }
+
+        // mouse is outside any feature
+        if (!feature) {
+          delete payload.feature;
           this.fireEvent('featureOut', payload);
           return;
         }
 
-        if (this._hoveredFeature) {
-          payload.feature = this._hoveredFeature;
-          this.fireEvent('featureLeave', payload);
+        // mouse entered another feature
+        this._hoveredFeature = feature;
+        this._renderQueue = [];
+        this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        if (tile) {
+          tile.style.cursor = 'pointer';
         }
 
         payload.feature = feature;
-        this._hoveredFeature = feature;
         this.fireEvent('featureEnter', payload);
-
-        this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
       }, this);
 
       return L.TileLayer.prototype.onAdd.call(this, map);
@@ -1256,7 +1261,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
-    symbolizer = shadingOrder[r];
+      symbolizer = shadingOrder[r];
 
       for (i = 0, il = collection.length; i < il; i++) {
         feature = collection[i];
@@ -1312,6 +1317,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           break;
         }
       }
+      canvas.finishAll();
     }
   }
 //console.log('RENDER TILE', Date.now()-start);
@@ -1335,11 +1341,11 @@ module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
 proto.createHitShader = function(key) {
-  var s = new Shader();
-  for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].createHitShaderLayer(key));
+  var hitShader = new Shader();
+  for (var i = 0; i < this._layers.length; i++) {
+    hitShader._layers.push(this._layers[i].createHitShaderLayer(key));
   }
-  return s;
+  return hitShader;
 };
 
 proto.update = function(style) {
@@ -1379,8 +1385,9 @@ proto.getLayers = function() {
 
 },{"./shader.layer":14}],14:[function(_dereq_,module,exports){
 
-var Shader = _dereq_('./shader');
+var VECNIK = _dereq_('./core/core');
 var Events = _dereq_('./core/events');
+var Shader = _dereq_('./shader');
 
 var propertyMapping = {
   'marker-width': 'markerSize',
@@ -1457,13 +1464,16 @@ proto.getStyle = function(featureProperties, mapContext) {
     style = {},
     nameAttachment = this._name.split('::')[1];
 
-  if (nameAttachment === 'hover' && (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
-    return style;
-  }
-//console.log('HOVER', featureProperties);
+  if (nameAttachment === 'hover') {
+    if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
+      return style;
+    }
+    }
 
-  if (nameAttachment === 'click' && (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
-    return style;
+  if (nameAttachment === 'click') {
+    if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
+      return style;
+    }
   }
 
   var
@@ -1484,7 +1494,7 @@ proto.getStyle = function(featureProperties, mapContext) {
   }
 
   return style;
-},
+};
 
 proto.getShadingOrder = function() {
   return this._shadingOrder;
@@ -1492,20 +1502,23 @@ proto.getShadingOrder = function() {
 
 /**
  * return a shader clone ready for hit test.
- * @keyAttribute: string with the attribute used as key (usually the feature id)
  */
-proto.createHitShaderLayer = function(key) {
-  var hit = this.clone();
-  // replace all kind of fill and stroke props to use a custom color
-  // TODO: review properties used
-  for (var k in hit._compiled) {
-    if (k === 'polygonFill' || k === 'strokeStyle') {
-      hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[key] + 1).join(',') + ')';
-      };
+proto.createHitShaderLayer = function(idColumn) {
+  var hitLayer = this.clone();
+  for (var k in hitLayer._compiled) {
+    hitLayer._compiled[k] = function(featureProperties, mapContext) {
+      return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+    };
+  }
+
+  // clone symbolizers and skip texts in hit layer
+  hitLayer._shadingOrder = [];
+  for (var i = 0, il = this._shadingOrder.length; i < il; i++) {
+    if (this._shadingOrder[i] !== 'text') {
+      hitLayer._shadingOrder.push(this._shadingOrder[i]);
     }
   }
-  return hit;
+  return hitLayer;
 };
 
 var RGB2Int = function(r, g, b) {
@@ -1523,7 +1536,7 @@ var Int2RGB = function(input) {
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
 
-},{"./core/events":3,"./shader":13}],15:[function(_dereq_,module,exports){
+},{"./core/core":2,"./core/events":3,"./shader":13}],15:[function(_dereq_,module,exports){
 
 var VECNIK = _dereq_('./core/core');
 var ShaderLayer = _dereq_('./shader.layer');
@@ -1587,7 +1600,6 @@ proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
   this._renderer.setShader(currentShader.createHitShader(VECNIK.ID_COLUMN));
-//  this._renderer.setShader(currentShader.createHitShader('id')); // make OSM work
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });

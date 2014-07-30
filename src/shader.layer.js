@@ -1,6 +1,7 @@
 
-var Shader = require('./shader');
+var VECNIK = require('./core/core');
 var Events = require('./core/events');
+var Shader = require('./shader');
 
 var propertyMapping = {
   'marker-width': 'markerSize',
@@ -77,13 +78,16 @@ proto.getStyle = function(featureProperties, mapContext) {
     style = {},
     nameAttachment = this._name.split('::')[1];
 
-  if (nameAttachment === 'hover' && (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
-    return style;
-  }
-//console.log('HOVER', featureProperties);
+  if (nameAttachment === 'hover') {
+    if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
+      return style;
+    }
+    }
 
-  if (nameAttachment === 'click' && (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
-    return style;
+  if (nameAttachment === 'click') {
+    if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
+      return style;
+    }
   }
 
   var
@@ -104,7 +108,7 @@ proto.getStyle = function(featureProperties, mapContext) {
   }
 
   return style;
-},
+};
 
 proto.getShadingOrder = function() {
   return this._shadingOrder;
@@ -112,20 +116,23 @@ proto.getShadingOrder = function() {
 
 /**
  * return a shader clone ready for hit test.
- * @keyAttribute: string with the attribute used as key (usually the feature id)
  */
-proto.createHitShaderLayer = function(key) {
-  var hit = this.clone();
-  // replace all kind of fill and stroke props to use a custom color
-  // TODO: review properties used
-  for (var k in hit._compiled) {
-    if (k === 'polygonFill' || k === 'strokeStyle') {
-      hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[key] + 1).join(',') + ')';
-      };
+proto.createHitShaderLayer = function(idColumn) {
+  var hitLayer = this.clone();
+  for (var k in hitLayer._compiled) {
+    hitLayer._compiled[k] = function(featureProperties, mapContext) {
+      return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+    };
+  }
+
+  // clone symbolizers and skip texts in hit layer
+  hitLayer._shadingOrder = [];
+  for (var i = 0, il = this._shadingOrder.length; i < il; i++) {
+    if (this._shadingOrder[i] !== 'text') {
+      hitLayer._shadingOrder.push(this._shadingOrder[i]);
     }
   }
-  return hit;
+  return hitLayer;
 };
 
 var RGB2Int = function(r, g, b) {

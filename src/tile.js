@@ -61,7 +61,6 @@ proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
   this._renderer.setShader(currentShader.createHitShader(VECNIK.ID_COLUMN));
-//  this._renderer.setShader(currentShader.createHitShader('id')); // make OSM work
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
