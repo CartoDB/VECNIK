@@ -29,16 +29,6 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
-// properties that cause a pointer hit
-var hitProperties = [
-  'markerFill',
-  'markerStrokeStyle',
-  'strokeStyle',
-  'polygonFill' //,
-//  'textFill',
-//  'textStrokeStyle',
-];
-
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
 
@@ -92,7 +82,7 @@ proto.getStyle = function(featureProperties, mapContext) {
     if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
       return style;
     }
-  }
+    }
 
   if (nameAttachment === 'click') {
     if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
@@ -128,16 +118,21 @@ proto.getShadingOrder = function() {
  * return a shader clone ready for hit test.
  */
 proto.createHitShaderLayer = function(idColumn) {
-  var hit = this.clone();
-  // replace all kind of fill and stroke props to use a custom color
-  for (var k in hit._compiled) {
-    if (~hitProperties.indexOf(k)) {
-      hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
-      };
+  var hitLayer = this.clone();
+  for (var k in hitLayer._compiled) {
+    hitLayer._compiled[k] = function(featureProperties, mapContext) {
+      return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+    };
+  }
+
+  // clone symbolizers and skip texts in hit layer
+  hitLayer._shadingOrder = [];
+  for (var i = 0, il = this._shadingOrder.length; i < il; i++) {
+    if (this._shadingOrder[i] !== 'text') {
+      hitLayer._shadingOrder.push(this._shadingOrder[i]);
     }
   }
-  return hit;
+  return hitLayer;
 };
 
 var RGB2Int = function(r, g, b) {

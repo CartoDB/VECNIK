@@ -1341,11 +1341,11 @@ module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
 proto.createHitShader = function(key) {
-  var s = new Shader();
-  for (var i = 0; i < this._layers.length; ++i) {
-    s._layers.push(this._layers[i].createHitShaderLayer(key));
+  var hitShader = new Shader();
+  for (var i = 0; i < this._layers.length; i++) {
+    hitShader._layers.push(this._layers[i].createHitShaderLayer(key));
   }
-  return s;
+  return hitShader;
 };
 
 proto.update = function(style) {
@@ -1415,16 +1415,6 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
-// properties that cause a pointer hit
-var hitProperties = [
-  'markerFill',
-  'markerStrokeStyle',
-  'strokeStyle',
-  'polygonFill' //,
-//  'textFill',
-//  'textStrokeStyle',
-];
-
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
 
@@ -1478,7 +1468,7 @@ proto.getStyle = function(featureProperties, mapContext) {
     if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
       return style;
     }
-  }
+    }
 
   if (nameAttachment === 'click') {
     if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
@@ -1514,16 +1504,21 @@ proto.getShadingOrder = function() {
  * return a shader clone ready for hit test.
  */
 proto.createHitShaderLayer = function(idColumn) {
-  var hit = this.clone();
-  // replace all kind of fill and stroke props to use a custom color
-  for (var k in hit._compiled) {
-    if (~hitProperties.indexOf(k)) {
-      hit._compiled[k] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
-      };
+  var hitLayer = this.clone();
+  for (var k in hitLayer._compiled) {
+    hitLayer._compiled[k] = function(featureProperties, mapContext) {
+      return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+    };
+  }
+
+  // clone symbolizers and skip texts in hit layer
+  hitLayer._shadingOrder = [];
+  for (var i = 0, il = this._shadingOrder.length; i < il; i++) {
+    if (this._shadingOrder[i] !== 'text') {
+      hitLayer._shadingOrder.push(this._shadingOrder[i]);
     }
   }
-  return hit;
+  return hitLayer;
 };
 
 var RGB2Int = function(r, g, b) {
@@ -1605,7 +1600,6 @@ proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
   this._renderer.setShader(currentShader.createHitShader(VECNIK.ID_COLUMN));
-//  this._renderer.setShader(currentShader.createHitShader('id')); // make OSM work
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
