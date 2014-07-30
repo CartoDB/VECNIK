@@ -66,8 +66,6 @@ proto._renderHitGrid = function() {
     zoom: this._coords.z
   });
 
-  this._hitCanvas.filterArtifacts();
-
   // restore shader
   this._renderer.setShader(currentShader);
   return this._hitCanvas.getData();
