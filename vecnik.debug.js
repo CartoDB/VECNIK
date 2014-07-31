@@ -389,7 +389,7 @@ if (typeof L !== 'undefined') {
       };
       setInterval(function() {
         requestAnimationFrame(lazyRender);
-      }, 33);
+      }, 10);
 
       L.TileLayer.prototype.initialize.call(this, '', options);
     },
@@ -420,7 +420,7 @@ if (typeof L !== 'undefined') {
       if (index > -1) {
         if (withPriority) {
           // remove earlier duplicate
-          this._renderQueue = this._renderQueue.splice(index, 1);
+          this._renderQueue.splice(index, 1);
         } else {
           // keep later duplicate and don't do anything
           return;
@@ -512,7 +512,6 @@ if (typeof L !== 'undefined') {
 
         // mouse entered another feature
         this._hoveredFeature = feature;
-        this._renderQueue = [];
         this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
         if (tile) {
           tile.style.cursor = 'pointer';
