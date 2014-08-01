@@ -1607,7 +1607,18 @@ proto._renderHitGrid = function() {
 
   // restore shader
   this._renderer.setShader(currentShader);
-  return this._hitCanvas.getData();
+
+  var data = this._hitCanvas.getData();
+
+  // check, whether somethisng has been drawn
+  // TODO: maybe shader was not ready. try to check this instead
+  for (var i = 0; i < data.length; i++) {
+    if (data[i]) {
+      return data;
+    }
+  }
+
+//  console.log('FAILED to render hit canvas');
 };
 
 /**
@@ -1618,11 +1629,21 @@ proto.getFeatureAt = function(x, y) {
   if (!this._hitGrid) {
     this._hitGrid = this._renderHitGrid();
   }
-  var idx = 4*((y|0) * Tile.SIZE + (x|0));
+
+  if (!this._hitGrid) {
+    return;
+  }
+
+  var i = 4*((y|0) * Tile.SIZE + (x|0));
+
+  if (this._hitGrid[i+3] < 255) {
+    return;
+  }
+
   var id = ShaderLayer.RGB2Int(
-    this._hitGrid[idx],
-    this._hitGrid[idx+1],
-    this._hitGrid[idx+2]
+    this._hitGrid[i  ],
+    this._hitGrid[i+1],
+    this._hitGrid[i+2]
   );
 
   if (!id) {
