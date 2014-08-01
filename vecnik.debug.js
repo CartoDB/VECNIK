@@ -420,7 +420,7 @@ if (typeof L !== 'undefined') {
       if (index > -1) {
         if (withPriority) {
           // remove earlier duplicate
-          this._renderQueue = this._renderQueue.splice(index, 1);
+          this._renderQueue.splice(index, 1);
         } else {
           // keep later duplicate and don't do anything
           return;
@@ -430,11 +430,13 @@ if (typeof L !== 'undefined') {
       this._renderQueue[withPriority ? 'push' : 'unshift'](key);
     },
 
-    _addAffectedToRenderQueue: function(idColumn) {
+    _renderAffectedTiles: function(idColumn) {
       var tiles = this._tileObjects[this._map.getZoom()];
       for (var key in tiles) {
         if (tiles[key].hasFeature(idColumn)) {
-          this._addToRenderQueue(key, true);
+          requestAnimationFrame((function(tile) {
+            return tile.render.bind(tile);
+          }(tiles[key])));
         }
       }
     },
@@ -450,7 +452,7 @@ if (typeof L !== 'undefined') {
 
         // render previously highlighted tiles as normal
         if (this._clickedFeature) {
-          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
+          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
 
         this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
@@ -463,7 +465,7 @@ if (typeof L !== 'undefined') {
             y: e.originalEvent.y
           });
 
-          this._addAffectedToRenderQueue(this._clickedFeature[VECNIK.ID_COLUMN]);
+          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
       }, this);
 
@@ -493,7 +495,7 @@ if (typeof L !== 'undefined') {
 
         // mouse just left a feature
         if (this._hoveredFeature) {
-          this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+          this._renderAffectedTiles(this._hoveredFeature[VECNIK.ID_COLUMN]);
           if (tile) {
             tile.style.cursor = 'inherit';
           }
@@ -512,8 +514,7 @@ if (typeof L !== 'undefined') {
 
         // mouse entered another feature
         this._hoveredFeature = feature;
-        this._renderQueue = [];
-        this._addAffectedToRenderQueue(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        this._renderAffectedTiles(this._hoveredFeature[VECNIK.ID_COLUMN]);
         if (tile) {
           tile.style.cursor = 'pointer';
         }
