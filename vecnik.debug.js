@@ -432,13 +432,13 @@ if (typeof L !== 'undefined') {
 
     _renderAffectedTiles: function(idColumn) {
       var tiles = this._tileObjects[this._map.getZoom()];
-      for (var key in tiles) {
-        if (tiles[key].hasFeature(idColumn)) {
-          requestAnimationFrame((function(tile) {
-            return tile.render.bind(tile);
-          }(tiles[key])));
+      requestAnimationFrame(function() {
+        for (var key in tiles) {
+          if (tiles[key].hasFeature(idColumn)) {
+            tiles[key].render();
+          }
         }
-      }
+      });
     },
 
     _hoveredFeature: null,
@@ -458,14 +458,14 @@ if (typeof L !== 'undefined') {
         this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
 
         if (this._clickedFeature) {
+          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
+
           this.fireEvent('featureClick', {
             feature: this._clickedFeature,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
           });
-
-          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
       }, this);
 
@@ -518,10 +518,10 @@ if (typeof L !== 'undefined') {
         if (tile) {
           tile.style.cursor = 'pointer';
         }
-
         payload.feature = feature;
         this.fireEvent('featureEnter', payload);
       }, this);
+
 
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
