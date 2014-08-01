@@ -587,8 +587,14 @@ if (typeof L !== 'undefined') {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.groupId);
-      if (pos = Geometry.getCentroid(featureParts)) {
+      if (feature.type === Geometry.POINT) {
+        pos = { x:feature.coordinates[0], y: feature.coordinates[1] };
+      } else {
+        var featureParts = this._getFeatureParts(feature.groupId);
+        pos = Geometry.getCentroid(featureParts);
+      }
+
+      if (pos) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
@@ -1272,12 +1278,12 @@ proto.render = function(tile, canvas, collection, mapContext) {
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-
               canvas.setStyle('strokeStyle', style.markerStrokeStyle);
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
-              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
+//              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
+canvas.drawCircle(pos.x, pos.y, 10, 'FS');
             }
           break;
 
