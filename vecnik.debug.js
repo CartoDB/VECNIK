@@ -46,6 +46,7 @@ proto.getData = function() {
 
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
+  this._context.moveTo(x+size, y);
   this._context.arc(x, y, size, 0, Math.PI*2);
 };
 
@@ -1278,12 +1279,13 @@ proto.render = function(tile, canvas, collection, mapContext) {
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
+
               canvas.setStyle('strokeStyle', style.markerStrokeStyle);
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
 //              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
-canvas.drawCircle(pos.x, pos.y, 10, 'FS');
+canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
             }
           break;
 
