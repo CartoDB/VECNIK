@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   State.init(defaultState);
 
-  map = new L.Map('map').setView([0, 0], 10);
+  map = new L.Map('map', { detectRetina: true }).setView([0, 0], 10);
 
   new L.TileLayer('http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21 }).addTo(map);
 

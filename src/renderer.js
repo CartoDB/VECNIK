@@ -57,12 +57,11 @@ proto.render = function(tile, canvas, collection, mapContext) {
 
   // for render order see https://gist.github.com/javisantana/7843f292ecf47f74a27d
 
-//var start = Date.now();
-
   for (s = 0, sl = layers.length; s < sl; s++) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
+shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
       symbolizer = shadingOrder[r];
@@ -80,8 +79,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
-//              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
-canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
+              canvas.drawCircle(pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.markerSize, 'FS' /*strokeFillOrder*/);
             }
           break;
 
@@ -117,7 +115,7 @@ canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
               canvas.setStyle('lineWidth',   style.textLineWidth);
               canvas.setStyle('fillStyle',   style.textFill);
 
-              canvas.drawText(style.textContent, pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.textAlign, !!style.textStrokeStyle);
+              canvas.drawText(style.textContent, pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }
@@ -125,5 +123,4 @@ canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
       canvas.finishAll();
     }
   }
-//console.log('RENDER TILE', Date.now()-start);
 };

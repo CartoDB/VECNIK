@@ -22,7 +22,7 @@ proto._getUrl = function(x, y, zoom) {
 };
 
 proto.load = function(tileCoords, callback) {
-  Format.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), tileCoords, this._projection, callback);
+  Format.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), this._projection, tileCoords, callback);
 };
 
 proto.update = function(options) {

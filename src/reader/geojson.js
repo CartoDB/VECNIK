@@ -2,31 +2,31 @@ var VECNIK = require('../core/core');
 var Geometry = require('../geometry');
 var Projection = require('../mercator');
 
-function _addPoint(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
+function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: groupId,
+    groupId: id,
     type: Geometry.POINT,
-    coordinates: _toBuffer([geoCoords], projection, tileCoords),
+    coordinates: _toBuffer([coordinates], projection, tileCoords),
     properties: properties
   });
 }
 
-function _addLineString(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
+function _addLineString(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: groupId,
+    groupId: id,
     type: Geometry.LINE,
-    coordinates: _toBuffer(geoCoords, projection, tileCoords),
+    coordinates: _toBuffer(coordinates, projection, tileCoords),
     properties: properties
   });
 }
 
-function _addPolygon(geoCoords, projection, groupId, properties, tileCoords, dataByRef) {
+function _addPolygon(coordinates, id, properties, projection, tileCoords, dataByRef) {
   var rings = [];
-  for (var i = 0, il = geoCoords.length; i < il; i++) {
-    rings.push(_toBuffer(geoCoords[i], projection, tileCoords));
+  for (var i = 0, il = coordinates.length; i < il; i++) {
+    rings.push(_toBuffer(coordinates[i], projection, tileCoords));
   }
   dataByRef.push({
-    groupId: groupId,
+    groupId: id,
     type: Geometry.POLYGON,
     coordinates: rings,
     properties: properties
@@ -34,11 +34,7 @@ function _addPolygon(geoCoords, projection, groupId, properties, tileCoords, dat
 }
 
 function _convertAndReproject(collection, projection, tileCoords) {
-  var
-    m, ml,
-    dataByRef = [],
-    feature,
-    type, geoCoords, groupId, properties;
+  var dataByRef = [], feature;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
     feature = collection.features[i];
@@ -47,64 +43,88 @@ function _convertAndReproject(collection, projection, tileCoords) {
       continue;
     }
 
-    type = feature.geometry.type;
-    geoCoords = feature.geometry.coordinates;
-    // TODO: per definition it should be feature.id
-    // it's named 'groupId' instead of just 'id' as it can occur multiple times for multi-geometries or geometries cut by tile borders!
-    groupId = feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN];
-    properties = feature.properties;
-
-    switch (type) {
-      case Geometry.POINT:
-        _addPoint(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
-      break;
-
-      case 'Multi'+ Geometry.POINT:
-        for (m = 0, ml = geoCoords.length; m < ml; m++) {
-          _addPoint(geoCoords[m], projection, groupId, _copy(properties), tileCoords, dataByRef);
-        }
-      break;
-
-      case Geometry.LINE:
-        _addLineString(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
-      break;
-
-      case 'Multi'+ Geometry.LINE:
-        for (m = 0, ml = geoCoords.length; m < ml; m++) {
-          _addLineString(geoCoords[m], projection, _copy(properties), tileCoords, dataByRef);
-        }
-      break;
-
-      case Geometry.POLYGON:
-        _addPolygon(geoCoords, projection, groupId, properties, tileCoords, dataByRef);
-      break;
-
-      case 'Multi'+ Geometry.POLYGON:
-        for (m = 0, ml = geoCoords.length; m < ml; m++) {
-          _addPolygon(geoCoords[m], projection, groupId, _copy(properties), tileCoords, dataByRef);
-        }
-      break;
-    }
+    _addGeometry(
+      // TODO: per GeoJSON definition it should be feature.id
+      feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
+      feature.properties,
+      feature.geometry,
+      projection,
+      tileCoords,
+      dataByRef
+    );
   }
 
   return dataByRef;
 }
 
-function _toBuffer(geoCoords, projection, tileCoords) {
+function _addGeometry(id, properties, geometry, projection, tileCoords, dataByRef) {
   var
-    len = geoCoords.length,
+    i, il,
+    type = geometry.type,
+    coordinates = geometry.coordinates;
+
+  switch (type) {
+    case 'Point':
+      _addPoint(coordinates, id, properties, projection, tileCoords, dataByRef);
+    break;
+
+    case 'MultiPoint':
+      for (i = 0, il = coordinates.length; i < il; i++) {
+        _addPoint(coordinates[i], id, _clone(properties), projection, tileCoords, dataByRef);
+      }
+    break;
+
+    case 'LineString':
+      _addLineString(coordinates, id, properties, projection, tileCoords, dataByRef);
+    break;
+
+    case 'MultiLineString':
+      for (i = 0, il = coordinates.length; i < il; i++) {
+        _addLineString(coordinates[i], _clone(properties), projection, tileCoords, dataByRef);
+      }
+    break;
+
+    case 'Polygon':
+      _addPolygon(coordinates, id, properties, projection, tileCoords, dataByRef);
+    break;
+
+    case 'MultiPolygon':
+      for (i = 0, il = coordinates.length; i < il; i++) {
+        _addPolygon(coordinates[i], id, _clone(properties), projection, tileCoords, dataByRef);
+      }
+    break;
+
+    case 'GeometryCollection':
+      var geometries = geometry.geometries;
+      for (i = 0, il = geometries.length; i < il; i++) {
+        _addGeometry(
+          id,
+          _clone(properties),
+          geometries[i],
+          projection,
+          tileCoords,
+          dataByRef
+        );
+      }
+    break;
+  }
+}
+
+function _toBuffer(coordinates, projection, tileCoords) {
+  var
+    len = coordinates.length,
     point,
     buffer = new Int16Array(len*2);
 
   for (var i = 0; i < len; i++) {
-    point = projection.latLonToTilePoint(geoCoords[i][1], geoCoords[i][0], tileCoords.x, tileCoords.y, tileCoords.z);
+    point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tileCoords.x, tileCoords.y, tileCoords.z);
     buffer[i*2  ] = point.x;
     buffer[i*2+1] = point.y;
   }
   return buffer;
 }
 
-function _copy(obj) {
+function _clone(obj) {
   var
     keys = Object.keys(obj),
     res = {};
@@ -116,7 +136,7 @@ function _copy(obj) {
 
 var Reader = module.exports = {};
 
-Reader.load = function(url, tileCoords, projection, callback) {
+Reader.load = function(url, projection, tileCoords, callback) {
 //  if (!Reader.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.load(url, function(collection) {
@@ -128,7 +148,7 @@ Reader.load = function(url, tileCoords, projection, callback) {
       callback(e.data);
     };
 
-    worker.postMessage({ url:url, tileCoords:tileCoords });
+    worker.postMessage({ url: url, tileCoords: tileCoords });
   }
 };
 
