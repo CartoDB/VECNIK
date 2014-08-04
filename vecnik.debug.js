@@ -160,20 +160,43 @@ prop = props[i];
 
 var Core = module.exports = {};
 
-Core.load = function(url, callback) {
-  var req = new XMLHttpRequest();
-  req.onreadystatechange = function() {
-    if (req.readyState === 4) {
-      if (req.status === 200) {
-        callback(JSON.parse(req.responseText));
-      }
-      // TODO: add error handling
+Core.load = function(url, successHandler, errorHandler) {
+  var xhr = new XMLHttpRequest();
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) {
+      return;
     }
+
+    if (!xhr.status || xhr.status < 200 || xhr.status > 299) {
+      if (errorHandler) {
+        errorHandler(xhr);
+      }
+      return;
+    }
+
+    if (!successHandler) {
+      return;
+    }
+
+    var json;
+
+    try {
+      json = JSON.parse(xhr.responseText);
+    } catch (ex) {
+      console.error('Invalid JSON resource:\n'+ url);
+      if (errorHandler) {
+        errorHandler(ex);
+      }
+      return;
+    }
+
+    successHandler(json);
   };
 
-  req.open('GET', url, true);
-  req.send(null);
-  return req;
+  xhr.open('GET', url, true);
+  xhr.send(null);
+  return xhr;
 };
 
 // TODO: make this configurable
@@ -1280,7 +1303,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
-shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
+shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for text/hover
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
       symbolizer = shadingOrder[r];
