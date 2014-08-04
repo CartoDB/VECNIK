@@ -247,9 +247,7 @@ if (typeof L !== 'undefined') {
       }
 
       var featureParts = this._getFeatureParts(feature.groupId);
-      pos = Geometry.getCentroid(featureParts);
-
-      if (pos) {
+      if (pos = Geometry.getCentroid(featureParts)) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
