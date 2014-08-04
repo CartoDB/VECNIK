@@ -108,7 +108,6 @@ shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
           break;
 
           case Shader.TEXT:
-            // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
               canvas.setStyle('strokeStyle', style.textStrokeStyle);

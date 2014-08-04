@@ -1,7 +1,6 @@
 
 var Core = module.exports = {};
 
-// TODO: http get - should be improved
 Core.load = function(url, callback) {
   var req = new XMLHttpRequest();
   req.onreadystatechange = function() {
@@ -9,6 +8,7 @@ Core.load = function(url, callback) {
       if (req.status === 200) {
         callback(JSON.parse(req.responseText));
       }
+      // TODO: add error handling
     }
   };
 

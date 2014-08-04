@@ -1,8 +1,4 @@
 
-// TODO: stroke/fill order
-// var shadingOrder, strokeAndFill;
-// strokeAndFill = getStrokeFillOrder(shadingOrder);
-
 var Canvas = module.exports = function(options) {
   options = options || {};
 
