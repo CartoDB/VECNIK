@@ -444,7 +444,7 @@ if (typeof L !== 'undefined') {
     _clickedFeature: null,
 
     onAdd: function(map) {
-alert('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+// alert('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
