@@ -62,7 +62,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
-shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
+shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for text/hover
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
       symbolizer = shadingOrder[r];
