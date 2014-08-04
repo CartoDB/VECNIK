@@ -246,12 +246,8 @@ if (typeof L !== 'undefined') {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      if (feature.type === Geometry.POINT) {
-        pos = { x:feature.coordinates[0], y: feature.coordinates[1] };
-      } else {
-        var featureParts = this._getFeatureParts(feature.groupId);
-        pos = Geometry.getCentroid(featureParts);
-      }
+      var featureParts = this._getFeatureParts(feature.groupId);
+      pos = Geometry.getCentroid(featureParts);
 
       if (pos) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };

@@ -588,12 +588,8 @@ if (typeof L !== 'undefined') {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      if (feature.type === Geometry.POINT) {
-        pos = { x:feature.coordinates[0], y: feature.coordinates[1] };
-      } else {
-        var featureParts = this._getFeatureParts(feature.groupId);
-        pos = Geometry.getCentroid(featureParts);
-      }
+      var featureParts = this._getFeatureParts(feature.groupId);
+      pos = Geometry.getCentroid(featureParts);
 
       if (pos) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
@@ -1284,8 +1280,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
-//              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
-canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
+              canvas.drawCircle(pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.markerSize, 'FS' /*strokeFillOrder*/);
+//canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
             }
           break;
 
@@ -1321,7 +1317,7 @@ canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
               canvas.setStyle('lineWidth',   style.textLineWidth);
               canvas.setStyle('fillStyle',   style.textFill);
 
-              canvas.drawText(style.textContent, pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.textAlign, !!style.textStrokeStyle);
+              canvas.drawText(style.textContent, pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }
