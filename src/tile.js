@@ -116,9 +116,9 @@ proto.getFeatureAt = function(x, y) {
   }
 };
 
-proto.getFeature = function(groupId) {
+proto.getFeature = function(id) {
   for (var i = 0, il = this._data.length; i < il; i++) {
-    if (this._data[i].groupId === groupId) {
+    if (this._data[i].id === id) {
       return this._data[i];
     }
   }

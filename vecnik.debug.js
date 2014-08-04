@@ -580,18 +580,18 @@ if (typeof L !== 'undefined') {
         scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._centroidPositions[feature.groupId]) {
+      if (pos = this._centroidPositions[feature.id]) {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.groupId);
+      var featureParts = this._getFeatureParts(feature.id);
       if (pos = Geometry.getCentroid(featureParts)) {
-        this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
+        this._centroidPositions[feature.id] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
 
-    _getFeatureParts: function(groupId) {
+    _getFeatureParts: function(id) {
       var
         tiles = this._tileObjects[this._map.getZoom()],
         tile,
@@ -602,7 +602,7 @@ if (typeof L !== 'undefined') {
         tile = tiles[key];
         for (f = 0, fl = tile._data.length; f < fl; f++) {
           feature = tile._data[f];
-          if (feature.groupId === groupId) {
+          if (feature.id === id) {
             featureParts.push({ feature: feature, tileCoords: tile.getCoords() });
           }
         }
@@ -1057,7 +1057,7 @@ var Projection = _dereq_('../mercator');
 
 function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.POINT,
     coordinates: _toBuffer([coordinates], projection, tileCoords),
     properties: properties
@@ -1066,7 +1066,7 @@ function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRe
 
 function _addLineString(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.LINE,
     coordinates: _toBuffer(coordinates, projection, tileCoords),
     properties: properties
@@ -1079,7 +1079,7 @@ function _addPolygon(coordinates, id, properties, projection, tileCoords, dataBy
     rings.push(_toBuffer(coordinates[i], projection, tileCoords));
   }
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.POLYGON,
     coordinates: rings,
     properties: properties
@@ -1670,9 +1670,9 @@ proto.getFeatureAt = function(x, y) {
   }
 };
 
-proto.getFeature = function(groupId) {
+proto.getFeature = function(id) {
   for (var i = 0, il = this._data.length; i < il; i++) {
-    if (this._data[i].groupId === groupId) {
+    if (this._data[i].id === id) {
       return this._data[i];
     }
   }

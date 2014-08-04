@@ -242,18 +242,18 @@ if (typeof L !== 'undefined') {
         scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._centroidPositions[feature.groupId]) {
+      if (pos = this._centroidPositions[feature.id]) {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.groupId);
+      var featureParts = this._getFeatureParts(feature.id);
       if (pos = Geometry.getCentroid(featureParts)) {
-        this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
+        this._centroidPositions[feature.id] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
 
-    _getFeatureParts: function(groupId) {
+    _getFeatureParts: function(id) {
       var
         tiles = this._tileObjects[this._map.getZoom()],
         tile,
@@ -264,7 +264,7 @@ if (typeof L !== 'undefined') {
         tile = tiles[key];
         for (f = 0, fl = tile._data.length; f < fl; f++) {
           feature = tile._data[f];
-          if (feature.groupId === groupId) {
+          if (feature.id === id) {
             featureParts.push({ feature: feature, tileCoords: tile.getCoords() });
           }
         }
