@@ -110,17 +110,17 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  // TODO: return the real feature
-  var feature = {};
-  feature[VECNIK.ID_COLUMN] = id-1;
-  return feature;
+  var feature = this.getFeature(id-1);
+  if (feature) {
+    return feature.properties;
+  }
 };
 
-proto.hasFeature = function(groupId) {
+proto.getFeature = function(groupId) {
   for (var i = 0, il = this._data.length; i < il; i++) {
     if (this._data[i].groupId === groupId) {
-      return true;
+      return this._data[i];
     }
   }
-  return false;
+  return;
 };

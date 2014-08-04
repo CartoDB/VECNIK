@@ -93,7 +93,7 @@ if (typeof L !== 'undefined') {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
         for (var key in tiles) {
-          if (tiles[key].hasFeature(idColumn)) {
+          if (!!tiles[key].getFeature(idColumn)) {
             tiles[key].render();
           }
         }

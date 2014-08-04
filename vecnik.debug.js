@@ -1,9 +1,5 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.VECNIK=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 
-// TODO: stroke/fill order
-// var shadingOrder, strokeAndFill;
-// strokeAndFill = getStrokeFillOrder(shadingOrder);
-
 var Canvas = module.exports = function(options) {
   options = options || {};
 
@@ -164,7 +160,6 @@ prop = props[i];
 
 var Core = module.exports = {};
 
-// TODO: http get - should be improved
 Core.load = function(url, callback) {
   var req = new XMLHttpRequest();
   req.onreadystatechange = function() {
@@ -172,6 +167,7 @@ Core.load = function(url, callback) {
       if (req.status === 200) {
         callback(JSON.parse(req.responseText));
       }
+      // TODO: add error handling
     }
   };
 
@@ -435,7 +431,7 @@ if (typeof L !== 'undefined') {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
         for (var key in tiles) {
-          if (tiles[key].hasFeature(idColumn)) {
+          if (!!tiles[key].getFeature(idColumn)) {
             tiles[key].render();
           }
         }
@@ -1279,7 +1275,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
-shadingOrder = ['polygon', 'line', 'text'];
+shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
       symbolizer = shadingOrder[r];
@@ -1326,7 +1322,6 @@ shadingOrder = ['polygon', 'line', 'text'];
           break;
 
           case Shader.TEXT:
-            // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
               canvas.setStyle('strokeStyle', style.textStrokeStyle);
@@ -1669,19 +1664,19 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  // TODO: return the real feature
-  var feature = {};
-  feature[VECNIK.ID_COLUMN] = id-1;
-  return feature;
+  var feature = this.getFeature(id-1);
+  if (feature) {
+    return feature.properties;
+  }
 };
 
-proto.hasFeature = function(groupId) {
+proto.getFeature = function(groupId) {
   for (var i = 0, il = this._data.length; i < il; i++) {
     if (this._data[i].groupId === groupId) {
-      return true;
+      return this._data[i];
     }
   }
-  return false;
+  return;
 };
 
 },{"./canvas":1,"./core/core":2,"./shader.layer":14}]},{},[6])
