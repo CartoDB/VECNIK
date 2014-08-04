@@ -17,9 +17,10 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   var geom_column_orig = '"the_geom"';
   var id_column = options.idColumn || VECNIK.ID_COLUMN; // though we dont't like the id column to be set manually,
                                                     // it allows us to have a different id column for OSM access
-  var TILE_SIZE = 256;
-  var tile_pixel_width = TILE_SIZE;
-  var tile_pixel_height = TILE_SIZE;
+//  var tileSize = L.Browser.retina ? 512 : 256;
+  var tileSize = 256;
+  var tile_pixel_width = tileSize;
+  var tile_pixel_height = tileSize;
 
   //console.log('-- ZOOM: ' + zoom);
 

@@ -4,7 +4,7 @@ var Projection = require('../mercator');
 
 function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.POINT,
     coordinates: _toBuffer([coordinates], projection, tileCoords),
     properties: properties
@@ -13,7 +13,7 @@ function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRe
 
 function _addLineString(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.LINE,
     coordinates: _toBuffer(coordinates, projection, tileCoords),
     properties: properties
@@ -26,7 +26,7 @@ function _addPolygon(coordinates, id, properties, projection, tileCoords, dataBy
     rings.push(_toBuffer(coordinates[i], projection, tileCoords));
   }
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.POLYGON,
     coordinates: rings,
     properties: properties

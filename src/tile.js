@@ -6,8 +6,9 @@ var Canvas = require('./canvas');
 var Tile = module.exports = function(options) {
   options = options || {};
 
-  this._canvas = new Canvas({ size: Tile.SIZE }),
-  this._hitCanvas = new Canvas({ size: Tile.SIZE });
+  this._tileSize = options.size || 256;
+  this._canvas = new Canvas({ size: this._tileSize }),
+  this._hitCanvas = new Canvas({ size: this._tileSize });
 
   this._layer = options.layer;
   this._renderer = options.renderer;
@@ -21,10 +22,7 @@ var Tile = module.exports = function(options) {
   });
 };
 
-Tile.SIZE = 256;
-
 var proto = Tile.prototype;
-
 
 proto.getDomElement = function() {
   return this._canvas.getDomElement();
@@ -36,6 +34,10 @@ proto.getLayer = function() {
 
 proto.getCoords = function() {
   return this._coords;
+};
+
+proto.getSize = function() {
+  return this._tileSize;
 };
 
 proto.render = function() {
@@ -94,9 +96,9 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  var i = 4*((y|0) * Tile.SIZE + (x|0));
+  var i = 4*((y|0) * this._tileSize + (x|0));
 
-  if (this._hitGrid[i+3] < 255) {
+  if (this._hitGrid[i+3] < this._tileSize-1) {
     return;
   }
 
@@ -110,17 +112,17 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  // TODO: return the real feature
-  var feature = {};
-  feature[VECNIK.ID_COLUMN] = id-1;
-  return feature;
+  var feature = this.getFeature(id-1);
+  if (feature) {
+    return feature.properties;
+  }
 };
 
-proto.hasFeature = function(groupId) {
+proto.getFeature = function(id) {
   for (var i = 0, il = this._data.length; i < il; i++) {
-    if (this._data[i].groupId === groupId) {
-      return true;
+    if (this._data[i].id === id) {
+      return this._data[i];
     }
   }
-  return false;
+  return;
 };

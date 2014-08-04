@@ -15,7 +15,6 @@ proto._getUrl = function(x, y, zoom) {
     .replace('{y}', y.toFixed(0));
 };
 
-// TODO: refactor this
 proto.load = function(coords, callback) {
-  Core.load(this._getUrl(coords.x, coords.y, coords.z), callback); // TODO: implement async conversion and projection
+  Core.load(this._getUrl(coords.x, coords.y, coords.z), callback);
 };

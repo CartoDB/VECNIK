@@ -1,9 +1,5 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.VECNIK=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 
-// TODO: stroke/fill order
-// var shadingOrder, strokeAndFill;
-// strokeAndFill = getStrokeFillOrder(shadingOrder);
-
 var Canvas = module.exports = function(options) {
   options = options || {};
 
@@ -164,7 +160,6 @@ prop = props[i];
 
 var Core = module.exports = {};
 
-// TODO: http get - should be improved
 Core.load = function(url, callback) {
   var req = new XMLHttpRequest();
   req.onreadystatechange = function() {
@@ -172,6 +167,7 @@ Core.load = function(url, callback) {
       if (req.status === 200) {
         callback(JSON.parse(req.responseText));
       }
+      // TODO: add error handling
     }
   };
 
@@ -236,8 +232,8 @@ proto.getCentroid = function(featureParts) {
   }
 
   coordinates = part.feature.coordinates;
-  tileX = part.tileCoords.x*256;
-  tileY = part.tileCoords.y*256;
+  tileX = part.tileCoords.x*part.tileSize;
+  tileY = part.tileCoords.y*part.tileSize;
 
   if (part.feature.type === Geometry.POINT) {
     return {
@@ -396,10 +392,11 @@ if (typeof L !== 'undefined') {
     },
 
     _getFeatureFromPos: function(pos) {
-      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var tileSize = this._getTileSize();
+      var tile = { x: (pos.x/tileSize) | 0, y: (pos.y/tileSize) | 0 };
       var key = this._tileCoordsToKey(tile);
-      var tileX = pos.x - 256*tile.x;
-      var tileY = pos.y - 256*tile.y;
+      var tileX = pos.x - tileSize*tile.x;
+      var tileY = pos.y - tileSize*tile.y;
       var tiles = this._tileObjects[this._map.getZoom()];
 
       if (!tiles[key]) {
@@ -410,7 +407,8 @@ if (typeof L !== 'undefined') {
     },
 
     _getTileFromPos: function(pos) {
-      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var tileSize = this._getTileSize();
+      var tile = { x: (pos.x/tileSize) | 0, y: (pos.y/tileSize) | 0 };
       var key = this._tileCoordsToKey(tile);
       return this._tiles[key];
     },
@@ -435,7 +433,7 @@ if (typeof L !== 'undefined') {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
         for (var key in tiles) {
-          if (tiles[key].hasFeature(idColumn)) {
+          if (!!tiles[key].getFeature(idColumn)) {
             tiles[key].render();
           }
         }
@@ -446,6 +444,8 @@ if (typeof L !== 'undefined') {
     _clickedFeature: null,
 
     onAdd: function(map) {
+// alert('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
@@ -534,6 +534,7 @@ if (typeof L !== 'undefined') {
 
     createTile: function(coords) {
       var tile = new Tile({
+        size: this._getTileSize(),
         coords: coords,
         layer: this,
         provider: this._provider,
@@ -584,18 +585,18 @@ if (typeof L !== 'undefined') {
         scale = Math.pow(2, this._map.getZoom()),
         pos;
 
-      if (pos = this._centroidPositions[feature.groupId]) {
+      if (pos = this._centroidPositions[feature.id]) {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.groupId);
+      var featureParts = this._getFeatureParts(feature.id);
       if (pos = Geometry.getCentroid(featureParts)) {
-        this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
+        this._centroidPositions[feature.id] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
 
-    _getFeatureParts: function(groupId) {
+    _getFeatureParts: function(id) {
       var
         tiles = this._tileObjects[this._map.getZoom()],
         tile,
@@ -606,8 +607,8 @@ if (typeof L !== 'undefined') {
         tile = tiles[key];
         for (f = 0, fl = tile._data.length; f < fl; f++) {
           feature = tile._data[f];
-          if (feature.groupId === groupId) {
-            featureParts.push({ feature: feature, tileCoords: tile.getCoords() });
+          if (feature.id === id) {
+            featureParts.push({ feature: feature, tileCoords: tile.getCoords(), tileSize: tile.getSize() });
           }
         }
       }
@@ -671,10 +672,6 @@ module.exports = VECNIK;
 
 var Tile = _dereq_('./tile');
 
-// TODO: somehow Tile.SIZE gets lost on tile creation
-//var tileSize = Tile ? Tile.SIZE : 256;
-var tileSize = Tile.SIZE || 256;
-
 var Point = function(x, y) {
   this.x = x || 0;
   this.y = y || 0;
@@ -696,9 +693,11 @@ function radiansToDegrees(rad) {
 
 
 var MercatorProjection = module.exports = function() {
-  this._pixelOrigin = new Point(tileSize / 2, tileSize / 2);
-  this._pixelsPerLonDegree = tileSize / 360;
-  this._pixelsPerLonRadian = tileSize / (2 * Math.PI);
+//  this._tileSize = L.Browser.retina ? 512 : 256;
+  this._tileSize = 256;
+  this._pixelOrigin = new Point(this._tileSize / 2, this._tileSize / 2);
+  this._pixelsPerLonDegree = this._tileSize / 360;
+  this._pixelsPerLonRadian = this._tileSize / (2 * Math.PI);
 };
 
 MercatorProjection.prototype._fromLatLonToPoint = function(lat, lon) {
@@ -726,17 +725,17 @@ MercatorProjection.prototype._fromPointToLatLon = function(point) {
 
 MercatorProjection.prototype._tilePixelPos = function(tileX, tileY) {
   return {
-    x: tileX*tileSize,
-    y: tileY*tileSize
+    x: tileX*this._tileSize,
+    y: tileY*this._tileSize
   };
 };
 
 MercatorProjection.prototype.tileBBox = function(x, y, zoom, bufferSize) {
   var numTiles = 1 <<zoom;
   bufferSize = bufferSize || 0;
-  var inc =  (tileSize + bufferSize*2)/numTiles;
-  var px = (x*tileSize - bufferSize  )/numTiles;
-  var py = (y*tileSize - bufferSize  )/numTiles;
+  var inc =  (this._tileSize + bufferSize*2)/numTiles;
+  var px = (x*this._tileSize - bufferSize  )/numTiles;
+  var py = (y*this._tileSize - bufferSize  )/numTiles;
   return [
     this._fromPointToLatLon(new Point(px, py + inc)),
     this._fromPointToLatLon(new Point(px + inc, py))
@@ -966,9 +965,10 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   var geom_column_orig = '"the_geom"';
   var id_column = options.idColumn || VECNIK.ID_COLUMN; // though we dont't like the id column to be set manually,
                                                     // it allows us to have a different id column for OSM access
-  var TILE_SIZE = 256;
-  var tile_pixel_width = TILE_SIZE;
-  var tile_pixel_height = TILE_SIZE;
+//  var tileSize = L.Browser.retina ? 512 : 256;
+  var tileSize = 256;
+  var tile_pixel_width = tileSize;
+  var tile_pixel_height = tileSize;
 
   //console.log('-- ZOOM: ' + zoom);
 
@@ -1061,7 +1061,7 @@ var Projection = _dereq_('../mercator');
 
 function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.POINT,
     coordinates: _toBuffer([coordinates], projection, tileCoords),
     properties: properties
@@ -1070,7 +1070,7 @@ function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRe
 
 function _addLineString(coordinates, id, properties, projection, tileCoords, dataByRef) {
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.LINE,
     coordinates: _toBuffer(coordinates, projection, tileCoords),
     properties: properties
@@ -1083,7 +1083,7 @@ function _addPolygon(coordinates, id, properties, projection, tileCoords, dataBy
     rings.push(_toBuffer(coordinates[i], projection, tileCoords));
   }
   dataByRef.push({
-    groupId: id,
+    id: id,
     type: Geometry.POLYGON,
     coordinates: rings,
     properties: properties
@@ -1262,6 +1262,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
+    tileSize = tile.getSize(),
     layers = this._shader.getLayers(),
     collection,
     shaderLayer, style,
@@ -1279,7 +1280,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
-shadingOrder = ['polygon', 'line', 'text'];
+shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
       symbolizer = shadingOrder[r];
@@ -1297,7 +1298,7 @@ shadingOrder = ['polygon', 'line', 'text'];
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
-              canvas.drawCircle(pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.markerSize, 'FS' /*strokeFillOrder*/);
+              canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.markerSize, 'FS' /*strokeFillOrder*/);
             }
           break;
 
@@ -1326,14 +1327,13 @@ shadingOrder = ['polygon', 'line', 'text'];
           break;
 
           case Shader.TEXT:
-            // TODO: solve labels closely beyond tile border
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
               canvas.setStyle('strokeStyle', style.textStrokeStyle);
               canvas.setStyle('lineWidth',   style.textLineWidth);
               canvas.setStyle('fillStyle',   style.textFill);
 
-              canvas.drawText(style.textContent, pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.textAlign, !!style.textStrokeStyle);
+              canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }
@@ -1565,8 +1565,9 @@ var Canvas = _dereq_('./canvas');
 var Tile = module.exports = function(options) {
   options = options || {};
 
-  this._canvas = new Canvas({ size: Tile.SIZE }),
-  this._hitCanvas = new Canvas({ size: Tile.SIZE });
+  this._tileSize = options.size || 256;
+  this._canvas = new Canvas({ size: this._tileSize }),
+  this._hitCanvas = new Canvas({ size: this._tileSize });
 
   this._layer = options.layer;
   this._renderer = options.renderer;
@@ -1580,10 +1581,7 @@ var Tile = module.exports = function(options) {
   });
 };
 
-Tile.SIZE = 256;
-
 var proto = Tile.prototype;
-
 
 proto.getDomElement = function() {
   return this._canvas.getDomElement();
@@ -1595,6 +1593,10 @@ proto.getLayer = function() {
 
 proto.getCoords = function() {
   return this._coords;
+};
+
+proto.getSize = function() {
+  return this._tileSize;
 };
 
 proto.render = function() {
@@ -1653,9 +1655,9 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  var i = 4*((y|0) * Tile.SIZE + (x|0));
+  var i = 4*((y|0) * this._tileSize + (x|0));
 
-  if (this._hitGrid[i+3] < 255) {
+  if (this._hitGrid[i+3] < this._tileSize-1) {
     return;
   }
 
@@ -1669,19 +1671,19 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  // TODO: return the real feature
-  var feature = {};
-  feature[VECNIK.ID_COLUMN] = id-1;
-  return feature;
+  var feature = this.getFeature(id-1);
+  if (feature) {
+    return feature.properties;
+  }
 };
 
-proto.hasFeature = function(groupId) {
+proto.getFeature = function(id) {
   for (var i = 0, il = this._data.length; i < il; i++) {
-    if (this._data[i].groupId === groupId) {
-      return true;
+    if (this._data[i].id === id) {
+      return this._data[i];
     }
   }
-  return false;
+  return;
 };
 
 },{"./canvas":1,"./core/core":2,"./shader.layer":14}]},{},[6])
