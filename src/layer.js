@@ -91,13 +91,13 @@ if (typeof L !== 'undefined') {
 
     _renderAffectedTiles: function(idColumn) {
       var tiles = this._tileObjects[this._map.getZoom()];
-      for (var key in tiles) {
-        if (tiles[key].hasFeature(idColumn)) {
-          requestAnimationFrame((function(tile) {
-            return tile.render.bind(tile);
-          }(tiles[key])));
+      requestAnimationFrame(function() {
+        for (var key in tiles) {
+          if (tiles[key].hasFeature(idColumn)) {
+            tiles[key].render();
+          }
         }
-      }
+      });
     },
 
     _hoveredFeature: null,
@@ -117,14 +117,14 @@ if (typeof L !== 'undefined') {
         this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
 
         if (this._clickedFeature) {
+          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
+
           this.fireEvent('featureClick', {
             feature: this._clickedFeature,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
           });
-
-          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
       }, this);
 
@@ -177,10 +177,10 @@ if (typeof L !== 'undefined') {
         if (tile) {
           tile.style.cursor = 'pointer';
         }
-
         payload.feature = feature;
         this.fireEvent('featureEnter', payload);
       }, this);
+
 
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
@@ -246,8 +246,14 @@ if (typeof L !== 'undefined') {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.groupId);
-      if (pos = Geometry.getCentroid(featureParts)) {
+      if (feature.type === Geometry.POINT) {
+        pos = { x:feature.coordinates[0], y: feature.coordinates[1] };
+      } else {
+        var featureParts = this._getFeatureParts(feature.groupId);
+        pos = Geometry.getCentroid(featureParts);
+      }
+
+      if (pos) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }

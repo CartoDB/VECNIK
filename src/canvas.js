@@ -45,6 +45,7 @@ proto.getData = function() {
 
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
+  this._context.moveTo(x+size, y);
   this._context.arc(x, y, size, 0, Math.PI*2);
 };
 

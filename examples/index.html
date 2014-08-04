@@ -231,24 +231,30 @@ document.addEventListener('DOMContentLoaded', function() {
     interaction: true
   });
 
+  var tooltip = $('#tooltip');
+
   vlayer.addTo(map)
-    .on('featureOver', function(e) {
-      var tooltip = $('#tooltip');
+    .on('featureEnter', function(e) {
       tooltip.style.display = 'block';
       tooltip.innerText     = e.feature.cartodb_id;
       tooltip.style.left    = (e.x+10) +'px';
       tooltip.style.top     = (e.y+10) +'px';
     })
+    .on('featureOver', function(e) {
+      tooltip.style.left = (e.x+10) +'px';
+      tooltip.style.top  = (e.y+10) +'px';
+    })
     .on('featureOut', function(e) {
-      $('#tooltip').style.display = 'none';
+      tooltip.style.display = 'none';
     })
     .on('featureClick', function(e) {
-      $('#tooltip').innerText += ' clicked';
+      tooltip.innerText += ' clicked';
     });
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);
 
   map.on('moveend zoomend', updateMap);
 });
+
 </script>
 </head>
 

@@ -80,7 +80,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
-              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
+//              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
+canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
             }
           break;
 

@@ -46,6 +46,7 @@ proto.getData = function() {
 
 proto.drawCircle = function(x, y, size, strokeFillOrder) {
   this._beginBatch('circle', strokeFillOrder);
+  this._context.moveTo(x+size, y);
   this._context.arc(x, y, size, 0, Math.PI*2);
 };
 
@@ -432,13 +433,13 @@ if (typeof L !== 'undefined') {
 
     _renderAffectedTiles: function(idColumn) {
       var tiles = this._tileObjects[this._map.getZoom()];
-      for (var key in tiles) {
-        if (tiles[key].hasFeature(idColumn)) {
-          requestAnimationFrame((function(tile) {
-            return tile.render.bind(tile);
-          }(tiles[key])));
+      requestAnimationFrame(function() {
+        for (var key in tiles) {
+          if (tiles[key].hasFeature(idColumn)) {
+            tiles[key].render();
+          }
         }
-      }
+      });
     },
 
     _hoveredFeature: null,
@@ -458,14 +459,14 @@ if (typeof L !== 'undefined') {
         this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
 
         if (this._clickedFeature) {
+          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
+
           this.fireEvent('featureClick', {
             feature: this._clickedFeature,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
           });
-
-          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
         }
       }, this);
 
@@ -518,10 +519,10 @@ if (typeof L !== 'undefined') {
         if (tile) {
           tile.style.cursor = 'pointer';
         }
-
         payload.feature = feature;
         this.fireEvent('featureEnter', payload);
       }, this);
+
 
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
@@ -587,8 +588,14 @@ if (typeof L !== 'undefined') {
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.groupId);
-      if (pos = Geometry.getCentroid(featureParts)) {
+      if (feature.type === Geometry.POINT) {
+        pos = { x:feature.coordinates[0], y: feature.coordinates[1] };
+      } else {
+        var featureParts = this._getFeatureParts(feature.groupId);
+        pos = Geometry.getCentroid(featureParts);
+      }
+
+      if (pos) {
         this._centroidPositions[feature.groupId] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
@@ -1277,7 +1284,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
-              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
+//              canvas.drawCircle(pos.x-tileCoords.x * 256, pos.y-tileCoords.y * 256, style.markerSize, strokeFillOrder);
+canvas.drawCircle(pos.x, pos.y, style.markerSize, 'FS');
             }
           break;
 
@@ -1607,7 +1615,18 @@ proto._renderHitGrid = function() {
 
   // restore shader
   this._renderer.setShader(currentShader);
-  return this._hitCanvas.getData();
+
+  var data = this._hitCanvas.getData();
+
+  // check, whether somethisng has been drawn
+  // TODO: maybe shader was not ready. try to check this instead
+  for (var i = 0; i < data.length; i++) {
+    if (data[i]) {
+      return data;
+    }
+  }
+
+//  console.log('FAILED to render hit canvas');
 };
 
 /**
@@ -1618,11 +1637,21 @@ proto.getFeatureAt = function(x, y) {
   if (!this._hitGrid) {
     this._hitGrid = this._renderHitGrid();
   }
-  var idx = 4*((y|0) * Tile.SIZE + (x|0));
+
+  if (!this._hitGrid) {
+    return;
+  }
+
+  var i = 4*((y|0) * Tile.SIZE + (x|0));
+
+  if (this._hitGrid[i+3] < 255) {
+    return;
+  }
+
   var id = ShaderLayer.RGB2Int(
-    this._hitGrid[idx],
-    this._hitGrid[idx+1],
-    this._hitGrid[idx+2]
+    this._hitGrid[i  ],
+    this._hitGrid[i+1],
+    this._hitGrid[i+2]
   );
 
   if (!id) {
