@@ -44,6 +44,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
   var
     layer = tile.getLayer(),
     tileCoords = tile.getCoords(),
+    tileSize = tile.getSize(),
     layers = this._shader.getLayers(),
     collection,
     shaderLayer, style,
@@ -79,7 +80,7 @@ shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
-              canvas.drawCircle(pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.markerSize, 'FS' /*strokeFillOrder*/);
+              canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.markerSize, 'FS' /*strokeFillOrder*/);
             }
           break;
 
@@ -114,7 +115,7 @@ shadingOrder = ['polygon', 'line', 'text']; // TODO: fix this for text/hover
               canvas.setStyle('lineWidth',   style.textLineWidth);
               canvas.setStyle('fillStyle',   style.textFill);
 
-              canvas.drawText(style.textContent, pos.x - tileCoords.x*256, pos.y - tileCoords.y*256, style.textAlign, !!style.textStrokeStyle);
+              canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textStrokeStyle);
             }
           break;
         }

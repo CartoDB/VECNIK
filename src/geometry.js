@@ -25,8 +25,8 @@ proto.getCentroid = function(featureParts) {
   }
 
   coordinates = part.feature.coordinates;
-  tileX = part.tileCoords.x*256;
-  tileY = part.tileCoords.y*256;
+  tileX = part.tileCoords.x*part.tileSize;
+  tileY = part.tileCoords.y*part.tileSize;
 
   if (part.feature.type === Geometry.POINT) {
     return {

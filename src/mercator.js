@@ -1,10 +1,6 @@
 
 var Tile = require('./tile');
 
-// TODO: somehow Tile.SIZE gets lost on tile creation
-//var tileSize = Tile ? Tile.SIZE : 256;
-var tileSize = Tile.SIZE || 256;
-
 var Point = function(x, y) {
   this.x = x || 0;
   this.y = y || 0;
@@ -26,9 +22,11 @@ function radiansToDegrees(rad) {
 
 
 var MercatorProjection = module.exports = function() {
-  this._pixelOrigin = new Point(tileSize / 2, tileSize / 2);
-  this._pixelsPerLonDegree = tileSize / 360;
-  this._pixelsPerLonRadian = tileSize / (2 * Math.PI);
+//  this._tileSize = L.Browser.retina ? 512 : 256;
+  this._tileSize = 256;
+  this._pixelOrigin = new Point(this._tileSize / 2, this._tileSize / 2);
+  this._pixelsPerLonDegree = this._tileSize / 360;
+  this._pixelsPerLonRadian = this._tileSize / (2 * Math.PI);
 };
 
 MercatorProjection.prototype._fromLatLonToPoint = function(lat, lon) {
@@ -56,17 +54,17 @@ MercatorProjection.prototype._fromPointToLatLon = function(point) {
 
 MercatorProjection.prototype._tilePixelPos = function(tileX, tileY) {
   return {
-    x: tileX*tileSize,
-    y: tileY*tileSize
+    x: tileX*this._tileSize,
+    y: tileY*this._tileSize
   };
 };
 
 MercatorProjection.prototype.tileBBox = function(x, y, zoom, bufferSize) {
   var numTiles = 1 <<zoom;
   bufferSize = bufferSize || 0;
-  var inc =  (tileSize + bufferSize*2)/numTiles;
-  var px = (x*tileSize - bufferSize  )/numTiles;
-  var py = (y*tileSize - bufferSize  )/numTiles;
+  var inc =  (this._tileSize + bufferSize*2)/numTiles;
+  var px = (x*this._tileSize - bufferSize  )/numTiles;
+  var py = (y*this._tileSize - bufferSize  )/numTiles;
   return [
     this._fromPointToLatLon(new Point(px, py + inc)),
     this._fromPointToLatLon(new Point(px + inc, py))

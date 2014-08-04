@@ -54,10 +54,11 @@ if (typeof L !== 'undefined') {
     },
 
     _getFeatureFromPos: function(pos) {
-      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var tileSize = this._getTileSize();
+      var tile = { x: (pos.x/tileSize) | 0, y: (pos.y/tileSize) | 0 };
       var key = this._tileCoordsToKey(tile);
-      var tileX = pos.x - 256*tile.x;
-      var tileY = pos.y - 256*tile.y;
+      var tileX = pos.x - tileSize*tile.x;
+      var tileY = pos.y - tileSize*tile.y;
       var tiles = this._tileObjects[this._map.getZoom()];
 
       if (!tiles[key]) {
@@ -68,7 +69,8 @@ if (typeof L !== 'undefined') {
     },
 
     _getTileFromPos: function(pos) {
-      var tile = { x: (pos.x/256) | 0, y: (pos.y/256) | 0 };
+      var tileSize = this._getTileSize();
+      var tile = { x: (pos.x/tileSize) | 0, y: (pos.y/tileSize) | 0 };
       var key = this._tileCoordsToKey(tile);
       return this._tiles[key];
     },
@@ -104,6 +106,8 @@ if (typeof L !== 'undefined') {
     _clickedFeature: null,
 
     onAdd: function(map) {
+// alert('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
@@ -192,6 +196,7 @@ if (typeof L !== 'undefined') {
 
     createTile: function(coords) {
       var tile = new Tile({
+        size: this._getTileSize(),
         coords: coords,
         layer: this,
         provider: this._provider,
@@ -265,7 +270,7 @@ if (typeof L !== 'undefined') {
         for (f = 0, fl = tile._data.length; f < fl; f++) {
           feature = tile._data[f];
           if (feature.id === id) {
-            featureParts.push({ feature: feature, tileCoords: tile.getCoords() });
+            featureParts.push({ feature: feature, tileCoords: tile.getCoords(), tileSize: tile.getSize() });
           }
         }
       }
