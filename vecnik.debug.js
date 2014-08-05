@@ -1315,7 +1315,7 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
         style = shaderLayer.getStyle(feature.properties, mapContext);
         switch (symbolizer) {
           case Shader.POINT:
-            if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
+            if ((pos = layer.getCentroid(feature)) && style.markerFill) {
 
               canvas.setStyle('strokeStyle', style.markerStrokeStyle);
               canvas.setStyle('lineWidth',   style.markerLineWidth);
@@ -1458,6 +1458,15 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
+var hitShaderProperties = [
+  'markerFill',
+  'markerStrokeStyle',
+  'strokeStyle',
+  'polygonFill',
+  'textFill',
+  'textStrokeStyle'
+];
+
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
 
@@ -1503,20 +1512,15 @@ proto.compile = function(shaderSrc) {
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
-  var
-    style = {},
-    nameAttachment = this._name.split('::')[1];
+  var nameAttachment = this._name.split('::')[1];
 
-  if (nameAttachment === 'hover') {
-    if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
-      return style;
-    }
-    }
-
-  if (nameAttachment === 'click') {
-    if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
-      return style;
-    }
+  if (nameAttachment === 'hover' &&
+     (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+    return {};
+  }
+  if (nameAttachment === 'click' &&
+     (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+    return {};
   }
 
   var
@@ -1548,10 +1552,12 @@ proto.getShadingOrder = function() {
  */
 proto.createHitShaderLayer = function(idColumn) {
   var hitLayer = this.clone();
-  for (var k in hitLayer._compiled) {
-    hitLayer._compiled[k] = function(featureProperties, mapContext) {
-      return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
-    };
+  for (var prop in hitLayer._compiled) {
+    if (~hitShaderProperties.indexOf(prop)) {
+      hitLayer._compiled[prop] = function(featureProperties, mapContext) {
+        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+      };
+    }
   }
 
   // clone symbolizers and skip texts in hit layer
