@@ -29,6 +29,15 @@ var propertyMapping = {
   'text-name': 'textContent'
 };
 
+var hitShaderProperties = [
+  'markerFill',
+  'markerStrokeStyle',
+  'strokeStyle',
+  'polygonFill',
+  'textFill',
+  'textStrokeStyle'
+];
+
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
 
@@ -82,7 +91,7 @@ proto.getStyle = function(featureProperties, mapContext) {
     if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
       return style;
     }
-    }
+  }
 
   if (nameAttachment === 'click') {
     if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
@@ -119,10 +128,12 @@ proto.getShadingOrder = function() {
  */
 proto.createHitShaderLayer = function(idColumn) {
   var hitLayer = this.clone();
-  for (var k in hitLayer._compiled) {
-    hitLayer._compiled[k] = function(featureProperties, mapContext) {
-      return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
-    };
+  for (var prop in hitLayer._compiled) {
+    if (~hitShaderProperties.indexOf(prop)) {
+      hitLayer._compiled[prop] = function(featureProperties, mapContext) {
+        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+      };
+    }
   }
 
   // clone symbolizers and skip texts in hit layer
