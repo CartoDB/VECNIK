@@ -1315,7 +1315,7 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
         style = shaderLayer.getStyle(feature.properties, mapContext);
         switch (symbolizer) {
           case Shader.POINT:
-            if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
+            if ((pos = layer.getCentroid(feature)) && style.markerFill) {
 
               canvas.setStyle('strokeStyle', style.markerStrokeStyle);
               canvas.setStyle('lineWidth',   style.markerLineWidth);
@@ -1512,20 +1512,15 @@ proto.compile = function(shaderSrc) {
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
-  var
-    style = {},
-    nameAttachment = this._name.split('::')[1];
+  var nameAttachment = this._name.split('::')[1];
 
-  if (nameAttachment === 'hover') {
-    if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
-      return style;
-    }
+  if (nameAttachment === 'hover' &&
+     (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+    return {};
   }
-
-  if (nameAttachment === 'click') {
-    if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
-      return style;
-    }
+  if (nameAttachment === 'click' &&
+     (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+    return {};
   }
 
   var

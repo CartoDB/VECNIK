@@ -80,23 +80,19 @@ proto.compile = function(shaderSrc) {
 // the style to apply to canvas context
 // TODO: optimize this to not evaluate when featureProperties do not
 // contain values involved in the shader
+// TODO: hover / click should just complement existing properties
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
-  var
-    style = {},
-    nameAttachment = this._name.split('::')[1];
+  var nameAttachment = this._name.split('::')[1];
 
-  if (nameAttachment === 'hover') {
-    if (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
-      return style;
-    }
+  if (nameAttachment === 'hover' &&
+     (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+    return {};
   }
-
-  if (nameAttachment === 'click') {
-    if (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN]) {
-      return style;
-    }
+  if (nameAttachment === 'click' &&
+     (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+    return {};
   }
 
   var
