@@ -13,6 +13,8 @@ if (typeof L !== 'undefined') {
       maxZoom: 22
     },
 
+    _qTree: {},
+
     _renderQueue: [],
 
     initialize: function(options) {
@@ -51,6 +53,31 @@ if (typeof L !== 'undefined') {
       }, 33);
 
       L.TileLayer.prototype.initialize.call(this, '', options);
+    },
+
+    addBBox: function(type, bbox) {
+      (this._qTree[type] || (this._qTree[type] = [])).push(bbox);
+    },
+
+    hasCollision: function(type, bbox) {
+      var
+        minX = bbox.x,
+        maxX = minX+bbox.w,
+        minY = bbox.y,
+        maxY = minY+bbox.h,
+        qTree = this._qTree[type] || (this._qTree[type] = []),
+        item;
+
+      for (var i = 0, il = qTree.length; i < il; i++) {
+        item = qTree[i];
+        if (item.id === bbox.id) {
+          return false;
+        }
+        if (minX < item.x+item.w && minY < item.y+item.h && maxX > item.x && maxY > item.y) {
+          return true;
+        }
+      }
+      return false;
     },
 
     _getFeatureFromPos: function(pos) {
@@ -186,6 +213,10 @@ if (typeof L !== 'undefined') {
       }, this);
 
 
+      map.on('zoomend', function (e) {
+        this._qTree = {};
+      }, this);
+
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
 
@@ -214,6 +245,7 @@ if (typeof L !== 'undefined') {
 
     redraw: function(forceReload) {
       this._renderQueue = [];
+      this._qTree = {};
 
       if (!!forceReload) {
         this._centroidPositions = {};

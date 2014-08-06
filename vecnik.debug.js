@@ -374,6 +374,8 @@ if (typeof L !== 'undefined') {
       maxZoom: 22
     },
 
+    _qTree: {},
+
     _renderQueue: [],
 
     initialize: function(options) {
@@ -412,6 +414,31 @@ if (typeof L !== 'undefined') {
       }, 33);
 
       L.TileLayer.prototype.initialize.call(this, '', options);
+    },
+
+    addBBox: function(type, bbox) {
+      (this._qTree[type] || (this._qTree[type] = [])).push(bbox);
+    },
+
+    hasCollision: function(type, bbox) {
+      var
+        minX = bbox.x,
+        maxX = minX+bbox.w,
+        minY = bbox.y,
+        maxY = minY+bbox.h,
+        qTree = this._qTree[type] || (this._qTree[type] = []),
+        item;
+
+      for (var i = 0, il = qTree.length; i < il; i++) {
+        item = qTree[i];
+        if (item.id === bbox.id) {
+          return false;
+        }
+        if (minX < item.x+item.w && minY < item.y+item.h && maxX > item.x && maxY > item.y) {
+          return true;
+        }
+      }
+      return false;
     },
 
     _getFeatureFromPos: function(pos) {
@@ -547,6 +574,10 @@ if (typeof L !== 'undefined') {
       }, this);
 
 
+      map.on('zoomend', function (e) {
+        this._qTree = {};
+      }, this);
+
       return L.TileLayer.prototype.onAdd.call(this, map);
     },
 
@@ -575,6 +606,7 @@ if (typeof L !== 'undefined') {
 
     redraw: function(forceReload) {
       this._renderQueue = [];
+      this._qTree = {};
 
       if (!!forceReload) {
         this._centroidPositions = {};
@@ -1303,8 +1335,6 @@ proto.render = function(tile, canvas, collection, mapContext) {
     shaderLayer = layers[s];
     shadingOrder = shaderLayer.getShadingOrder();
     strokeFillOrder = getStrokeFillOrder(shadingOrder);
-console.log(shadingOrder);
-//shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for text/hover
 
     for (r = 0, rl = shadingOrder.length; r < rl; r++) {
       symbolizer = shadingOrder[r];
@@ -1317,11 +1347,15 @@ console.log(shadingOrder);
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              canvas.setStyle('strokeStyle', style.markerLineColor);
-              canvas.setStyle('lineWidth',   style.markerLineWidth);
-              canvas.setStyle('fillStyle',   style.markerFill);
+              var radius = style.markerSize;
+              if (!layer.hasCollision(symbolizer, { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 })) {
+                canvas.setStyle('strokeStyle', style.markerLineColor);
+                canvas.setStyle('lineWidth',   style.markerLineWidth);
+                canvas.setStyle('fillStyle',   style.markerFill);
+                canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
 
-              canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.markerSize, 'FS' /*strokeFillOrder*/);
+                layer.addBBox(symbolizer, { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 });
+              }
             }
           break;
 
@@ -1350,12 +1384,19 @@ console.log(shadingOrder);
 
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
-              canvas.setFont(style.fontSize, style.fontFace);
-              canvas.setStyle('strokeStyle', style.textOutlineColor);
-              canvas.setStyle('lineWidth',   style.textOutlineWidth);
-              canvas.setStyle('fillStyle',   style.textFill);
+              if (!layer.hasCollision(symbolizer, { id: feature.id, x: pos.x, y: pos.y, w: 100, h: style.fontSize })) {
+                canvas.setFont(style.fontSize, style.fontFace);
+                canvas.setStyle('strokeStyle', style.textOutlineColor);
+                canvas.setStyle('lineWidth',   style.textOutlineWidth);
+                canvas.setStyle('fillStyle',   style.textFill);
 
-              canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
+// TODO: get real text width
+// var len = context.measureText(text);
+
+                canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
+
+                layer.addBBox(symbolizer, { id: feature.id, x: pos.x, y: pos.y, w: 100, h: style.fontSize });
+              }
             }
           break;
         }
