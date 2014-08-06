@@ -37,13 +37,13 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | *POINT RELATED* | | |
 | marker-width | markerSize | {radius} for arc() |
 | marker-fill | markerFill | fillStyle |
-| marker-line-color | markerStrokeStyle | strokeStyle |
+| marker-line-color | lineColor | strokeStyle |
 | marker-line-width | markerLineWidth | lineWidth |
 | marker-color | markerFill | fillStyle |
 | point-color | markerFill | fillStyle |
 | marker-opacity (?) | markerAlpha | {none yet} |
 | *LINE REALATED* | | |
-| line-color | strokeStyle | strokeStyle |
+| line-color | lineColor | strokeStyle |
 | line-width | lineWidth | lineWidth |
 | line-opacity | lineAlpha | {none yet} |
 | *POLYGON RELATED* | | |
@@ -54,8 +54,8 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | text-size | fontSize | font |
 | text-fill | textFill | fillStyle |
 | text-opacity | textAlpha | {none yet} |
-| text-halo-fill | textStrokeStyle | strokeStyle |
-| text-halo-radius | textLineWidth | lineWidth |
+| text-halo-fill | textOutlineColor | strokeStyle |
+| text-halo-radius | textOutlineWidth | lineWidth |
 | text-align | textAlign | textAlign |
 | text-name | textContent | {text} for strokeText() |
 
@@ -65,8 +65,8 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 What style properties are required in order to droaw what kind of geometry?
 
 - POINT: markerSize, markerFill
-- LINE: strokeStyle
-- POLYGON: strokeStyle or polygonFill, geometry of type POLYGON
+- LINE: lineColor
+- POLYGON: lineColor or polygonFill, geometry of type POLYGON
 - TEXT: textContent
 
 (*) Mapnik does not support CartoCSS directly but it does indirectly through XML.

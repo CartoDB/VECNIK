@@ -1315,9 +1315,8 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
         style = shaderLayer.getStyle(feature.properties, mapContext);
         switch (symbolizer) {
           case Shader.POINT:
-            if ((pos = layer.getCentroid(feature)) && style.markerFill) {
-
-              canvas.setStyle('strokeStyle', style.markerStrokeStyle);
+            if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
+              canvas.setStyle('strokeStyle', style.markerLineColor);
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
@@ -1326,23 +1325,22 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
           break;
 
           case Shader.LINE:
-            if (style.strokeStyle) {
+            if (style.lineColor) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
 
-              canvas.setStyle('strokeStyle', style.strokeStyle);
-              canvas.setStyle('lineWidth',   style.LineWidth);
+              canvas.setStyle('strokeStyle', style.lineColor);
+              canvas.setStyle('lineWidth',   style.lineWidth);
 
               canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
-            if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
-
-              canvas.setStyle('strokeStyle', style.polygonStrokeStyle);
-              canvas.setStyle('lineWidth',   style.polygonLineWidth);
+            if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill)) {
+              canvas.setStyle('strokeStyle', style.lineColor);
+              canvas.setStyle('lineWidth',   style.lineWidth);
               canvas.setStyle('fillStyle',   style.polygonFill);
 
               canvas.drawPolygon(coordinates, strokeFillOrder);
@@ -1352,11 +1350,11 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
-              canvas.setStyle('strokeStyle', style.textStrokeStyle);
-              canvas.setStyle('lineWidth',   style.textLineWidth);
+              canvas.setStyle('strokeStyle', style.textOutlineColor);
+              canvas.setStyle('lineWidth',   style.textOutlineWidth);
               canvas.setStyle('fillStyle',   style.textFill);
 
-              canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textStrokeStyle);
+              canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
             }
           break;
         }
@@ -1432,19 +1430,20 @@ var VECNIK = _dereq_('./core/core');
 var Events = _dereq_('./core/events');
 var Shader = _dereq_('./shader');
 
+// https://www.mapbox.com/carto/api/2.3.0/
+
 var propertyMapping = {
   'marker-width': 'markerSize',
   'marker-fill': 'markerFill',
-  'marker-line-color': 'markerStrokeStyle',
+  'marker-line-color': 'markerLineColor',
   'marker-line-width': 'markerLineWidth',
   'marker-color': 'markerFill',
   'point-color': 'markerFill',
   'marker-opacity': 'markerAlpha', // does that exist?
 
-  'line-color': 'strokeStyle',
+  'line-color': 'lineColor',
   'line-width': 'lineWidth',
   'line-opacity': 'lineAlpha',
-
   'polygon-fill': 'polygonFill',
   'polygon-opacity': 'polygonAlpha',
 
@@ -1452,19 +1451,19 @@ var propertyMapping = {
   'text-size': 'fontSize',
   'text-fill': 'textFill',
   'text-opacity': 'textAlpha',
-  'text-halo-fill': 'textStrokeStyle',
-  'text-halo-radius': 'textLineWidth',
+  'text-halo-fill': 'textOutlineColor',
+  'text-halo-radius': 'textOutlineWidth',
   'text-align': 'textAlign',
   'text-name': 'textContent'
 };
 
 var hitShaderProperties = [
   'markerFill',
-  'markerStrokeStyle',
-  'strokeStyle',
+  'markerLineColor',
+  'lineColor',
   'polygonFill',
   'textFill',
-  'textStrokeStyle'
+  'textOutlineColor'
 ];
 
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
@@ -1509,6 +1508,7 @@ proto.compile = function(shaderSrc) {
 // the style to apply to canvas context
 // TODO: optimize this to not evaluate when featureProperties do not
 // contain values involved in the shader
+// TODO: hover / click should just complement existing properties
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 

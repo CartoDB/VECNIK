@@ -3,19 +3,20 @@ var VECNIK = require('./core/core');
 var Events = require('./core/events');
 var Shader = require('./shader');
 
+// https://www.mapbox.com/carto/api/2.3.0/
+
 var propertyMapping = {
   'marker-width': 'markerSize',
   'marker-fill': 'markerFill',
-  'marker-line-color': 'markerStrokeStyle',
+  'marker-line-color': 'markerLineColor',
   'marker-line-width': 'markerLineWidth',
   'marker-color': 'markerFill',
   'point-color': 'markerFill',
   'marker-opacity': 'markerAlpha', // does that exist?
 
-  'line-color': 'strokeStyle',
+  'line-color': 'lineColor',
   'line-width': 'lineWidth',
   'line-opacity': 'lineAlpha',
-
   'polygon-fill': 'polygonFill',
   'polygon-opacity': 'polygonAlpha',
 
@@ -23,19 +24,19 @@ var propertyMapping = {
   'text-size': 'fontSize',
   'text-fill': 'textFill',
   'text-opacity': 'textAlpha',
-  'text-halo-fill': 'textStrokeStyle',
-  'text-halo-radius': 'textLineWidth',
+  'text-halo-fill': 'textOutlineColor',
+  'text-halo-radius': 'textOutlineWidth',
   'text-align': 'textAlign',
   'text-name': 'textContent'
 };
 
 var hitShaderProperties = [
   'markerFill',
-  'markerStrokeStyle',
-  'strokeStyle',
+  'markerLineColor',
+  'lineColor',
   'polygonFill',
   'textFill',
-  'textStrokeStyle'
+  'textOutlineColor'
 ];
 
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
