@@ -75,8 +75,7 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-
-              canvas.setStyle('strokeStyle', style.markerStrokeStyle);
+              canvas.setStyle('strokeStyle', style.markerLineColor);
               canvas.setStyle('lineWidth',   style.markerLineWidth);
               canvas.setStyle('fillStyle',   style.markerFill);
 
@@ -85,23 +84,22 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
           break;
 
           case Shader.LINE:
-            if (style.strokeStyle) {
+            if (style.lineColor) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
 
-              canvas.setStyle('strokeStyle', style.strokeStyle);
-              canvas.setStyle('lineWidth',   style.LineWidth);
+              canvas.setStyle('strokeStyle', style.lineColor);
+              canvas.setStyle('lineWidth',   style.lineWidth);
 
               canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
-            if (feature.type === Geometry.POLYGON && (style.strokeStyle || style.polygonFill)) {
-
-              canvas.setStyle('strokeStyle', style.polygonStrokeStyle);
-              canvas.setStyle('lineWidth',   style.polygonLineWidth);
+            if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill)) {
+              canvas.setStyle('strokeStyle', style.lineColor);
+              canvas.setStyle('lineWidth',   style.lineWidth);
               canvas.setStyle('fillStyle',   style.polygonFill);
 
               canvas.drawPolygon(coordinates, strokeFillOrder);
@@ -111,11 +109,11 @@ shadingOrder = ['polygon', 'line', 'markers', 'text']; // TODO: fix this for tex
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFont(style.fontSize, style.fontFace);
-              canvas.setStyle('strokeStyle', style.textStrokeStyle);
-              canvas.setStyle('lineWidth',   style.textLineWidth);
+              canvas.setStyle('strokeStyle', style.textOutlineColor);
+              canvas.setStyle('lineWidth',   style.textOutlineWidth);
               canvas.setStyle('fillStyle',   style.textFill);
 
-              canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textStrokeStyle);
+              canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
             }
           break;
         }
