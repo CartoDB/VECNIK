@@ -52,7 +52,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
     strokeFillOrder,
     i, il, r, rl, s, sl,
     feature, coordinates,
-		pos;
+		pos,
+    radius, bbox, hasCollision;
 
   canvas.clear();
 
@@ -74,14 +75,17 @@ proto.render = function(tile, canvas, collection, mapContext) {
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              var radius = style.markerSize;
-              if (!layer.hasCollision(symbolizer, { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 })) {
+              radius = style.markerSize;
+              bbox = { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 };
+              hasCollision = !style.markerAllowOverlap && layer.hasCollision(symbolizer, bbox);
+
+              if (!hasCollision) {
                 canvas.setStyle('strokeStyle', style.markerLineColor);
                 canvas.setStyle('lineWidth',   style.markerLineWidth);
                 canvas.setStyle('fillStyle',   style.markerFill);
                 canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
 
-                layer.addBBox(symbolizer, { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 });
+                layer.addBBox(symbolizer, bbox);
               }
             }
           break;
@@ -111,18 +115,18 @@ proto.render = function(tile, canvas, collection, mapContext) {
 
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
-              if (!layer.hasCollision(symbolizer, { id: feature.id, x: pos.x, y: pos.y, w: 100, h: style.fontSize })) {
+              bbox = { id: feature.id, x: pos.x, y: pos.y, w: 100, h: style.fontSize };
+              hasCollision = !style.textAllowOverlap && layer.hasCollision(symbolizer, bbox);
+
+              if (!hasCollision) {
                 canvas.setFont(style.fontSize, style.fontFace);
                 canvas.setStyle('strokeStyle', style.textOutlineColor);
                 canvas.setStyle('lineWidth',   style.textOutlineWidth);
                 canvas.setStyle('fillStyle',   style.textFill);
-
 // TODO: get real text width
 // var len = context.measureText(text);
-
                 canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
-
-                layer.addBBox(symbolizer, { id: feature.id, x: pos.x, y: pos.y, w: 100, h: style.fontSize });
+                layer.addBBox(symbolizer, bbox);
               }
             }
           break;

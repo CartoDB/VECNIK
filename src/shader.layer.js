@@ -11,8 +11,8 @@ var propertyMapping = {
   'marker-line-color': 'markerLineColor',
   'marker-line-width': 'markerLineWidth',
   'marker-color': 'markerFill',
-  'point-color': 'markerFill',
   'marker-opacity': 'markerAlpha', // does that exist?
+  'marker-allow-overlap': 'markerAllowOverlap',
 
   'line-color': 'lineColor',
   'line-width': 'lineWidth',
@@ -27,7 +27,8 @@ var propertyMapping = {
   'text-halo-fill': 'textOutlineColor',
   'text-halo-radius': 'textOutlineWidth',
   'text-align': 'textAlign',
-  'text-name': 'textContent'
+  'text-name': 'textContent',
+  'text-allow-overlap': 'textAllowOverlap'
 };
 
 var hitShaderProperties = [
