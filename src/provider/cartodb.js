@@ -2,14 +2,12 @@
 var CartoDB = module.exports = {};
 
 CartoDB.SQL = require('./cartodb.sql').SQL;
-var Projection = require('../mercator');
 
 CartoDB.API = function(reader, options) {
   if (!reader) {
-    throw new Error('CartoDB Provider requires a Reader');
+    throw new Error('Provider requires a Reader');
   }
   this._reader = reader;
-  this._projection = new Projection();
   this.update(options);
 };
 
@@ -22,7 +20,7 @@ proto._debug = function(msg) {
 };
 
 proto._getUrl = function(coords) {
-  var sql = CartoDB.SQL(this._projection, this._options.table, coords.x, coords.y, coords.z, this._options);
+  var sql = CartoDB.SQL(this._options.table, coords.x, coords.y, coords.z, this._options);
   this._debug(sql);
   return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
 };

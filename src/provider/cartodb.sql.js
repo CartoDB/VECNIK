@@ -1,9 +1,10 @@
 
 var VECNIK = require('../core/core');
+var Mercator = require('../mercator');
 
 var CartoDB = module.exports = {};
 
-CartoDB.SQL = function(projection, table, x, y, zoom, options) {
+CartoDB.SQL = function(table, x, y, zoom, options) {
 
   options = options || {
     ENABLE_SIMPLIFY: true,
@@ -12,6 +13,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
     ENABLE_FIXING:   true
   };
 
+  var projection = new Mercator();
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';

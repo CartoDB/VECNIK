@@ -5,11 +5,9 @@ var TMS = module.exports = function(template, reader) {
   this._template = template;
 
   if (!reader) {
-    throw new Error('TMS Provider requires a reader');
+    throw new Error('Provider requires a reader');
   }
-
   this._reader = reader;
-  this._projection = new Projection();
   this.update(options);
 };
 
