@@ -8,7 +8,6 @@ var TMS = module.exports = function(template, reader) {
     throw new Error('Provider requires a reader');
   }
   this._reader = reader;
-  this.update(options);
 };
 
 var proto = TMS.prototype;

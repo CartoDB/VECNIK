@@ -199,6 +199,8 @@ Core.loadJSON = function(url, successHandler, errorHandler) {
   return xhr;
 };
 
+//  this._responseType = "arraybuffer"; // binary data
+
 // TODO: make this configurable
 Core.ID_COLUMN = 'cartodb_id';
 },{}],3:[function(_dereq_,module,exports){
@@ -685,7 +687,7 @@ if (typeof L !== 'undefined') {
   });
 }
 
-},{"./core/core":2,"./geometry":4,"./profiler":8,"./tile":15}],6:[function(_dereq_,module,exports){
+},{"./core/core":2,"./geometry":4,"./profiler":8,"./tile":17}],6:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -714,16 +716,20 @@ VECNIK.CartoShader = _dereq_('./shader');
 VECNIK.CartoShaderLayer = _dereq_('./shader.layer');
 VECNIK.Renderer    = _dereq_('./renderer');
 
+// Providers
 VECNIK.CartoDB     = _dereq_('./provider/cartodb');
-VECNIK.Layer       = _dereq_('./layer');
-// TODO: worker should use whatever reader the user defined
-VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
-VECNIK.Profiler    = _dereq_('./profiler');
+VECNIK.TMS         = _dereq_('./provider/tms');
 
+// Readers
+VECNIK.GeoJSON     = _dereq_('./reader/geojson');
+VECNIK.VectorTile  = _dereq_('./reader/vectortile');
+
+VECNIK.Layer       = _dereq_('./layer');
+VECNIK.Profiler    = _dereq_('./profiler');
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./canvas":1,"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./reader/geojson":11,"./renderer":12,"./shader":13,"./shader.layer":14}],7:[function(_dereq_,module,exports){
+},{"./canvas":1,"./core/core":2,"./geometry":4,"./layer":5,"./profiler":8,"./provider/cartodb":9,"./provider/tms":11,"./reader/geojson":12,"./reader/vectortile":13,"./renderer":14,"./shader":15,"./shader.layer":16}],7:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
@@ -805,7 +811,7 @@ MercatorProjection.prototype.latLonToTilePoint = function(lat, lon, tileX, tileY
   return new Point(Math.round(pixelCoordinate.x-tilePixelPos.x), Math.round(pixelCoordinate.y-tilePixelPos.y));
 };
 
-},{"./tile":15}],8:[function(_dereq_,module,exports){
+},{"./tile":17}],8:[function(_dereq_,module,exports){
 /*
 # metrics profiler
 
@@ -956,14 +962,12 @@ module.exports = Profiler;
 var CartoDB = module.exports = {};
 
 CartoDB.SQL = _dereq_('./cartodb.sql').SQL;
-var Projection = _dereq_('../mercator');
 
 CartoDB.API = function(reader, options) {
   if (!reader) {
-    throw new Error('CartoDB Provider requires a Reader');
+    throw new Error('Provider requires a Reader');
   }
   this._reader = reader;
-  this._projection = new Projection();
   this.update(options);
 };
 
@@ -976,7 +980,7 @@ proto._debug = function(msg) {
 };
 
 proto._getUrl = function(coords) {
-  var sql = CartoDB.SQL(this._projection, this._options.table, coords.x, coords.y, coords.z, this._options);
+  var sql = CartoDB.SQL(this._options.table, coords.x, coords.y, coords.z, this._options);
   this._debug(sql);
   return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
 };
@@ -1006,13 +1010,14 @@ proto.update = function(options) {
   }
 };
 
-},{"../mercator":7,"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
+},{"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
 
 var VECNIK = _dereq_('../core/core');
+var Mercator = _dereq_('../mercator');
 
 var CartoDB = module.exports = {};
 
-CartoDB.SQL = function(projection, table, x, y, zoom, options) {
+CartoDB.SQL = function(table, x, y, zoom, options) {
 
   options = options || {
     ENABLE_SIMPLIFY: true,
@@ -1021,6 +1026,7 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
     ENABLE_FIXING:   true
   };
 
+  var projection = new Mercator();
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
@@ -1115,7 +1121,35 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter; // +' LIMIT 100';
 };
 
-},{"../core/core":2}],11:[function(_dereq_,module,exports){
+},{"../core/core":2,"../mercator":7}],11:[function(_dereq_,module,exports){
+
+var Projection = _dereq_('../mercator');
+
+var TMS = module.exports = function(template, reader) {
+  this._template = template;
+
+  if (!reader) {
+    throw new Error('Provider requires a reader');
+  }
+  this._reader = reader;
+};
+
+var proto = TMS.prototype;
+
+proto._getUrl = function(coords) {
+  return this._template
+    .replace('{z}', coords.z.toFixed(0))
+    .replace('{x}', coords.x.toFixed(0))
+    .replace('{y}', coords.y.toFixed(0));
+};
+
+proto.load = function(tile, callback) {
+  this._reader.load(this._getUrl(tile), tile, callback);
+};
+
+proto.update = function() {};
+
+},{"../mercator":7}],12:[function(_dereq_,module,exports){
 
 var VECNIK = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
@@ -1275,7 +1309,186 @@ GeoJSON.convertForWorker = function(collection, tile) {
   return _convertAndReproject(collection, tile);
 };
 
-},{"../core/core":2,"../geometry":4,"../mercator":7}],12:[function(_dereq_,module,exports){
+},{"../core/core":2,"../geometry":4,"../mercator":7}],13:[function(_dereq_,module,exports){
+
+var VECNIK = _dereq_('../core/core');
+var Geometry = _dereq_('../geometry');
+var Mercator = _dereq_('../mercator');
+//var VectorTile = require('vector-tile'); // Mapbox vector tile lib
+
+var projection = new Mercator();
+
+function _addPoint(coordinates, id, properties, tile, dataByRef) {
+  dataByRef.push({
+    id: id,
+    type: Geometry.POINT,
+    coordinates: _toBuffer([coordinates], tile),
+    properties: properties
+  });
+}
+
+function _addLineString(coordinates, id, properties, tile, dataByRef) {
+  dataByRef.push({
+    id: id,
+    type: Geometry.LINE,
+    coordinates: _toBuffer(coordinates, tile),
+    properties: properties
+  });
+}
+
+function _addPolygon(coordinates, id, properties, tile, dataByRef) {
+  var rings = [];
+  for (var i = 0, il = coordinates.length; i < il; i++) {
+    rings.push(_toBuffer(coordinates[i], tile));
+  }
+  dataByRef.push({
+    id: id,
+    type: Geometry.POLYGON,
+    coordinates: rings,
+    properties: properties
+  });
+}
+
+function _convertAndReproject(buffer, tile) {
+  var dataByRef = [], feature;
+
+  for (var i = 0, il = buffer.features.length; i < il; i++) {
+    feature = buffer.features[i];
+
+    if (!feature.geometry) {
+      continue;
+    }
+
+    _addGeometry(
+      // TODO: per GeoJSON definition it should be feature.id
+      feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
+      feature.properties,
+      feature.geometry,
+      tile,
+      dataByRef
+    );
+  }
+
+  return dataByRef;
+}
+
+function _addGeometry(id, properties, geometry, tile, dataByRef) {
+  var
+    i, il,
+    type = geometry.type,
+    coordinates = geometry.coordinates;
+
+  switch (type) {
+    case 'Point':
+      _addPoint(coordinates, id, properties, tile, dataByRef);
+    break;
+
+    case 'MultiPoint':
+      for (i = 0, il = coordinates.length; i < il; i++) {
+        _addPoint(coordinates[i], id, _clone(properties), tile, dataByRef);
+      }
+    break;
+
+    case 'LineString':
+      _addLineString(coordinates, id, properties, tile, dataByRef);
+    break;
+
+    case 'MultiLineString':
+      for (i = 0, il = coordinates.length; i < il; i++) {
+        _addLineString(coordinates[i], _clone(properties), tile, dataByRef);
+      }
+    break;
+
+    case 'Polygon':
+      _addPolygon(coordinates, id, properties, tile, dataByRef);
+    break;
+
+    case 'MultiPolygon':
+      for (i = 0, il = coordinates.length; i < il; i++) {
+        _addPolygon(coordinates[i], id, _clone(properties), tile, dataByRef);
+      }
+    break;
+
+    case 'GeometryCollection':
+      var geometries = geometry.geometries;
+      for (i = 0, il = geometries.length; i < il; i++) {
+        _addGeometry(
+          id,
+          _clone(properties),
+          geometries[i],
+          tile,
+          dataByRef
+        );
+      }
+    break;
+  }
+}
+
+function _toBuffer(coordinates, tile) {
+  var
+    len = coordinates.length,
+    point,
+    buffer = new Int16Array(len*2);
+
+  for (var i = 0; i < len; i++) {
+    point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tile.x, tile.y, tile.z);
+    buffer[i*2  ] = point.x;
+    buffer[i*2+1] = point.y;
+  }
+  return buffer;
+}
+
+function _clone(obj) {
+  var
+    keys = Object.keys(obj),
+    res = {};
+  for (var i = 0, il = keys.length; i < il; i++) {
+    res[keys[i]] = obj[keys[i]];
+  }
+  return res;
+}
+
+var VectorTile = module.exports = {};
+
+VectorTile.load = function(url, tile, callback) {
+//  if (!VectorTile.WEBWORKERS || typeof Worker === undefined) {
+  if (typeof Worker === undefined) {
+    VECNIK.loadBinary(url, function(buffer) {
+      callback(_convertAndReproject(buffer, tile));
+    });
+  } else {
+    var worker = new Worker('../src/reader/geojson.worker.js');
+    worker.onmessage = function(e) {
+      callback(e.data);
+    };
+
+    worker.postMessage({ url: url, tile: tile });
+  }
+};
+
+VectorTile.convertForWorker = function(buffer, tile) {
+  return _convertAndReproject(buffer, tile);
+};
+
+//  this._responseType = "arraybuffer"; // binary data
+
+//  tile.data = new this.VectorTile(new Uint8Array(tile.xhr.response));
+//  tile.layers = tile.data.toGeoJSON();
+
+//  for (var t in tile.layers) {
+//    var num_features = tile.layers[t].features.length;
+//    for (var f=0; f < num_features; f++) {
+//      var feature = tile.layers[t].features[f];
+//
+//      feature.properties.id = feature.properties.osm_id;
+//      feature.geometry.coordinates = Geo.transformGeometry(feature.geometry, function (coordinates) {
+//        coordinates[1] = -coordinates[1];
+//        return coordinates;
+//      });
+//    };
+//  }
+
+},{"../core/core":2,"../geometry":4,"../mercator":7}],14:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Geometry = _dereq_('./geometry');
@@ -1415,7 +1628,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
   }
 };
 
-},{"./geometry":4,"./shader":13}],13:[function(_dereq_,module,exports){
+},{"./geometry":4,"./shader":15}],15:[function(_dereq_,module,exports){
 
 var Shader = module.exports = function(style) {
   this._layers = [];
@@ -1475,7 +1688,7 @@ proto.getLayers = function() {
   return this._layers;
 };
 
-},{"./shader.layer":14}],14:[function(_dereq_,module,exports){
+},{"./shader.layer":16}],16:[function(_dereq_,module,exports){
 
 var VECNIK = _dereq_('./core/core');
 var Events = _dereq_('./core/events');
@@ -1637,7 +1850,7 @@ var Int2RGB = function(input) {
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
 
-},{"./core/core":2,"./core/events":3,"./shader":13}],15:[function(_dereq_,module,exports){
+},{"./core/core":2,"./core/events":3,"./shader":15}],17:[function(_dereq_,module,exports){
 
 var VECNIK = _dereq_('./core/core');
 var ShaderLayer = _dereq_('./shader.layer');
@@ -1767,6 +1980,6 @@ proto.getFeature = function(id) {
   return;
 };
 
-},{"./canvas":1,"./core/core":2,"./shader.layer":14}]},{},[6])
+},{"./canvas":1,"./core/core":2,"./shader.layer":16}]},{},[6])
 (6)
 });

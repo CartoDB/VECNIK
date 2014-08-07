@@ -25,10 +25,14 @@ VECNIK.CartoShader = require('./shader');
 VECNIK.CartoShaderLayer = require('./shader.layer');
 VECNIK.Renderer    = require('./renderer');
 
+// Providers
 VECNIK.CartoDB     = require('./provider/cartodb');
-VECNIK.Layer       = require('./layer');
-// TODO: worker should use whatever reader the user defined
-VECNIK.GeoJSON     = require('./reader/geojson'); // exposed for web worker
-VECNIK.Profiler    = require('./profiler');
+VECNIK.TMS         = require('./provider/tms');
 
+// Readers
+VECNIK.GeoJSON     = require('./reader/geojson');
+VECNIK.VectorTile  = require('./reader/vectortile');
+
+VECNIK.Layer       = require('./layer');
+VECNIK.Profiler    = require('./profiler');
 module.exports = VECNIK;

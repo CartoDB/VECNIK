@@ -212,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
   columnsControl.value = State.get('columns') || '';
   filterControl.value = State.get('filter') || '';
 
+/***
   provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
     user: userControl.value,
     table: tableControl.value,
@@ -221,6 +222,9 @@ document.addEventListener('DOMContentLoaded', function() {
     debug: false,
     bufferSize: 50
   });
+***/
+
+  provider = new VECNIK.TMS('http://vector.mapzen.com/osm/buildings/{z}/{x}/{y}.json', VECNIK.GeoJSON);
 
   cartocssControl.value = State.get('cartocss');
   shader = new VECNIK.CartoShader(cartocssControl.value);
