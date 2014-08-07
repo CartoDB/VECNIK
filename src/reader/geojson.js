@@ -140,7 +140,7 @@ var GeoJSON = module.exports = {};
 GeoJSON.load = function(url, tile, callback) {
 //  if (!GeoJSON.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    VECNIK.loadJSON(url, function(collection) {
+    VECNIK.load(url, 'json', function(collection) {
       callback(_convertAndReproject(collection, tile));
     });
   } else {

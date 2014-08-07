@@ -224,7 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 ***/
 
-  provider = new VECNIK.TMS('http://vector.mapzen.com/osm/buildings/{z}/{x}/{y}.json', VECNIK.GeoJSON);
+//  provider = new VECNIK.TMS('http://vector.mapzen.com/osm/buildings/{z}/{x}/{y}.json', VECNIK.GeoJSON);
+  provider = new VECNIK.TMS('http://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6-dev/15/9685/11722.vector.pbf?access_token=pk.eyJ1IjoiZmFyYWRheTIiLCJhIjoiTUVHbDl5OCJ9.buFaqIdaIM3iXr1BOYKpsQ', VECNIK.VectorTile);
 
   cartocssControl.value = State.get('cartocss');
   shader = new VECNIK.CartoShader(cartocssControl.value);

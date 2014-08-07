@@ -17,7 +17,10 @@
   "scripts": {
     "test": "phantomjs test/vendor/runner.js test/suite.html?noglobals=true"
   },
-  "dependencies": {},
+  "dependencies": {
+    "vector-tile": "~0.1.2",
+    "pbf": "~0.0.2"
+  },
   "devDependencies": {
     "jshint": "~2.5.1",
     "closure-compiler": "~0.2.6",

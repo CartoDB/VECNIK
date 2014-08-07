@@ -1,7 +1,7 @@
 
 var Core = module.exports = {};
 
-Core.loadJSON = function(url, successHandler, errorHandler) {
+Core.load = function(url, type, onSuccess, onError) {
   var xhr = new XMLHttpRequest();
 
   xhr.onreadystatechange = function() {
@@ -10,31 +10,18 @@ Core.loadJSON = function(url, successHandler, errorHandler) {
     }
 
     if (!xhr.status || xhr.status < 200 || xhr.status > 299) {
-      if (errorHandler) {
-        errorHandler(xhr);
+      if (onError) {
+        onError(xhr);
       }
       return;
     }
 
-    if (!successHandler) {
-      return;
+    if (onSuccess) {
+      onSuccess(xhr.response);
     }
-
-    var json;
-
-    try {
-      json = JSON.parse(xhr.responseText);
-    } catch (ex) {
-      console.error('Invalid JSON resource:\n'+ url);
-      if (errorHandler) {
-        errorHandler(ex);
-      }
-      return;
-    }
-
-    successHandler(json);
   };
 
+  xhr.responseType = type;
   xhr.open('GET', url, true);
   xhr.send(null);
   return xhr;
