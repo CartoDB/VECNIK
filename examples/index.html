@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
   columnsControl.value = State.get('columns') || '';
   filterControl.value = State.get('filter') || '';
 
-  provider = new VECNIK.CartoDB.API({
+  provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
     user: userControl.value,
     table: tableControl.value,
     columns: columnsControl.value.split(','),

@@ -160,7 +160,7 @@ prop = props[i];
 
 var Core = module.exports = {};
 
-Core.load = function(url, successHandler, errorHandler) {
+Core.loadJSON = function(url, successHandler, errorHandler) {
   var xhr = new XMLHttpRequest();
 
   xhr.onreadystatechange = function() {
@@ -714,7 +714,7 @@ VECNIK.CartoShader = _dereq_('./shader');
 VECNIK.CartoShaderLayer = _dereq_('./shader.layer');
 VECNIK.Renderer    = _dereq_('./renderer');
 
-VECNIK.CartoDB     = { API: _dereq_('./provider/cartodb') };
+VECNIK.CartoDB     = _dereq_('./provider/cartodb');
 VECNIK.Layer       = _dereq_('./layer');
 // TODO: worker should use whatever reader the user defined
 VECNIK.GeoJSON     = _dereq_('./reader/geojson'); // exposed for web worker
@@ -952,16 +952,22 @@ module.exports = Profiler;
 
 
 },{}],9:[function(_dereq_,module,exports){
-var CartoDB = _dereq_('./cartodb.sql');
-var Projection = _dereq_('../mercator');
-var Format = _dereq_('../reader/geojson');
 
-var Provider = module.exports = function(options) {
+var CartoDB = module.exports = {};
+
+CartoDB.SQL = _dereq_('./cartodb.sql').SQL;
+var Projection = _dereq_('../mercator');
+
+CartoDB.API = function(reader, options) {
+  if (!reader) {
+    throw new Error('CartoDB Provider requires a Reader');
+  }
+  this._reader = reader;
   this._projection = new Projection();
   this.update(options);
 };
 
-var proto = Provider.prototype;
+var proto = CartoDB.API.prototype;
 
 proto._debug = function(msg) {
   if (this._options.debug) {
@@ -969,14 +975,14 @@ proto._debug = function(msg) {
   }
 };
 
-proto._getUrl = function(x, y, zoom) {
-  var sql = CartoDB.SQL(this._projection, this._options.table, x, y, zoom, this._options);
+proto._getUrl = function(coords) {
+  var sql = CartoDB.SQL(this._projection, this._options.table, coords.x, coords.y, coords.z, this._options);
   this._debug(sql);
   return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
 };
 
-proto.load = function(tileCoords, callback) {
-  Format.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), this._projection, tileCoords, callback);
+proto.load = function(tile, callback) {
+  this._reader.load(this._getUrl(tile), tile, callback);
 };
 
 proto.update = function(options) {
@@ -1000,7 +1006,7 @@ proto.update = function(options) {
   }
 };
 
-},{"../mercator":7,"../reader/geojson":11,"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
+},{"../mercator":7,"./cartodb.sql":10}],10:[function(_dereq_,module,exports){
 
 var VECNIK = _dereq_('../core/core');
 
@@ -1110,32 +1116,35 @@ CartoDB.SQL = function(projection, table, x, y, zoom, options) {
 };
 
 },{"../core/core":2}],11:[function(_dereq_,module,exports){
+
 var VECNIK = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
-var Projection = _dereq_('../mercator');
+var Mercator = _dereq_('../mercator');
 
-function _addPoint(coordinates, id, properties, projection, tileCoords, dataByRef) {
+var projection = new Mercator();
+
+function _addPoint(coordinates, id, properties, tile, dataByRef) {
   dataByRef.push({
     id: id,
     type: Geometry.POINT,
-    coordinates: _toBuffer([coordinates], projection, tileCoords),
+    coordinates: _toBuffer([coordinates], tile),
     properties: properties
   });
 }
 
-function _addLineString(coordinates, id, properties, projection, tileCoords, dataByRef) {
+function _addLineString(coordinates, id, properties, tile, dataByRef) {
   dataByRef.push({
     id: id,
     type: Geometry.LINE,
-    coordinates: _toBuffer(coordinates, projection, tileCoords),
+    coordinates: _toBuffer(coordinates, tile),
     properties: properties
   });
 }
 
-function _addPolygon(coordinates, id, properties, projection, tileCoords, dataByRef) {
+function _addPolygon(coordinates, id, properties, tile, dataByRef) {
   var rings = [];
   for (var i = 0, il = coordinates.length; i < il; i++) {
-    rings.push(_toBuffer(coordinates[i], projection, tileCoords));
+    rings.push(_toBuffer(coordinates[i], tile));
   }
   dataByRef.push({
     id: id,
@@ -1145,7 +1154,7 @@ function _addPolygon(coordinates, id, properties, projection, tileCoords, dataBy
   });
 }
 
-function _convertAndReproject(collection, projection, tileCoords) {
+function _convertAndReproject(collection, tile) {
   var dataByRef = [], feature;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
@@ -1160,8 +1169,7 @@ function _convertAndReproject(collection, projection, tileCoords) {
       feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
       feature.properties,
       feature.geometry,
-      projection,
-      tileCoords,
+      tile,
       dataByRef
     );
   }
@@ -1169,7 +1177,7 @@ function _convertAndReproject(collection, projection, tileCoords) {
   return dataByRef;
 }
 
-function _addGeometry(id, properties, geometry, projection, tileCoords, dataByRef) {
+function _addGeometry(id, properties, geometry, tile, dataByRef) {
   var
     i, il,
     type = geometry.type,
@@ -1177,32 +1185,32 @@ function _addGeometry(id, properties, geometry, projection, tileCoords, dataByRe
 
   switch (type) {
     case 'Point':
-      _addPoint(coordinates, id, properties, projection, tileCoords, dataByRef);
+      _addPoint(coordinates, id, properties, tile, dataByRef);
     break;
 
     case 'MultiPoint':
       for (i = 0, il = coordinates.length; i < il; i++) {
-        _addPoint(coordinates[i], id, _clone(properties), projection, tileCoords, dataByRef);
+        _addPoint(coordinates[i], id, _clone(properties), tile, dataByRef);
       }
     break;
 
     case 'LineString':
-      _addLineString(coordinates, id, properties, projection, tileCoords, dataByRef);
+      _addLineString(coordinates, id, properties, tile, dataByRef);
     break;
 
     case 'MultiLineString':
       for (i = 0, il = coordinates.length; i < il; i++) {
-        _addLineString(coordinates[i], _clone(properties), projection, tileCoords, dataByRef);
+        _addLineString(coordinates[i], _clone(properties), tile, dataByRef);
       }
     break;
 
     case 'Polygon':
-      _addPolygon(coordinates, id, properties, projection, tileCoords, dataByRef);
+      _addPolygon(coordinates, id, properties, tile, dataByRef);
     break;
 
     case 'MultiPolygon':
       for (i = 0, il = coordinates.length; i < il; i++) {
-        _addPolygon(coordinates[i], id, _clone(properties), projection, tileCoords, dataByRef);
+        _addPolygon(coordinates[i], id, _clone(properties), tile, dataByRef);
       }
     break;
 
@@ -1213,8 +1221,7 @@ function _addGeometry(id, properties, geometry, projection, tileCoords, dataByRe
           id,
           _clone(properties),
           geometries[i],
-          projection,
-          tileCoords,
+          tile,
           dataByRef
         );
       }
@@ -1222,14 +1229,14 @@ function _addGeometry(id, properties, geometry, projection, tileCoords, dataByRe
   }
 }
 
-function _toBuffer(coordinates, projection, tileCoords) {
+function _toBuffer(coordinates, tile) {
   var
     len = coordinates.length,
     point,
     buffer = new Int16Array(len*2);
 
   for (var i = 0; i < len; i++) {
-    point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tileCoords.x, tileCoords.y, tileCoords.z);
+    point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tile.x, tile.y, tile.z);
     buffer[i*2  ] = point.x;
     buffer[i*2+1] = point.y;
   }
@@ -1246,13 +1253,13 @@ function _clone(obj) {
   return res;
 }
 
-var Reader = module.exports = {};
+var GeoJSON = module.exports = {};
 
-Reader.load = function(url, projection, tileCoords, callback) {
-//  if (!Reader.WEBWORKERS || typeof Worker === undefined) {
+GeoJSON.load = function(url, tile, callback) {
+//  if (!GeoJSON.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    VECNIK.load(url, function(collection) {
-      callback(_convertAndReproject(collection, projection, tileCoords));
+    VECNIK.loadJSON(url, function(collection) {
+      callback(_convertAndReproject(collection, tile));
     });
   } else {
     var worker = new Worker('../src/reader/geojson.worker.js');
@@ -1260,14 +1267,12 @@ Reader.load = function(url, projection, tileCoords, callback) {
       callback(e.data);
     };
 
-    worker.postMessage({ url: url, tileCoords: tileCoords });
+    worker.postMessage({ url: url, tile: tile });
   }
 };
 
-Reader.convertForWorker = function(collection, tileCoords) {
-  // TODO: projection has to be passed from outside (but worker doesn't accept that)
-  var projection = new Projection();
-  return _convertAndReproject(collection, projection, tileCoords);
+GeoJSON.convertForWorker = function(collection, tile) {
+  return _convertAndReproject(collection, tile);
 };
 
 },{"../core/core":2,"../geometry":4,"../mercator":7}],12:[function(_dereq_,module,exports){

@@ -1,7 +1,7 @@
 
 var Core = module.exports = {};
 
-Core.load = function(url, successHandler, errorHandler) {
+Core.loadJSON = function(url, successHandler, errorHandler) {
   var xhr = new XMLHttpRequest();
 
   xhr.onreadystatechange = function() {
