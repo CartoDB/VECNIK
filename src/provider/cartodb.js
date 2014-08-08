@@ -1,13 +1,17 @@
-var CartoDB = require('./cartodb.sql');
-var Projection = require('../mercator');
-var Format = require('../reader/geojson');
 
-var Provider = module.exports = function(options) {
-  this._projection = new Projection();
+var CartoDB = module.exports = {};
+
+CartoDB.SQL = require('./cartodb.sql').SQL;
+
+CartoDB.API = function(reader, options) {
+  if (!reader) {
+    throw new Error('Provider requires a Reader');
+  }
+  this._reader = reader;
   this.update(options);
 };
 
-var proto = Provider.prototype;
+var proto = CartoDB.API.prototype;
 
 proto._debug = function(msg) {
   if (this._options.debug) {
@@ -15,14 +19,14 @@ proto._debug = function(msg) {
   }
 };
 
-proto._getUrl = function(x, y, zoom) {
-  var sql = CartoDB.SQL(this._projection, this._options.table, x, y, zoom, this._options);
+proto._getUrl = function(coords) {
+  var sql = CartoDB.SQL(this._options.table, coords.x, coords.y, coords.z, this._options);
   this._debug(sql);
   return this._baseUrl +'?q='+ encodeURIComponent(sql) +'&format=geojson&dp=6';
 };
 
-proto.load = function(tileCoords, callback) {
-  Format.load(this._getUrl(tileCoords.x, tileCoords.y, tileCoords.z), this._projection, tileCoords, callback);
+proto.load = function(tile, callback) {
+  this._reader.load(this._getUrl(tile), tile, callback);
 };
 
 proto.update = function(options) {

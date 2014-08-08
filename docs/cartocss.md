@@ -40,8 +40,8 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | marker-line-color | lineColor | strokeStyle |
 | marker-line-width | markerLineWidth | lineWidth |
 | marker-color | markerFill | fillStyle |
-| point-color | markerFill | fillStyle |
 | marker-opacity (?) | markerAlpha | {none yet} |
+| marker-allow-overlap | markerAllowOverlap | N/A |
 | *LINE REALATED* | | |
 | line-color | lineColor | strokeStyle |
 | line-width | lineWidth | lineWidth |
@@ -58,7 +58,7 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | text-halo-radius | textOutlineWidth | lineWidth |
 | text-align | textAlign | textAlign |
 | text-name | textContent | {text} for strokeText() |
-
+| text-allow-overlap | textAllowOverlap | N/A |
 
 ## Rendering conditions
 
