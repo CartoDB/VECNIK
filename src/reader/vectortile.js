@@ -1,18 +1,15 @@
 
 var VECNIK = require('../core/core');
 var Geometry = require('../geometry');
-var Mercator = require('../mercator');
 
 var PBF = require('pbf');
 var VT = require('vector-tile').VectorTile;
-
-var projection = new Mercator();
 
 function _addPoint(coordinates, id, properties, tile, dataByRef) {
   dataByRef.push({
     id: id,
     type: Geometry.POINT,
-    coordinates: _toBuffer([coordinates], tile),
+    coordinates: _toBuffer(coordinates[0][0], tile),
     properties: properties
   });
 }
@@ -21,16 +18,13 @@ function _addLineString(coordinates, id, properties, tile, dataByRef) {
   dataByRef.push({
     id: id,
     type: Geometry.LINE,
-    coordinates: _toBuffer(coordinates, tile),
+    coordinates: _toBuffer(coordinates[0], tile),
     properties: properties
   });
 }
 
 function _addPolygon(coordinates, id, properties, tile, dataByRef) {
-  var rings = [];
-  for (var i = 0, il = coordinates.length; i < il; i++) {
-    rings.push(_toBuffer(coordinates[i], tile));
-  }
+  var rings = [_toBuffer(coordinates, tile)];
   dataByRef.push({
     id: id,
     type: Geometry.POLYGON,
@@ -42,62 +36,43 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 function _convertAndReproject(buffer, tile) {
   buffer = new PBF(new Uint8Array(buffer));
 
-  var data = new VT(buffer);
-
-  var f, numFeatures, feature;
-
-  for (var l in data.layers) {
-
-//    numFeatures = data.layers[l].features.length;
-//    for (f = 0; f < numFeatures; f++) {
-//      var feature = data.layers[l].features[f];
-//      feature.properties.id = feature.properties.osm_id;
-//      feature.geometry.coordinates = Geo.transformGeometry(feature.geometry, function (coordinates) {
-//        coordinates[1] = -coordinates[1];
-//        return coordinates;
-//      });
-//    }
-
-  }
-return;
-
+  var vTile = new VT(buffer);
+  var f, numFeatures;
   var dataByRef = [], feature;
 
-  for (var i = 0, il = buffer.features.length; i < il; i++) {
-    feature = buffer.features[i];
-
-    if (!feature.geometry) {
-      continue;
+  for (var l in vTile.layers) {
+    numFeatures = vTile.layers[l].length;
+    for (f = 0; f < numFeatures; f++) {
+      feature = vTile.layers[l].feature(f);
+      _addGeometry(
+        feature.type,
+        feature.loadGeometry(),
+        feature._id || feature.properties[VECNIK.ID_COLUMN],
+        feature.properties,
+        tile,
+        dataByRef
+      );
     }
-
-    _addGeometry(
-      // TODO: per GeoJSON definition it should be feature.id
-      feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
-      feature.properties,
-      feature.geometry,
-      tile,
-      dataByRef
-    );
+    debugger
   }
 
   return dataByRef;
 }
 
-function _addGeometry(id, properties, geometry, tile, dataByRef) {
-  var
-    type = geometry.type,
-    coordinates = geometry.coordinates;
-
-  switch (type) {
-    case 'Point':
+function _addGeometry(geometryType, coordinates, id, properties, tile, dataByRef) {
+  switch (geometryType) {
+    case 1: // Point
+console.log('Point')
       _addPoint(coordinates, id, properties, tile, dataByRef);
     break;
 
-    case 'LineString':
+    case 2: // LineString
+console.log('LineString')
       _addLineString(coordinates, id, properties, tile, dataByRef);
     break;
 
-    case 'Polygon':
+    case 3: // Polygon
+console.log('Polygon')
       _addPolygon(coordinates, id, properties, tile, dataByRef);
     break;
   }
@@ -106,25 +81,14 @@ function _addGeometry(id, properties, geometry, tile, dataByRef) {
 function _toBuffer(coordinates, tile) {
   var
     len = coordinates.length,
-    point,
     buffer = new Int16Array(len*2);
 
   for (var i = 0; i < len; i++) {
-    point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tile.x, tile.y, tile.z);
-    buffer[i*2  ] = point.x;
-    buffer[i*2+1] = point.y;
+    buffer[i*2  ] = coordinates[i].x;
+    buffer[i*2+1] = coordinates[i].y;
   }
+console.log(coordinates, buffer)
   return buffer;
-}
-
-function _clone(obj) {
-  var
-    keys = Object.keys(obj),
-    res = {};
-  for (var i = 0, il = keys.length; i < il; i++) {
-    res[keys[i]] = obj[keys[i]];
-  }
-  return res;
 }
 
 var VectorTile = module.exports = {};

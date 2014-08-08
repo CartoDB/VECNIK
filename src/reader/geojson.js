@@ -47,10 +47,11 @@ function _convertAndReproject(collection, tile) {
     }
 
     _addGeometry(
+      feature.geometry.type,
+      feature.geometry.coordinates,
       // TODO: per GeoJSON definition it should be feature.id
       feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
       feature.properties,
-      feature.geometry,
       tile,
       dataByRef
     );
@@ -59,13 +60,10 @@ function _convertAndReproject(collection, tile) {
   return dataByRef;
 }
 
-function _addGeometry(id, properties, geometry, tile, dataByRef) {
-  var
-    i, il,
-    type = geometry.type,
-    coordinates = geometry.coordinates;
+function _addGeometry(geometryType, coordinates, id, properties, tile, dataByRef) {
+  var i, il;
 
-  switch (type) {
+  switch (geometryType) {
     case 'Point':
       _addPoint(coordinates, id, properties, tile, dataByRef);
     break;
@@ -100,9 +98,10 @@ function _addGeometry(id, properties, geometry, tile, dataByRef) {
       var geometries = geometry.geometries;
       for (i = 0, il = geometries.length; i < il; i++) {
         _addGeometry(
+          geometries[i].type,
+          geometries[i].coordinates,
           id,
           _clone(properties),
-          geometries[i],
           tile,
           dataByRef
         );
