@@ -9,7 +9,7 @@ function _addPoint(coordinates, id, properties, tile, dataByRef) {
   dataByRef.push({
     id: id,
     type: Geometry.POINT,
-    coordinates: _toBuffer(coordinates[0][0], tile),
+    coordinates: _toBuffer(coordinates[0], tile),
     properties: properties
   });
 }
@@ -24,7 +24,10 @@ function _addLineString(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _addPolygon(coordinates, id, properties, tile, dataByRef) {
-  var rings = [_toBuffer(coordinates, tile)];
+  var rings = [];
+  for (var i = 0, il = coordinates.length; i < il; i++) {
+    rings.push(_toBuffer(coordinates[i], tile));
+  }
   dataByRef.push({
     id: id,
     type: Geometry.POLYGON,
@@ -53,7 +56,6 @@ function _convertAndReproject(buffer, tile) {
         dataByRef
       );
     }
-    debugger
   }
 
   return dataByRef;
@@ -62,17 +64,14 @@ function _convertAndReproject(buffer, tile) {
 function _addGeometry(geometryType, coordinates, id, properties, tile, dataByRef) {
   switch (geometryType) {
     case 1: // Point
-console.log('Point')
       _addPoint(coordinates, id, properties, tile, dataByRef);
     break;
 
     case 2: // LineString
-console.log('LineString')
       _addLineString(coordinates, id, properties, tile, dataByRef);
     break;
 
     case 3: // Polygon
-console.log('Polygon')
       _addPolygon(coordinates, id, properties, tile, dataByRef);
     break;
   }
@@ -84,10 +83,10 @@ function _toBuffer(coordinates, tile) {
     buffer = new Int16Array(len*2);
 
   for (var i = 0; i < len; i++) {
-    buffer[i*2  ] = coordinates[i].x;
-    buffer[i*2+1] = coordinates[i].y;
+    buffer[i*2  ] = coordinates[i].x;// - tile.x;
+    buffer[i*2+1] = coordinates[i].y;// - tile.y;
   }
-console.log(coordinates, buffer)
+
   return buffer;
 }
 
