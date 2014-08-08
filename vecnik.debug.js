@@ -3197,7 +3197,6 @@ proto._getUrl = function(coords) {
 };
 
 proto.load = function(tile, callback) {
-  console.log(tile, this._getUrl(tile));
   this._reader.load(this._getUrl(tile), tile, callback);
 };
 
@@ -3253,8 +3252,7 @@ function _convertAndReproject(collection, tile) {
     }
 
     _addGeometry(
-      feature.geometry.type,
-      feature.geometry.coordinates,
+      feature.geometry,
       // TODO: per GeoJSON definition it should be feature.id
       feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
       feature.properties,
@@ -3266,10 +3264,10 @@ function _convertAndReproject(collection, tile) {
   return dataByRef;
 }
 
-function _addGeometry(geometryType, coordinates, id, properties, tile, dataByRef) {
-  var i, il;
+function _addGeometry(geometry, id, properties, tile, dataByRef) {
+  var i, il, coordinates = geometry.coordinates;
 
-  switch (geometryType) {
+  switch (geometry.type) {
     case 'Point':
       _addPoint(coordinates, id, properties, tile, dataByRef);
     break;
@@ -3304,8 +3302,7 @@ function _addGeometry(geometryType, coordinates, id, properties, tile, dataByRef
       var geometries = geometry.geometries;
       for (i = 0, il = geometries.length; i < il; i++) {
         _addGeometry(
-          geometries[i].type,
-          geometries[i].coordinates,
+          geometries[i],
           id,
           _clone(properties),
           tile,
@@ -3370,28 +3367,28 @@ var Geometry = _dereq_('../geometry');
 var PBF = _dereq_('pbf');
 var VT = _dereq_('vector-tile').VectorTile;
 
-function _addPoint(coordinates, id, properties, tile, dataByRef) {
+function _addPoint(coordinates, id, properties, dataByRef) {
   dataByRef.push({
     id: id,
     type: Geometry.POINT,
-    coordinates: _toBuffer(coordinates[0], tile),
+    coordinates: _toBuffer(coordinates[0]),
     properties: properties
   });
 }
 
-function _addLineString(coordinates, id, properties, tile, dataByRef) {
+function _addLineString(coordinates, id, properties, dataByRef) {
   dataByRef.push({
     id: id,
     type: Geometry.LINE,
-    coordinates: _toBuffer(coordinates[0], tile),
+    coordinates: _toBuffer(coordinates[0]),
     properties: properties
   });
 }
 
-function _addPolygon(coordinates, id, properties, tile, dataByRef) {
+function _addPolygon(coordinates, id, properties, dataByRef) {
   var rings = [];
   for (var i = 0, il = coordinates.length; i < il; i++) {
-    rings.push(_toBuffer(coordinates[i], tile));
+    rings.push(_toBuffer(coordinates[i]));
   }
   dataByRef.push({
     id: id,
@@ -3401,7 +3398,7 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
   });
 }
 
-function _convertAndReproject(buffer, tile) {
+function _convertAndReproject(buffer) {
   buffer = new PBF(new Uint8Array(buffer));
 
   var vTile = new VT(buffer);
@@ -3417,7 +3414,6 @@ function _convertAndReproject(buffer, tile) {
         feature.loadGeometry(),
         feature._id || feature.properties[VECNIK.ID_COLUMN],
         feature.properties,
-        tile,
         dataByRef
       );
     }
@@ -3426,30 +3422,30 @@ function _convertAndReproject(buffer, tile) {
   return dataByRef;
 }
 
-function _addGeometry(geometryType, coordinates, id, properties, tile, dataByRef) {
+function _addGeometry(geometryType, coordinates, id, properties, dataByRef) {
   switch (geometryType) {
     case 1: // Point
-      _addPoint(coordinates, id, properties, tile, dataByRef);
+      _addPoint(coordinates, id, properties, dataByRef);
     break;
 
     case 2: // LineString
-      _addLineString(coordinates, id, properties, tile, dataByRef);
+      _addLineString(coordinates, id, properties, dataByRef);
     break;
 
     case 3: // Polygon
-      _addPolygon(coordinates, id, properties, tile, dataByRef);
+      _addPolygon(coordinates, id, properties, dataByRef);
     break;
   }
 }
 
-function _toBuffer(coordinates, tile) {
+function _toBuffer(coordinates) {
   var
     len = coordinates.length,
     buffer = new Int16Array(len*2);
 
   for (var i = 0; i < len; i++) {
-    buffer[i*2  ] = coordinates[i].x;// - tile.x;
-    buffer[i*2+1] = 256-coordinates[i].y;// - tile.y;
+    buffer[i*2  ] = coordinates[i].x >>4;
+    buffer[i*2+1] = coordinates[i].y >>4;
   }
 
   return buffer;
@@ -3459,22 +3455,22 @@ var VectorTile = module.exports = {};
 
 VectorTile.load = function(url, tile, callback) {
 //  if (!VectorTile.WEBWORKERS || typeof Worker === undefined) {
-//  if (typeof Worker === undefined) {
+  if (typeof Worker === undefined) {
     VECNIK.load(url, 'arraybuffer', function(buffer) {
-      callback(_convertAndReproject(buffer, tile));
+      callback(_convertAndReproject(buffer));
     });
-//  } else {
-//    var worker = new Worker('../src/reader/vectortile.worker.js');
-//    worker.onmessage = function(e) {
-//      callback(e.data);
-//    };
-//
-//    worker.postMessage({ url: url, tile: tile });
-//  }
+  } else {
+    var worker = new Worker('../src/reader/vectortile.worker.js');
+    worker.onmessage = function(e) {
+      callback(e.data);
+    };
+
+    worker.postMessage({ url: url });
+  }
 };
 
-VectorTile.convertForWorker = function(buffer, tile) {
-  return _convertAndReproject(buffer, tile);
+VectorTile.convertForWorker = function(buffer) {
+  return _convertAndReproject(buffer);
 };
 
 },{"../core/core":12,"../geometry":14,"pbf":4,"vector-tile":6}],24:[function(_dereq_,module,exports){

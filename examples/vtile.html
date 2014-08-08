@@ -212,15 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
   columnsControl.value = State.get('columns') || '';
   filterControl.value = State.get('filter') || '';
 
-  provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
-    user: userControl.value,
-    table: tableControl.value,
-    columns: columnsControl.value.split(','),
-    filter: filterControl.value,
-//    idColumn: 'id', // hacky solution for OSM
-    debug: false,
-    bufferSize: 50
-  });
+  provider = new VECNIK.TMS('http://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6-dev/{z}/{x}/{y}.vector.pbf?access_token=pk.eyJ1IjoiZmFyYWRheTIiLCJhIjoiTUVHbDl5OCJ9.buFaqIdaIM3iXr1BOYKpsQ', VECNIK.VectorTile);
 
   cartocssControl.value = State.get('cartocss');
   shader = new VECNIK.CartoShader(cartocssControl.value);
