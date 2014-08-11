@@ -45,8 +45,11 @@ function _convertAndReproject(buffer) {
 
   for (var l in vTile.layers) {
     numFeatures = vTile.layers[l].length;
+
     for (f = 0; f < numFeatures; f++) {
       feature = vTile.layers[l].feature(f);
+      feature.properties[VECNIK.ID_COLUMN] = feature._id || feature.properties.osm_id || feature.properties.id || Math.random() * 10000000 <<0;
+
       _addGeometry(
         feature.type,
         feature.loadGeometry(),

@@ -24,7 +24,6 @@ if (typeof L !== 'undefined') {
       }
       this._provider = options.provider;
 
-      // TODO: use internal renderer as default
       // applies to a single tile but we don'T want to check on per tile basis
       if (!options.renderer) {
         throw new Error('VECNIK.Tile requires a renderer');
@@ -133,7 +132,7 @@ if (typeof L !== 'undefined') {
     _clickedFeature: null,
 
     onAdd: function(map) {
-// alert('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
@@ -175,9 +174,7 @@ if (typeof L !== 'undefined') {
         };
 
         // mouse stays in same feature
-        if (feature && this._hoveredFeature &&
-          feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]
-        ) {
+        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
           payload.feature = this._hoveredFeature;
           this.fireEvent('featureOver', payload);
           return;
