@@ -116,11 +116,11 @@ if (typeof L !== 'undefined') {
       this._renderQueue[withPriority ? 'push' : 'unshift'](key);
     },
 
-    _renderAffectedTiles: function(idColumn) {
+    _renderAffectedTiles: function(cartodb_id) {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
         for (var key in tiles) {
-          if (!!tiles[key].getFeature(idColumn)) {
+          if (!!tiles[key].getFeature(cartodb_id)) {
             tiles[key].render();
           }
         }

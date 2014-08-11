@@ -85,7 +85,7 @@ proto.compile = function(shaderSrc) {
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
-  var nameAttachment = this._name.split('::')[1];
+  var nameAttachment = typeof this._name === 'string' ? this._name.split('::')[1] : '';
 
   if (nameAttachment === 'hover' &&
      (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
@@ -123,12 +123,12 @@ proto.getShadingOrder = function() {
 /**
  * return a shader clone ready for hit test.
  */
-proto.createHitShaderLayer = function(idColumn) {
+proto.createHitShaderLayer = function() {
   var hitLayer = this.clone();
   for (var prop in hitLayer._compiled) {
     if (~hitShaderProperties.indexOf(prop)) {
       hitLayer._compiled[prop] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+        return 'rgb(' + Int2RGB(featureProperties.cartodb_id + 1).join(',') + ')';
       };
     }
   }

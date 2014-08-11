@@ -2530,11 +2530,11 @@ if (typeof L !== 'undefined') {
       this._renderQueue[withPriority ? 'push' : 'unshift'](key);
     },
 
-    _renderAffectedTiles: function(idColumn) {
+    _renderAffectedTiles: function(cartodb_id) {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
         for (var key in tiles) {
-          if (!!tiles[key].getFeature(idColumn)) {
+          if (!!tiles[key].getFeature(cartodb_id)) {
             tiles[key].render();
           }
         }
@@ -3399,7 +3399,7 @@ function _convertAndReproject(buffer) {
   for (var l in vTile.layers) {
     numFeatures = vTile.layers[l].length;
 
-    for (f = 0; f < numFeatures && f < 500; f++) {
+    for (f = 0; f < numFeatures; f++) {
       feature = vTile.layers[l].feature(f);
 
       // Mapbox specific
@@ -3626,10 +3626,10 @@ module.exports.POINT   = 'markers';
 module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
-proto.createHitShader = function(idColumn) {
+proto.createHitShader = function() {
   var hitShader = new Shader();
   for (var i = 0; i < this._layers.length; i++) {
-    hitShader._layers.push(this._layers[i].createHitShaderLayer(idColumn));
+    hitShader._layers.push(this._layers[i].createHitShaderLayer());
   }
   return hitShader;
 };
@@ -3757,7 +3757,7 @@ proto.compile = function(shaderSrc) {
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
-  var nameAttachment = this._name.split('::')[1];
+  var nameAttachment = typeof this._name === 'string' ? this._name.split('::')[1] : '';
 
   if (nameAttachment === 'hover' &&
      (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
@@ -3795,12 +3795,12 @@ proto.getShadingOrder = function() {
 /**
  * return a shader clone ready for hit test.
  */
-proto.createHitShaderLayer = function(idColumn) {
+proto.createHitShaderLayer = function() {
   var hitLayer = this.clone();
   for (var prop in hitLayer._compiled) {
     if (~hitShaderProperties.indexOf(prop)) {
       hitLayer._compiled[prop] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties[idColumn] + 1).join(',') + ')';
+        return 'rgb(' + Int2RGB(featureProperties.cartodb_id + 1).join(',') + ')';
       };
     }
   }
@@ -3894,7 +3894,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader());
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
@@ -3934,25 +3934,25 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  var id = ShaderLayer.RGB2Int(
+  var cartodb_id = ShaderLayer.RGB2Int(
     this._hitGrid[i  ],
     this._hitGrid[i+1],
     this._hitGrid[i+2]
   );
 
-  if (!id) {
+  if (!cartodb_id) {
     return;
   }
 
-  var feature = this.getFeature(id-1);
+  var feature = this.getFeature(cartodb_id-1);
   if (feature) {
     return feature.properties;
   }
 };
 
-proto.getFeature = function(id) {
+proto.getFeature = function(cartodb_id) {
   for (var i = 0, il = this._data.length; i < il; i++) {
-    if (this._data[i].id === id) {
+    if (this._data[i].cartodb_id === cartodb_id) {
       return this._data[i];
     }
   }

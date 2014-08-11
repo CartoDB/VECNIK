@@ -6,17 +6,24 @@ module('renderer');
   var tile, canvas, collection,
     circleDone = 0, lineDone = 0, polygonDone = 0, textDone = 0;
 
-  QUnit.testStart(function(details) {
+  QUnit.testStart(function() {
     tile = {
       getLayer: function() {
         return {
           getCentroid: function() {
             return { x:0, y:0 };
-          }
+          },
+          hasCollision: function() {
+            return false;
+          },
+          addBBox: function() {}
         };
       },
       getCoords: function() {
         return { x:0, y:0, z:0 };
+      },
+      getSize: function() {
+        return 256;
       }
     };
 
@@ -36,16 +43,18 @@ module('renderer');
       setFont: function() {},
       drawText: function() {
         textDone++;
-      }
+      },
+      finishAll: function() {}
     };
 
     collection = [
-      { type: VECNIK.Geometry.POINT,   groupId: 'id-'+ VECNIK.Geometry.POINT,   coordinates: [0,1], properties: {}},
-      { type: VECNIK.Geometry.LINE,    groupId: 'id-'+ VECNIK.Geometry.LINE,    coordinates: [[0,1], [2,3]], properties: {}},
-      { type: VECNIK.Geometry.POLYGON, groupId: 'id-'+ VECNIK.Geometry.POLYGON, coordinates: [[[0,1], [2,3], [0,1]]], properties: {}}
+      { type: VECNIK.Geometry.POINT,   id: 123, coordinates: [0,1], properties: {}},
+      { type: VECNIK.Geometry.LINE,    id: 456, coordinates: [[0,1], [2,3]], properties: {}},
+      { type: VECNIK.Geometry.POLYGON, id: 789, coordinates: [[[0,1], [2,3], [0,1]]], properties: {}}
     ];
   });
-  var tile, canvas, collection, operationsDone = { circle:0, line:0, polygon:0, text:0 };
+
+  var tile, canvas, collection;
 
   test('should render as text', function() {
     var renderer = new VECNIK.Renderer({
@@ -116,8 +125,7 @@ module('renderer');
   test('should not render at all', function() {
     var renderer = new VECNIK.Renderer({
       shader: new VECNIK.CartoShader(
-        '#layer {\n'+
-        '}'
+        '#layer {}'
       )
     });
     textDone = 0; polygonDone = 0; lineDone = 0; circleDone = 0;

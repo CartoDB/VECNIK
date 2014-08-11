@@ -61,7 +61,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
+  this._renderer.setShader(currentShader.createHitShader());
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
@@ -101,25 +101,25 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  var id = ShaderLayer.RGB2Int(
+  var cartodb_id = ShaderLayer.RGB2Int(
     this._hitGrid[i  ],
     this._hitGrid[i+1],
     this._hitGrid[i+2]
   );
 
-  if (!id) {
+  if (!cartodb_id) {
     return;
   }
 
-  var feature = this.getFeature(id-1);
+  var feature = this.getFeature(cartodb_id-1);
   if (feature) {
     return feature.properties;
   }
 };
 
-proto.getFeature = function(id) {
+proto.getFeature = function(cartodb_id) {
   for (var i = 0, il = this._data.length; i < il; i++) {
-    if (this._data[i].id === id) {
+    if (this._data[i].cartodb_id === cartodb_id) {
       return this._data[i];
     }
   }
