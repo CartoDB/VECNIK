@@ -48,8 +48,7 @@ function _convertAndReproject(collection, tile) {
 
     _addGeometry(
       feature.geometry,
-      // TODO: per GeoJSON definition it should be feature.id
-      feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
+      feature.id || feature.properties.id || feature.properties.cartodb_id,
       feature.properties,
       tile,
       dataByRef

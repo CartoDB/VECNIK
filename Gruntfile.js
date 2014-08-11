@@ -89,6 +89,7 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('default', 'Development build', function() {
+    grunt.log.writeln(grunt.template.date(new Date(), 'yyyy-mm-dd HH:MM:ss'));
     grunt.task.run('browserify');
   });
 

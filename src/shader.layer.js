@@ -1,5 +1,4 @@
 
-var VECNIK = require('./core/core');
 var Events = require('./core/events');
 var Shader = require('./shader');
 
@@ -89,11 +88,11 @@ proto.getStyle = function(featureProperties, mapContext) {
   var nameAttachment = this._name.split('::')[1];
 
   if (nameAttachment === 'hover' &&
-     (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+     (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
   if (nameAttachment === 'click' &&
-     (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+     (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
 

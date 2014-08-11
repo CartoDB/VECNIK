@@ -26,6 +26,3 @@ Core.load = function(url, type, onSuccess, onError) {
   xhr.send(null);
   return xhr;
 };
-
-// TODO: make this configurable
-Core.ID_COLUMN = 'cartodb_id';

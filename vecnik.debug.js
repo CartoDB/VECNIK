@@ -2254,8 +2254,6 @@ Core.load = function(url, type, onSuccess, onError) {
   return xhr;
 };
 
-// TODO: make this configurable
-Core.ID_COLUMN = 'cartodb_id';
 },{}],13:[function(_dereq_,module,exports){
 
 var Events = module.exports = function() {
@@ -2415,7 +2413,6 @@ function getLargestPart(featureParts) {
 
 },{}],15:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('./core/core');
 var Geometry = _dereq_('./geometry');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
@@ -2495,7 +2492,7 @@ if (typeof L !== 'undefined') {
       return false;
     },
 
-    _getFeatureFromPos: function(pos) {
+    _getFeaturePropertiesFromPos: function(pos) {
       var tileSize = this._getTileSize();
       var tile = { x: (pos.x/tileSize) | 0, y: (pos.y/tileSize) | 0 };
       var key = this._tileCoordsToKey(tile);
@@ -2544,8 +2541,8 @@ if (typeof L !== 'undefined') {
       });
     },
 
-    _hoveredFeature: null,
-    _clickedFeature: null,
+    _hoveredFeatureProperties: null,
+    _clickedFeatureProperties: null,
 
     onAdd: function(map) {
 console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
@@ -2556,17 +2553,17 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         }
 
         // render previously highlighted tiles as normal
-        if (this._clickedFeature) {
-          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
+        if (this._clickedFeatureProperties) {
+          this._renderAffectedTiles(this._clickedFeatureProperties.cartodb_id);
         }
 
-        this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
+        this._clickedFeatureProperties = this._getFeaturePropertiesFromPos(map.project(e.latlng));
 
-        if (this._clickedFeature) {
-          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
+        if (this._clickedFeatureProperties) {
+          this._renderAffectedTiles(this._clickedFeatureProperties.cartodb_id);
 
           this.fireEvent('featureClick', {
-            feature: this._clickedFeature,
+            feature: this._clickedFeatureProperties,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
@@ -2581,9 +2578,7 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
         var pos = map.project(e.latlng);
         var tile = this._getTileFromPos(pos);
-        var feature = this._getFeatureFromPos(pos);
-
-if (feature) console.log(feature[VECNIK.ID_COLUMN])
+        var feature = this._getFeaturePropertiesFromPos(pos);
 
         var payload = {
           geo: e.latlng,
@@ -2592,21 +2587,21 @@ if (feature) console.log(feature[VECNIK.ID_COLUMN])
         };
 
         // mouse stays in same feature
-        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
-          payload.feature = this._hoveredFeature;
+        if (feature && this._hoveredFeatureProperties && feature.cartodb_id === this._hoveredFeatureProperties.cartodb_id) {
+          payload.feature = this._hoveredFeatureProperties;
           this.fireEvent('featureOver', payload);
           return;
         }
 
         // mouse just left a feature
-        if (this._hoveredFeature) {
-          this._renderAffectedTiles(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        if (this._hoveredFeatureProperties) {
+          this._renderAffectedTiles(this._hoveredFeatureProperties.cartodb_id);
           if (tile) {
             tile.style.cursor = 'inherit';
           }
-          payload.feature = this._hoveredFeature;
+          payload.feature = this._hoveredFeatureProperties;
           this.fireEvent('featureLeave', payload);
-          this._hoveredFeature = null;
+          this._hoveredFeatureProperties = null;
           return;
         }
 
@@ -2618,8 +2613,8 @@ if (feature) console.log(feature[VECNIK.ID_COLUMN])
         }
 
         // mouse entered another feature
-        this._hoveredFeature = feature;
-        this._renderAffectedTiles(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        this._hoveredFeatureProperties = feature;
+        this._renderAffectedTiles(this._hoveredFeatureProperties.cartodb_id);
         if (tile) {
           tile.style.cursor = 'pointer';
         }
@@ -2698,14 +2693,14 @@ if (feature) console.log(feature[VECNIK.ID_COLUMN])
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.id);
+      var featureParts = this._getFeaturePropertiesParts(feature.id);
       if (pos = Geometry.getCentroid(featureParts)) {
         this._centroidPositions[feature.id] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
 
-    _getFeatureParts: function(id) {
+    _getFeaturePropertiesParts: function(id) {
       var
         tiles = this._tileObjects[this._map.getZoom()],
         tile,
@@ -2730,16 +2725,16 @@ if (feature) console.log(feature[VECNIK.ID_COLUMN])
     },
 
     getHoveredFeature: function() {
-      return this._hoveredFeature;
+      return this._hoveredFeatureProperties;
     },
 
     getClickedFeature: function() {
-      return this._clickedFeature;
+      return this._clickedFeatureProperties;
     }
   });
 }
 
-},{"./core/core":12,"./geometry":14,"./profiler":18,"./tile":27}],16:[function(_dereq_,module,exports){
+},{"./geometry":14,"./profiler":18,"./tile":27}],16:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -3064,7 +3059,6 @@ proto.update = function(options) {
 
 },{"./cartodb.sql":20}],20:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('../core/core');
 var Mercator = _dereq_('../mercator');
 
 var CartoDB = module.exports = {};
@@ -3082,10 +3076,9 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
-  var id_column = options.idColumn || VECNIK.ID_COLUMN; // though we dont't like the id column to be set manually,
-                                                    // it allows us to have a different id column for OSM access
-//  var tileSize = L.Browser.retina ? 512 : 256;
-  var tileSize = 256;
+  var id_column = '"cartodb_id"';
+
+  var tileSize = 256; // = L.Browser.retina ? 512 : 256;
   var tile_pixel_width = tileSize;
   var tile_pixel_height = tileSize;
 
@@ -3173,7 +3166,7 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter; // +' LIMIT 100';
 };
 
-},{"../core/core":12,"../mercator":17}],21:[function(_dereq_,module,exports){
+},{"../mercator":17}],21:[function(_dereq_,module,exports){
 
 var Projection = _dereq_('../mercator');
 
@@ -3252,8 +3245,7 @@ function _convertAndReproject(collection, tile) {
 
     _addGeometry(
       feature.geometry,
-      // TODO: per GeoJSON definition it should be feature.id
-      feature.id || feature.properties.id || feature.properties[VECNIK.ID_COLUMN],
+      feature.id || feature.properties.id || feature.properties.cartodb_id,
       feature.properties,
       tile,
       dataByRef
@@ -3407,14 +3399,16 @@ function _convertAndReproject(buffer) {
   for (var l in vTile.layers) {
     numFeatures = vTile.layers[l].length;
 
-    for (f = 0; f < numFeatures; f++) {
+    for (f = 0; f < numFeatures && f < 500; f++) {
       feature = vTile.layers[l].feature(f);
-      feature.properties[VECNIK.ID_COLUMN] = feature._id || feature.properties.osm_id || feature.properties.id || Math.random() * 10000000 <<0;
+
+      // Mapbox specific
+      feature.properties.cartodb_id = feature.properties.osm_id || Math.random() * 100000 <<0;
 
       _addGeometry(
         feature.type,
         feature.loadGeometry(),
-        feature._id || feature.properties[VECNIK.ID_COLUMN],
+        feature.id || feature.properties.id || feature.properties.cartodb_id,
         feature.properties,
         dataByRef
       );
@@ -3632,10 +3626,10 @@ module.exports.POINT   = 'markers';
 module.exports.TEXT    = 'text';
 
 // clones every layer in the shader
-proto.createHitShader = function(key) {
+proto.createHitShader = function(idColumn) {
   var hitShader = new Shader();
   for (var i = 0; i < this._layers.length; i++) {
-    hitShader._layers.push(this._layers[i].createHitShaderLayer(key));
+    hitShader._layers.push(this._layers[i].createHitShaderLayer(idColumn));
   }
   return hitShader;
 };
@@ -3677,7 +3671,6 @@ proto.getLayers = function() {
 
 },{"./shader.layer":26}],26:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('./core/core');
 var Events = _dereq_('./core/events');
 var Shader = _dereq_('./shader');
 
@@ -3767,11 +3760,11 @@ proto.getStyle = function(featureProperties, mapContext) {
   var nameAttachment = this._name.split('::')[1];
 
   if (nameAttachment === 'hover' &&
-     (!mapContext.hovered || mapContext.hovered[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+     (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
   if (nameAttachment === 'click' &&
-     (!mapContext.clicked || mapContext.clicked[VECNIK.ID_COLUMN] !== featureProperties[VECNIK.ID_COLUMN])) {
+     (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
 
@@ -3837,9 +3830,8 @@ var Int2RGB = function(input) {
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;
 
-},{"./core/core":12,"./core/events":13,"./shader":25}],27:[function(_dereq_,module,exports){
+},{"./core/events":13,"./shader":25}],27:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('./core/core');
 var ShaderLayer = _dereq_('./shader.layer');
 var Canvas = _dereq_('./canvas');
 
@@ -3902,7 +3894,7 @@ proto.render = function() {
 proto._renderHitGrid = function() {
   // store current shader and use hitShader for rendering the grid
   var currentShader = this._renderer.getShader();
-  this._renderer.setShader(currentShader.createHitShader(VECNIK.ID_COLUMN));
+  this._renderer.setShader(currentShader.createHitShader('cartodb_id'));
   this._renderer.render(this, this._hitCanvas, this._data, {
     zoom: this._coords.z
   });
@@ -3967,6 +3959,6 @@ proto.getFeature = function(id) {
   return;
 };
 
-},{"./canvas":11,"./core/core":12,"./shader.layer":26}]},{},[16])
+},{"./canvas":11,"./shader.layer":26}]},{},[16])
 (16)
 });

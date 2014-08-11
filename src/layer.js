@@ -1,5 +1,4 @@
 
-var VECNIK = require('./core/core');
 var Geometry = require('./geometry');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
@@ -79,7 +78,7 @@ if (typeof L !== 'undefined') {
       return false;
     },
 
-    _getFeatureFromPos: function(pos) {
+    _getFeaturePropertiesFromPos: function(pos) {
       var tileSize = this._getTileSize();
       var tile = { x: (pos.x/tileSize) | 0, y: (pos.y/tileSize) | 0 };
       var key = this._tileCoordsToKey(tile);
@@ -128,8 +127,8 @@ if (typeof L !== 'undefined') {
       });
     },
 
-    _hoveredFeature: null,
-    _clickedFeature: null,
+    _hoveredFeatureProperties: null,
+    _clickedFeatureProperties: null,
 
     onAdd: function(map) {
 console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
@@ -140,17 +139,17 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         }
 
         // render previously highlighted tiles as normal
-        if (this._clickedFeature) {
-          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
+        if (this._clickedFeatureProperties) {
+          this._renderAffectedTiles(this._clickedFeatureProperties.cartodb_id);
         }
 
-        this._clickedFeature = this._getFeatureFromPos(map.project(e.latlng));
+        this._clickedFeatureProperties = this._getFeaturePropertiesFromPos(map.project(e.latlng));
 
-        if (this._clickedFeature) {
-          this._renderAffectedTiles(this._clickedFeature[VECNIK.ID_COLUMN]);
+        if (this._clickedFeatureProperties) {
+          this._renderAffectedTiles(this._clickedFeatureProperties.cartodb_id);
 
           this.fireEvent('featureClick', {
-            feature: this._clickedFeature,
+            feature: this._clickedFeatureProperties,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
@@ -165,7 +164,7 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
         var pos = map.project(e.latlng);
         var tile = this._getTileFromPos(pos);
-        var feature = this._getFeatureFromPos(pos);
+        var feature = this._getFeaturePropertiesFromPos(pos);
 
         var payload = {
           geo: e.latlng,
@@ -174,21 +173,21 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         };
 
         // mouse stays in same feature
-        if (feature && this._hoveredFeature && feature[VECNIK.ID_COLUMN] === this._hoveredFeature[VECNIK.ID_COLUMN]) {
-          payload.feature = this._hoveredFeature;
+        if (feature && this._hoveredFeatureProperties && feature.cartodb_id === this._hoveredFeatureProperties.cartodb_id) {
+          payload.feature = this._hoveredFeatureProperties;
           this.fireEvent('featureOver', payload);
           return;
         }
 
         // mouse just left a feature
-        if (this._hoveredFeature) {
-          this._renderAffectedTiles(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        if (this._hoveredFeatureProperties) {
+          this._renderAffectedTiles(this._hoveredFeatureProperties.cartodb_id);
           if (tile) {
             tile.style.cursor = 'inherit';
           }
-          payload.feature = this._hoveredFeature;
+          payload.feature = this._hoveredFeatureProperties;
           this.fireEvent('featureLeave', payload);
-          this._hoveredFeature = null;
+          this._hoveredFeatureProperties = null;
           return;
         }
 
@@ -200,8 +199,8 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         }
 
         // mouse entered another feature
-        this._hoveredFeature = feature;
-        this._renderAffectedTiles(this._hoveredFeature[VECNIK.ID_COLUMN]);
+        this._hoveredFeatureProperties = feature;
+        this._renderAffectedTiles(this._hoveredFeatureProperties.cartodb_id);
         if (tile) {
           tile.style.cursor = 'pointer';
         }
@@ -280,14 +279,14 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         return { x: pos.x*scale <<0, y: pos.y*scale <<0 };
       }
 
-      var featureParts = this._getFeatureParts(feature.id);
+      var featureParts = this._getFeaturePropertiesParts(feature.id);
       if (pos = Geometry.getCentroid(featureParts)) {
         this._centroidPositions[feature.id] = { x: pos.x/scale, y: pos.y/scale };
         return pos;
       }
     },
 
-    _getFeatureParts: function(id) {
+    _getFeaturePropertiesParts: function(id) {
       var
         tiles = this._tileObjects[this._map.getZoom()],
         tile,
@@ -312,11 +311,11 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
     },
 
     getHoveredFeature: function() {
-      return this._hoveredFeature;
+      return this._hoveredFeatureProperties;
     },
 
     getClickedFeature: function() {
-      return this._clickedFeature;
+      return this._clickedFeatureProperties;
     }
   });
 }

@@ -48,12 +48,14 @@ function _convertAndReproject(buffer) {
 
     for (f = 0; f < numFeatures; f++) {
       feature = vTile.layers[l].feature(f);
-      feature.properties[VECNIK.ID_COLUMN] = feature._id || feature.properties.osm_id || feature.properties.id || Math.random() * 10000000 <<0;
+
+      // Mapbox specific
+      feature.properties.cartodb_id = feature.properties.osm_id || Math.random() * 100000 <<0;
 
       _addGeometry(
         feature.type,
         feature.loadGeometry(),
-        feature._id || feature.properties[VECNIK.ID_COLUMN],
+        feature.id || feature.properties.id || feature.properties.cartodb_id,
         feature.properties,
         dataByRef
       );
