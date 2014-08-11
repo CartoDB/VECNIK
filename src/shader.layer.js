@@ -85,7 +85,7 @@ proto.compile = function(shaderSrc) {
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
-  var nameAttachment = typeof this._name === 'string' ? this._name.split('::')[1] : '';
+  var nameAttachment = this._name.split('::')[1];
 
   if (nameAttachment === 'hover' &&
      (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
