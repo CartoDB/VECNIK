@@ -29,6 +29,18 @@ html, body {
   z-index: 100;
   pointer-events: none;
 }
+
+.property {
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.property .key {
+  display: block;
+  font-weight: bold;
+  color: #999999;
+}
 </style>
 
 <script src="lib/leaflet08/leaflet-src.js"></script>
@@ -215,10 +227,6 @@ var cartocss =
 '}'+
 '#layer [scalerank = 0] {'+
 '  line-color: #FDBF6F;'+
-'}'+
-'#layer::hover {\n'+
-'  line-color: #ff00ff;\n'+
-'  line-width: 10;\n'+
 '}'
 ;
 
@@ -265,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
       tooltip.style.display = 'block';
       var innerHTML = '';
       for (var key in e.feature) {
-        innerHTML += key +'<br>'+ e.feature[key] +'<br>';
+        innerHTML += '<div class="property"><span class="key">'+ key +'</span>'+ e.feature[key] +'</div>';
       }
       tooltip.innerHTML     = innerHTML;
       tooltip.style.left    = (e.x+10) +'px';
@@ -277,9 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .on('featureOut', function(e) {
       tooltip.style.display = 'none';
-    })
-    .on('featureClick', function(e) {
-//      tooltip.innerHTML += ' clicked';
     });
 
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);

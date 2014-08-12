@@ -3856,7 +3856,7 @@ var Tile = module.exports = function(options) {
 var proto = Tile.prototype;
 
 proto.getDomElement = function() {
-  return this._hitCanvas.getDomElement();
+  return this._canvas.getDomElement();
 };
 
 proto.getLayer = function() {

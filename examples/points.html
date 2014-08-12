@@ -192,9 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .on('featureOut', function(e) {
       tooltip.style.display = 'none';
-    })
-    .on('featureClick', function(e) {
-      tooltip.innerHTML += ' clicked';
     });
 
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);
