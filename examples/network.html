@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vecnik - Network</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="lib/leaflet08/leaflet.css">
+<style type="text/css">
+html, body {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#map {
+  height: 100%;
+}
+
+#tooltip {
+  position: absolute;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: sans-serif;
+  font-size: 14px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.property {
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.property .key {
+  display: block;
+  font-weight: bold;
+  color: #999999;
+}
+</style>
+
+<script src="lib/leaflet08/leaflet-src.js"></script>
+<script src="../vecnik.debug.js"></script>
+<script src="lib/underscore.js"></script>
+<script src="lib/carto.js"></script>
+<script>
+// https://viz2.cartodb.com/viz/78c9ecce-ed61-11e3-b81e-0e73339ffa50/public_map
+
+var viz = {
+  "id": "f5d3ea30-ed61-11e3-ba3c-0e230854a1cb",
+  "version": "0.1.0",
+  "title": "vecnik_huge_line",
+  "description": null,
+  "scrollwheel": true,
+  "legends": true,
+  "url": null,
+  "map_provider": "googlemaps",
+  "bounds": [
+    [40.07324899763176, -4.032269290783688],
+    [40.712301637456974, -3.044873050549313]
+  ],
+  "center": [40.393533408592276, -3.5385711706665],
+  "zoom": 11,
+  "updated_at": "2014-06-06T10:14:59+00:00",
+  "layers": [{
+    "options": {
+      "style": [{
+        "stylers": [{
+          "saturation": -65
+        }, {
+          "gamma": 1.52
+        }]
+      }, {
+        "featureType": "administrative",
+        "stylers": [{
+          "saturation": -95
+        }, {
+          "gamma": 2.26
+        }]
+      }, {
+        "featureType": "water",
+        "elementType": "labels",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "administrative.locality",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "road",
+        "stylers": [{
+          "visibility": "simplified"
+        }, {
+          "saturation": -99
+        }, {
+          "gamma": 2.22
+        }]
+      }, {
+        "featureType": "poi",
+        "elementType": "labels",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "road.arterial",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "road.local",
+        "elementType": "labels",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "transit",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "road",
+        "elementType": "labels",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "poi",
+        "stylers": [{
+          "saturation": -55
+        }]
+      }],
+      "base_type": "roadmap"
+    },
+    "infowindow": null,
+    "tooltip": null,
+    "id": "42bd392b-babe-4781-a461-d68ecf3bd14d",
+    "order": 0,
+    "type": "gmapsbase"
+  }, {
+    "type": "layergroup",
+    "options": {
+//      "user_name": "viz2",
+      "user_name": "osmbuildings",
+      "tiler_protocol": "http",
+      "tiler_domain": "cartodb.com",
+      "tiler_port": "80",
+      "sql_api_protocol": "http",
+      "sql_api_domain": "cartodb.com",
+      "sql_api_endpoint": "/api/v2/sql",
+      "sql_api_port": 80,
+      "cdn_url": {
+        "http": "api.cartocdn.com",
+        "https": "cartocdn.global.ssl.fastly.net"
+      },
+      "layer_definition": {
+        "stat_tag": "f5d3ea30-ed61-11e3-ba3c-0e230854a1cb",
+        "version": "1.0.1",
+        "layers": [{
+          "id": "1998039b-9e1c-4f48-97d5-d199d1c229ca",
+          "type": "CartoDB",
+          "infowindow": {
+            "fields": [{
+              "name": "highway",
+              "title": true,
+              "position": 19
+            }, {
+              "name": "tracktype",
+              "title": true,
+              "position": 49
+            }, {
+              "name": "width",
+              "title": true,
+              "position": 55
+            }],
+            "template_name": "table/views/infowindow_light",
+            "template": "<div class=\"cartodb-popup v2\">\n  <a href=\"#close\" class=\"cartodb-popup-close-button close\">x</a>\n  <div class=\"cartodb-popup-content-wrapper\">\n    <div class=\"cartodb-popup-content\">\n      {{#content.fields}}\n        {{#title}}<h4>{{title}}</h4>{{/title}}\n        {{#value}}\n          <p {{#type}}class=\"{{ type }}\"{{/type}}>{{{ value }}}</p>\n        {{/value}}\n        {{^value}}\n          <p class=\"empty\">null</p>\n        {{/value}}\n      {{/content.fields}}\n    </div>\n  </div>\n  <div class=\"cartodb-popup-tip-container\"></div>\n</div>\n",
+            "alternative_names": {},
+            "width": 226,
+            "maxHeight": 180
+          },
+          "tooltip": null,
+          "legend": {
+            "type": "none",
+            "show_title": false,
+            "title": "",
+            "template": ""
+          },
+          "order": 1,
+          "visible": true,
+          "options": {
+            "sql": "select * from madrid_osm_line",
+            "layer_name": "madrid_osm_line",
+            "cartocss": "@motorway_line: #000;\n@primary_line: #000;\n@secondary_line: #000;\n@standard_line: #C00;\n@trunk_line: #300;\n\n#madrid_osm_line[zoom>=5][zoom<=8] {\n  [highway='motorway'] { line-color: @motorway_line; }\n  [highway='trunk'] { line-color: @trunk_line; }\n  [zoom=5] {\n    [highway='motorway'] { line-width: 0.4; }\n    [highway='trunk'] { line-width: 0.2; } }\n  [zoom=6] {\n    [highway='motorway'] { line-width: 0.5; }\n    [highway='trunk'] { line-width: 0.25; } }\n  [zoom=7] {\n    [highway='motorway'] { line-width: 0.6; }\n    [highway='trunk'] { line-width: 0.3; } }\n  [zoom=8] {\n    [highway='motorway'] { line-width: 1; }\n    [highway='trunk'] { line-width: 0.5; } }\n}\n\n/* At mid-level scales start to show primary and secondary routes\nas well. */\n\n#madrid_osm_line[zoom>=9][zoom<=14] {\n  [highway='motorway'],\n  [highway='motorway_link'] {\n    line-color: @motorway_line;\n  }\n  [highway='trunk'],\n  [highway='trunk_link'] {\n    line-color: @trunk_line;\n  }\n  [highway='primary'] { line-color: @primary_line; }\n  [highway='secondary'] { line-color: @secondary_line; }\n  [highway='tertiary'] { line-color: @standard_line; }\n  [zoom=9] {\n    [highway='motorway'],[highway='trunk'] { line-width: 1.4; }\n    [highway='primary'],[highway='secondary'],\n    [highway='motorway_link'],[highway='trunk_link'] { line-width: 0.6; }\n  }\n  [zoom=10] {\n    [highway='motorway'],[highway='trunk'] { line-width: 1.8; }\n    [highway='primary'],[highway='secondary'],\n    [highway='motorway_link'],[highway='trunk_link'] { line-width: 0.8; }\n  }\n}",
+            "cartocss_version": "2.1.1",
+            "interactivity": "cartodb_id",
+            "table_name": "\"\"."
+          }
+        }]
+      }
+    }
+  }],
+  "overlays": [{
+    "type": "loader",
+    "order": 8,
+    "options": {
+      "display": true,
+      "x": 20,
+      "y": 150
+    },
+    "template": "<div class=\"loader\" original-title=\"\"></div>"
+  }, {
+    "type": "zoom",
+    "order": 6,
+    "options": {
+      "display": true,
+      "x": 20,
+      "y": 20
+    },
+    "template": "<a href=\"#zoom_in\" class=\"zoom_in\">+</a> <a href=\"#zoom_out\" class=\"zoom_out\">-</a>"
+  }]
+};
+
+var cartocss = "\
+@motorway_line: #000;\
+@primary_line: #000;\
+@secondary_line: #000;\
+@standard_line: #C00;\
+@trunk_line: #300;\
+\
+#madrid_osm_line[zoom>=5][zoom<=8] {\
+  [highway='motorway'] { line-color: @motorway_line; }\
+  [highway='trunk'] { line-color: @trunk_line; }\
+  [zoom=5] {\
+    [highway='motorway'] { line-width: 0.4; }\
+    [highway='trunk'] { line-width: 0.2; } }\
+  [zoom=6] {\
+    [highway='motorway'] { line-width: 0.5; }\
+    [highway='trunk'] { line-width: 0.25; } }\
+  [zoom=7] {\
+    [highway='motorway'] { line-width: 0.6; }\
+    [highway='trunk'] { line-width: 0.3; } }\
+  [zoom=8] {\
+    [highway='motorway'] { line-width: 1; }\
+    [highway='trunk'] { line-width: 0.5; } }\
+}\
+\
+#madrid_osm_line[zoom>=9][zoom<=14] {\
+  [highway='motorway'],\
+  [highway='motorway_link'] {\
+    line-color: @motorway_line;\
+  }\
+  [highway='trunk'],\
+  [highway='trunk_link'] {\
+    line-color: @trunk_line;\
+  }\
+  [highway='primary'] { line-color: @primary_line; }\
+  [highway='secondary'] { line-color: @secondary_line; }\
+  [highway='tertiary'] { line-color: @standard_line; }\
+  [zoom=9] {\
+    [highway='motorway'],[highway='trunk'] { line-width: 1.4; }\
+    [highway='primary'],[highway='secondary'],\
+    [highway='motorway_link'],[highway='trunk_link'] { line-width: 0.6; }\
+  }\
+  [zoom=10] {\
+    [highway='motorway'],[highway='trunk'] { line-width: 1.8; }\
+    [highway='primary'],[highway='secondary'],\
+    [highway='motorway_link'],[highway='trunk_link'] { line-width: 0.8; }\
+  }\
+}";
+
+cartocss = viz.layers[1].options.layer_definition.layers[0].options.cartocss;
+
+var map;
+
+var provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
+  user: 'osm',
+  table: 'planet',
+  columns: ['tags->\'highway\' AS highway'],
+  filter: '(tags->\'highway\' = \'motorway\' OR tags->\'highway\' = \'primary\' OR tags->\'highway\' = \'secondary\' OR tags->\'highway\' = \'standard\' OR tags->\'highway\' = \'trunk\')',
+  debug: false,
+  bufferSize: 50
+});
+
+var shader = new VECNIK.CartoShader(cartocss);
+
+var vlayer = new VECNIK.Layer({
+  provider: provider,
+  renderer: new VECNIK.Renderer({ shader: shader }),
+  interaction: true,
+  detectRetina: true
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  map = new L.Map('map').setView(viz.center, viz.zoom-1);
+
+  new L.TileLayer(
+    'http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png',
+    {
+      subdomains: 'abc',
+      attribution: '&copy; Stamen Toner',
+      maxZoom: 18
+    })
+    .addTo(map);
+
+  var tooltip = document.querySelector('#tooltip');
+
+  vlayer.addTo(map)
+    .on('featureEnter', function(e) {
+      tooltip.style.display = 'block';
+      var innerHTML = '';
+      for (var key in e.feature) {
+        innerHTML += '<div class="property"><span class="key">'+ key +'</span>'+ e.feature[key] +'</div>';
+      }
+      tooltip.innerHTML     = innerHTML;
+      tooltip.style.left    = (e.x+10) +'px';
+      tooltip.style.top     = (e.y+10) +'px';
+    })
+    .on('featureOver', function(e) {
+      tooltip.style.left = (e.x+10) +'px';
+      tooltip.style.top  = (e.y+10) +'px';
+    })
+    .on('featureOut', function(e) {
+      tooltip.style.display = 'none';
+    });
+
+  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+});
+
+</script>
+</head>
+
+<body>
+<div id="map"></div>
+<div id="tooltip"></div>
+</body>
+</html>

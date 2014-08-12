@@ -3063,6 +3063,8 @@ var Mercator = _dereq_('../mercator');
 
 var CartoDB = module.exports = {};
 
+//http://osm.cartodb.com/api/v1/sql?q=select%201%20from%20planet%20limit%201
+
 CartoDB.SQL = function(table, x, y, zoom, options) {
 
   options = options || {
@@ -3076,7 +3078,8 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
-  var id_column = '"cartodb_id"';
+//  var id_column = '"cartodb_id"';
+  var id_column = 'osm_id AS cartodb_id';
 
   var tileSize = 256; // = L.Browser.retina ? 512 : 256;
   var tile_pixel_width = tileSize;
