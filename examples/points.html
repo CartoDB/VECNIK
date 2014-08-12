@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vecnik - Points</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="lib/leaflet08/leaflet.css">
+<style type="text/css">
+html, body {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#map {
+  height: 100%;
+}
+
+#tooltip {
+  position: absolute;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: sans-serif;
+  font-size: 14px;
+  z-index: 100;
+  pointer-events: none;
+}
+</style>
+
+<script src="lib/leaflet08/leaflet-src.js"></script>
+<script src="../vecnik.debug.js"></script>
+<script src="lib/underscore.js"></script>
+<script src="lib/carto.js"></script>
+<script>
+var viz = {
+  "id": "fa3a62aa-ed63-11e3-a243-0e10bcd91c2b",
+  "version": "0.1.0",
+  "title": "vecnik_points",
+  "description": null,
+  "scrollwheel": true,
+  "legends": true,
+  "url": null,
+  "map_provider": "leaflet",
+  "bounds": [
+    [-73.67726447634907, -200.91796874999997],
+    [71.35706654962706, 249.08203125]
+  ],
+  "center": [-3.8642546157214084, 24.08203125],
+  "zoom": 3,
+  "updated_at": "2014-06-06T10:20:29+00:00",
+  "layers": [{
+    "options": {
+      "visible": true,
+      "type": "Tiled",
+      "urlTemplate": "https://{s}.maps.nlp.nokia.com/maptile/2.1/maptile/newest/normal.day/{z}/{x}/{y}/256/png8?lg=eng&token=A7tBPacePg9Mj_zghvKt9Q&app_id=KuYppsdXZznpffJsKT24",
+      "name": "Nokia Day",
+      "className": "nokia_day",
+      "attribution": "\u00a92012 Nokia <a href='http://here.net/services/terms' target='_blank'>Terms of use</a>",
+      "subdomains": "1234"
+    },
+    "infowindow": null,
+    "tooltip": null,
+    "id": "73199c16-a151-4a07-9e47-2d2a3150a7ae",
+    "order": 0,
+    "type": "tiled"
+  }, {
+    "type": "namedmap",
+    "order": 1,
+    "options": {
+      "type": "namedmap",
+//      "user_name": "viz2",
+      "user_name": "osmbuildings",
+      "tiler_protocol": "http",
+      "tiler_domain": "cartodb.com",
+      "tiler_port": "80",
+      "cdn_url": {
+        "http": "api.cartocdn.com",
+        "https": "cartocdn.global.ssl.fastly.net"
+      },
+      "named_map": {
+        "name": "tpl_fa3a62aa_ed63_11e3_a243_0e10bcd91c2b",
+        "stat_tag": "fa3a62aa-ed63-11e3-a243-0e10bcd91c2b",
+        "params": {
+          "layer0": 1
+        },
+        "layers": [{
+//          "layer_name": "ne_10m_populated_places",
+          "layer_name": "populated_places",
+          "interactivity": "cartodb_id",
+          "visible": true,
+          "legend": {
+            "type": "category",
+            "show_title": false,
+            "title": "",
+            "template": "",
+            "items": [{
+              "name": 0,
+              "visible": true,
+              "value": "url(http://com.cartodb.users-assets.production.s3.amazonaws.com/maki-icons/circle-stroked-18.svg)"
+            }, {
+              "name": 1,
+              "visible": true,
+              "value": "url(http://com.cartodb.users-assets.production.s3.amazonaws.com/pin-maps/favourite1.svg)"
+            }]
+          }
+        }]
+      }
+    }
+  }],
+  "overlays": [{
+    "type": "loader",
+    "order": 8,
+    "options": {
+      "display": true,
+      "x": 20,
+      "y": 150
+    },
+    "template": "<div class=\"loader\" original-title=\"\"></div>"
+  }, {
+    "type": "zoom",
+    "order": 6,
+    "options": {
+      "display": true,
+      "x": 20,
+      "y": 20
+    },
+    "template": "<a href=\"#zoom_in\" class=\"zoom_in\">+</a> <a href=\"#zoom_out\" class=\"zoom_out\">-</a>"
+  }]
+};
+
+var cartocss =
+'#layer {\n'+
+'  marker-fill: #666666;\n'+
+'  marker-width: 5;\n'+
+'  marker-line-color: rgba(0, 0, 0, 0.01);\n'+
+'  marker-line-width: 2;\n'+
+'}';
+
+var map;
+
+var providerOptions = viz.layers[1].options;
+
+var provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
+  user: providerOptions.user_name,
+  table: providerOptions.named_map.layers[0].layer_name,
+  debug: false,
+  bufferSize: 50
+});
+
+var shader = new VECNIK.CartoShader(cartocss);
+
+var vlayer = new VECNIK.Layer({
+  provider: provider,
+  renderer: new VECNIK.Renderer({ shader: shader }),
+  interaction: true,
+  detectRetina: true
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  map = new L.Map('map').setView(viz.center, viz.zoom);
+
+  var baseTiles = viz.layers[0].options;
+
+  new L.TileLayer(
+    baseTiles.urlTemplate,
+    {
+      subdomains: '1234',
+      name: baseTiles.name,
+      attribution: baseTiles.attribution,
+      maxZoom: 20
+    })
+    .addTo(map);
+
+  var tooltip = document.querySelector('#tooltip');
+
+  vlayer.addTo(map)
+    .on('featureEnter', function(e) {
+      tooltip.style.display = 'block';
+      tooltip.innerText     = e.feature.cartodb_id;
+      tooltip.style.left    = (e.x+10) +'px';
+      tooltip.style.top     = (e.y+10) +'px';
+    })
+    .on('featureOver', function(e) {
+      tooltip.style.left = (e.x+10) +'px';
+      tooltip.style.top  = (e.y+10) +'px';
+    })
+    .on('featureOut', function(e) {
+      tooltip.style.display = 'none';
+    })
+    .on('featureClick', function(e) {
+      tooltip.innerText += ' clicked';
+    });
+
+  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+});
+
+</script>
+</head>
+
+<body>
+<div id="map"></div>
+<div id="tooltip"></div>
+</body>
+</html>

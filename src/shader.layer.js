@@ -154,6 +154,5 @@ var Int2RGB = function(input) {
   return [r, g, b];
 };
 
-// TODO: could be static methods of VECNIK.Shader
 ShaderLayer.RGB2Int = RGB2Int;
 ShaderLayer.Int2RGB = Int2RGB;

@@ -71,7 +71,7 @@ proto._renderHitGrid = function() {
 
   var data = this._hitCanvas.getData();
 
-  // check, whether somethisng has been drawn
+  // check, whether something has been drawn
   // TODO: maybe shader was not ready. try to check this instead
   for (var i = 0; i < data.length; i++) {
     if (data[i]) {
