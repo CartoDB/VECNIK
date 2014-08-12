@@ -3275,7 +3275,7 @@ function _addGeometry(geometry, id, properties, tile, dataByRef) {
 
     case 'MultiLineString':
       for (i = 0, il = coordinates.length; i < il; i++) {
-        _addLineString(coordinates[i], _clone(properties), tile, dataByRef);
+        _addLineString(coordinates[i], id, _clone(properties), tile, dataByRef);
       }
     break;
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Vecnik - Points</title>
+<title>Vecnik - Lines</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -36,37 +36,41 @@ html, body {
 <script src="lib/underscore.js"></script>
 <script src="lib/carto.js"></script>
 <script>
-// https://viz2.cartodb.com/viz/fa3a62aa-ed63-11e3-a243-0e10bcd91c2b/public_map
+// https://viz2.cartodb.com/viz/78c9ecce-ed61-11e3-b81e-0e73339ffa50/public_map
 
 var viz = {
-  "id": "fa3a62aa-ed63-11e3-a243-0e10bcd91c2b",
+  "id": "78c9ecce-ed61-11e3-b81e-0e73339ffa50",
   "version": "0.1.0",
-  "title": "vecnik_points",
+  "title": "vecnik_lines",
   "description": null,
   "scrollwheel": true,
   "legends": true,
   "url": null,
   "map_provider": "leaflet",
   "bounds": [
-    [-73.67726447634907, -200.91796874999997],
-    [71.35706654962706, 249.08203125]
+    [6.620957270326323, -43.33007812499999],
+    [51.536085601784755, 69.169921875]
   ],
-  "center": [-3.8642546157214084, 24.08203125],
-  "zoom": 3,
-  "updated_at": "2014-06-06T10:20:29+00:00",
+  "center": [31.728167146023935, 12.919921874999998],
+  "zoom": 5,
+  "updated_at": "2014-06-06T10:02:06+00:00",
   "layers": [{
     "options": {
       "visible": true,
       "type": "Tiled",
-      "urlTemplate": "https://{s}.maps.nlp.nokia.com/maptile/2.1/maptile/newest/normal.day/{z}/{x}/{y}/256/png8?lg=eng&token=A7tBPacePg9Mj_zghvKt9Q&app_id=KuYppsdXZznpffJsKT24",
-      "name": "Nokia Day",
-      "className": "nokia_day",
-      "attribution": "\u00a92012 Nokia <a href='http://here.net/services/terms' target='_blank'>Terms of use</a>",
-      "subdomains": "1234"
+      "name": "Warden (Mapbox)",
+      "className": "mapbox_warden",
+      "base_type": "mapbox_warden",
+      "urlTemplate": "https://dnv9my2eseobd.cloudfront.net/v3/cartodb.map-uulyudas/{z}/{x}/{y}.png",
+      "read_only": true,
+      "maxZoom": 21,
+      "attribution": "Mapbox <a href='http://mapbox.com/about/maps' target='_blank'>Terms &amp; Feedback</a>",
+      "order": 0,
+      "id": 2696
     },
     "infowindow": null,
     "tooltip": null,
-    "id": "73199c16-a151-4a07-9e47-2d2a3150a7ae",
+    "id": "03de8b49-1078-4102-bf48-5d21cae93945",
     "order": 0,
     "type": "tiled"
   }, {
@@ -84,29 +88,81 @@ var viz = {
         "https": "cartocdn.global.ssl.fastly.net"
       },
       "named_map": {
-        "name": "tpl_fa3a62aa_ed63_11e3_a243_0e10bcd91c2b",
-        "stat_tag": "fa3a62aa-ed63-11e3-a243-0e10bcd91c2b",
+        "name": "tpl_78c9ecce_ed61_11e3_b81e_0e73339ffa50",
+        "stat_tag": "78c9ecce-ed61-11e3-b81e-0e73339ffa50",
         "params": {
           "layer0": 1
         },
         "layers": [{
-//          "layer_name": "ne_10m_populated_places",
-          "layer_name": "populated_places",
+//          "layer_name": "table_50m_rivers_lake_cen",
+          "layer_name": "table_50m_rivers_lake_centerlines_with_scale_r",
           "interactivity": "cartodb_id",
           "visible": true,
+          "infowindow": {
+            "fields": [{
+              "name": "dissolve",
+              "title": true,
+              "position": 2
+            }, {
+              "name": "featurecla",
+              "title": true,
+              "position": 3
+            }, {
+              "name": "name1",
+              "title": true,
+              "position": 4
+            }, {
+              "name": "note",
+              "title": true,
+              "position": 5
+            }, {
+              "name": "scalerank",
+              "title": true,
+              "position": 6
+            }, {
+              "name": "strokeweig",
+              "title": true,
+              "position": 7
+            }],
+            "template_name": "table/views/infowindow_light",
+            "template": "<div class=\"cartodb-popup v2\">\n  <a href=\"#close\" class=\"cartodb-popup-close-button close\">x</a>\n  <div class=\"cartodb-popup-content-wrapper\">\n    <div class=\"cartodb-popup-content\">\n      {{#content.fields}}\n        {{#title}}<h4>{{title}}</h4>{{/title}}\n        {{#value}}\n          <p {{#type}}class=\"{{ type }}\"{{/type}}>{{{ value }}}</p>\n        {{/value}}\n        {{^value}}\n          <p class=\"empty\">null</p>\n        {{/value}}\n      {{/content.fields}}\n    </div>\n  </div>\n  <div class=\"cartodb-popup-tip-container\"></div>\n</div>\n",
+            "alternative_names": {},
+            "width": 226,
+            "maxHeight": 180
+          },
           "legend": {
             "type": "category",
             "show_title": false,
             "title": "",
             "template": "",
             "items": [{
-              "name": 0,
+              "name": 6,
               "visible": true,
-              "value": "url(http://com.cartodb.users-assets.production.s3.amazonaws.com/maki-icons/circle-stroked-18.svg)"
+              "value": "#A6CEE3"
+            }, {
+              "name": 3,
+              "visible": true,
+              "value": "#1F78B4"
+            }, {
+              "name": 4,
+              "visible": true,
+              "value": "#B2DF8A"
+            }, {
+              "name": 5,
+              "visible": true,
+              "value": "#33A02C"
+            }, {
+              "name": 2,
+              "visible": true,
+              "value": "#FB9A99"
             }, {
               "name": 1,
               "visible": true,
-              "value": "url(http://com.cartodb.users-assets.production.s3.amazonaws.com/pin-maps/favourite1.svg)"
+              "value": "#E31A1C"
+            }, {
+              "name": 0,
+              "visible": true,
+              "value": "#FDBF6F"
             }]
           }
         }]
@@ -136,10 +192,8 @@ var viz = {
 
 var cartocss =
 '#layer {\n'+
-'  marker-fill: #666666;\n'+
-'  marker-width: 5;\n'+
-'  marker-line-color: rgba(0, 0, 0, 0.01);\n'+
-'  marker-line-width: 2;\n'+
+'  line-color: rgb(100, 100, 200);\n'+
+'  line-width: 2;\n'+
 '}';
 
 var map;
