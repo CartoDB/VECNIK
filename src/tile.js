@@ -119,7 +119,7 @@ proto.getFeatureAt = function(x, y) {
 
 proto.getFeature = function(cartodb_id) {
   for (var i = 0, il = this._data.length; i < il; i++) {
-    if (this._data[i].cartodb_id === cartodb_id) {
+    if (this._data[i].properties.cartodb_id === cartodb_id) {
       return this._data[i];
     }
   }

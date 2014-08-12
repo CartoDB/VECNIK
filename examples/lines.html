@@ -193,8 +193,34 @@ var viz = {
 var cartocss =
 '#layer {\n'+
 '  line-color: rgb(100, 100, 200);\n'+
-'  line-width: 2;\n'+
-'}';
+'  line-width: [strokeweig]*5;\n'+
+'}'+
+'#layer [scalerank = 6] {'+
+'  line-color: #A6CEE3;'+
+'}'+
+'#layer [scalerank = 3] {'+
+'  line-color: #1F78B4;'+
+'}'+
+'#layer [scalerank = 4] {'+
+'  line-color: #B2DF8A;'+
+'}'+
+'#layer [scalerank = 5] {'+
+'  line-color: #33A02C;'+
+'}'+
+'#layer [scalerank = 2] {'+
+'  line-color: #FB9A99;'+
+'}'+
+'#layer [scalerank = 1] {'+
+'  line-color: #E31A1C;'+
+'}'+
+'#layer [scalerank = 0] {'+
+'  line-color: #FDBF6F;'+
+'}'+
+'#layer::hover {\n'+
+'  line-color: #ff00ff;\n'+
+'  line-width: 10;\n'+
+'}'
+;
 
 var map;
 
@@ -203,6 +229,7 @@ var providerOptions = viz.layers[1].options;
 var provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
   user: providerOptions.user_name,
   table: providerOptions.named_map.layers[0].layer_name,
+  columns: ['dissolve', 'featurecla', 'name1', 'note', 'scalerank', 'strokeweig'],
   debug: false,
   bufferSize: 50
 });
@@ -236,7 +263,11 @@ document.addEventListener('DOMContentLoaded', function() {
   vlayer.addTo(map)
     .on('featureEnter', function(e) {
       tooltip.style.display = 'block';
-      tooltip.innerText     = e.feature.cartodb_id;
+      var innerHTML = '';
+      for (var key in e.feature) {
+        innerHTML += key +'<br>'+ e.feature[key] +'<br>';
+      }
+      tooltip.innerHTML     = innerHTML;
       tooltip.style.left    = (e.x+10) +'px';
       tooltip.style.top     = (e.y+10) +'px';
     })
@@ -248,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
       tooltip.style.display = 'none';
     })
     .on('featureClick', function(e) {
-      tooltip.innerText += ' clicked';
+//      tooltip.innerHTML += ' clicked';
     });
 
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);

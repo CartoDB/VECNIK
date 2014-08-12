@@ -78,7 +78,7 @@ if (typeof L !== 'undefined') {
       return false;
     },
 
-    _getFeaturePropertiesFromPos: function(pos) {
+    _getPropertiesFromPos: function(pos) {
       var tileSize = this._getTileSize();
       var tile = { x: (pos.x/tileSize) | 0, y: (pos.y/tileSize) | 0 };
       var key = this._tileCoordsToKey(tile);
@@ -127,8 +127,8 @@ if (typeof L !== 'undefined') {
       });
     },
 
-    _hoveredFeatureProperties: null,
-    _clickedFeatureProperties: null,
+    _hoverProperties: null,
+    _hoverProperties: null,
 
     onAdd: function(map) {
 console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
@@ -139,17 +139,17 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         }
 
         // render previously highlighted tiles as normal
-        if (this._clickedFeatureProperties) {
-          this._renderAffectedTiles(this._clickedFeatureProperties.cartodb_id);
+        if (this._hoverProperties) {
+          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
         }
 
-        this._clickedFeatureProperties = this._getFeaturePropertiesFromPos(map.project(e.latlng));
+        this._hoverProperties = this._getPropertiesFromPos(map.project(e.latlng));
 
-        if (this._clickedFeatureProperties) {
-          this._renderAffectedTiles(this._clickedFeatureProperties.cartodb_id);
+        if (this._hoverProperties) {
+          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
 
           this.fireEvent('featureClick', {
-            feature: this._clickedFeatureProperties,
+            feature: this._hoverProperties,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
@@ -164,7 +164,7 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
         var pos = map.project(e.latlng);
         var tile = this._getTileFromPos(pos);
-        var feature = this._getFeaturePropertiesFromPos(pos);
+        var hoverProperties = this._getPropertiesFromPos(pos);
 
         var payload = {
           geo: e.latlng,
@@ -173,38 +173,38 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         };
 
         // mouse stays in same feature
-        if (feature && this._hoveredFeatureProperties && feature.cartodb_id === this._hoveredFeatureProperties.cartodb_id) {
-          payload.feature = this._hoveredFeatureProperties;
+        if (hoverProperties && this._hoverProperties && hoverProperties.cartodb_id === this._hoverProperties.cartodb_id) {
+          payload.feature = this._hoverProperties;
           this.fireEvent('featureOver', payload);
           return;
         }
 
         // mouse just left a feature
-        if (this._hoveredFeatureProperties) {
-          this._renderAffectedTiles(this._hoveredFeatureProperties.cartodb_id);
+        if (this._hoverProperties) {
+          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
           if (tile) {
             tile.style.cursor = 'inherit';
           }
-          payload.feature = this._hoveredFeatureProperties;
+          payload.feature = this._hoverProperties;
           this.fireEvent('featureLeave', payload);
-          this._hoveredFeatureProperties = null;
+          this._hoverProperties = null;
           return;
         }
 
         // mouse is outside any feature
-        if (!feature) {
+        if (!hoverProperties) {
           delete payload.feature;
           this.fireEvent('featureOut', payload);
           return;
         }
 
         // mouse entered another feature
-        this._hoveredFeatureProperties = feature;
-        this._renderAffectedTiles(this._hoveredFeatureProperties.cartodb_id);
+        this._hoverProperties = hoverProperties;
+        this._renderAffectedTiles(this._hoverProperties.cartodb_id);
         if (tile) {
           tile.style.cursor = 'pointer';
         }
-        payload.feature = feature;
+        payload.feature = hoverProperties;
         this.fireEvent('featureEnter', payload);
       }, this);
 
@@ -311,11 +311,11 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
     },
 
     getHoveredFeature: function() {
-      return this._hoveredFeatureProperties;
+      return this._hoverProperties;
     },
 
     getClickedFeature: function() {
-      return this._clickedFeatureProperties;
+      return this._hoverProperties;
     }
   });
 }

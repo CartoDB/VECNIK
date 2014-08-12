@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
   vlayer.addTo(map)
     .on('featureEnter', function(e) {
       tooltip.style.display = 'block';
-      tooltip.innerText     = e.feature.cartodb_id;
+      tooltip.innerHTML     = e.feature.cartodb_id;
       tooltip.style.left    = (e.x+10) +'px';
       tooltip.style.top     = (e.y+10) +'px';
     })
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
       tooltip.style.display = 'none';
     })
     .on('featureClick', function(e) {
-      tooltip.innerText += ' clicked';
+      tooltip.innerHTML += ' clicked';
     });
 
   L.control.layers({}, { VECNIK: vlayer }).addTo(map);
