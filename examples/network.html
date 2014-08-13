@@ -226,55 +226,50 @@ var viz = {
   }]
 };
 
-var cartocss = "\
-@motorway_line: #000;\
-@primary_line: #000;\
-@secondary_line: #000;\
-@standard_line: #C00;\
-@trunk_line: #300;\
-\
-#madrid_osm_line[zoom>=5][zoom<=8] {\
-  [highway='motorway'] { line-color: @motorway_line; }\
-  [highway='trunk'] { line-color: @trunk_line; }\
+var cartocss =
+'\
+#network[zoom>=5][zoom<=8] {\
+  line-color: rgba(0, 0, 0, 0);\
+  [highway=\'"motorway"\'] { line-color: #000; }\
+  [highway=\'"trunk"\'] { line-color: #300; }\
   [zoom=5] {\
-    [highway='motorway'] { line-width: 0.4; }\
-    [highway='trunk'] { line-width: 0.2; } }\
+    [highway=\'"motorway"\'] { line-width: 0.4; }\
+    [highway=\'"trunk"\'] { line-width: 0.2; } }\
   [zoom=6] {\
-    [highway='motorway'] { line-width: 0.5; }\
-    [highway='trunk'] { line-width: 0.25; } }\
+    [highway=\'"motorway"\'] { line-width: 0.5; }\
+    [highway=\'"trunk"\'] { line-width: 0.25; } }\
   [zoom=7] {\
-    [highway='motorway'] { line-width: 0.6; }\
-    [highway='trunk'] { line-width: 0.3; } }\
+    [highway=\'"motorway"\'] { line-width: 0.6; }\
+    [highway=\'"trunk"\'] { line-width: 0.3; } }\
   [zoom=8] {\
-    [highway='motorway'] { line-width: 1; }\
-    [highway='trunk'] { line-width: 0.5; } }\
+    [highway=\'"motorway"\'] { line-width: 1; }\
+    [highway=\'"trunk"\'] { line-width: 0.5; } }\
 }\
 \
-#madrid_osm_line[zoom>=9][zoom<=14] {\
-  [highway='motorway'],\
-  [highway='motorway_link'] {\
-    line-color: @motorway_line;\
+#network[zoom>=9][zoom<=14] {\
+  line-color: rgba(0, 0, 0, 0);\
+  [highway=\'"motorway"\'], [highway=\'"motorway_link"\'] {\
+    line-color: #000;\
   }\
-  [highway='trunk'],\
-  [highway='trunk_link'] {\
-    line-color: @trunk_line;\
+  [highway=\'"trunk"\'], [highway=\'"trunk_link"\'] {\
+    line-color: #300;\
   }\
-  [highway='primary'] { line-color: @primary_line; }\
-  [highway='secondary'] { line-color: @secondary_line; }\
-  [highway='tertiary'] { line-color: @standard_line; }\
+  [highway=\'"primary"\'] { line-color: #000; }\
+  [highway=\'"secondary"\'] { line-color: #000; }\
+  [highway=\'"tertiary"\'] { line-color: #C00; }\
   [zoom=9] {\
-    [highway='motorway'],[highway='trunk'] { line-width: 1.4; }\
-    [highway='primary'],[highway='secondary'],\
-    [highway='motorway_link'],[highway='trunk_link'] { line-width: 0.6; }\
+    [highway=\'"motorway"\'],[highway=\'"trunk"\'] { line-width: 1.4; }\
+    [highway=\'"primary"\'],[highway=\'"secondary"\'],\
+    [highway=\'"motorway_link"\'],[highway=\'"trunk_link"\'] { line-width: 0.6; }\
   }\
   [zoom=10] {\
-    [highway='motorway'],[highway='trunk'] { line-width: 1.8; }\
-    [highway='primary'],[highway='secondary'],\
-    [highway='motorway_link'],[highway='trunk_link'] { line-width: 0.8; }\
+    [highway=\'"motorway"\'],[highway=\'"trunk"\'] { line-width: 1.8; }\
+    [highway=\'"primary"\'],[highway=\'"secondary"\'],\
+    [highway=\'"motorway_link"\'],[highway=\'"trunk_link"\'] { line-width: 0.8; }\
   }\
-}";
+}';
 
-cartocss = viz.layers[1].options.layer_definition.layers[0].options.cartocss;
+//cartocss = viz.layers[1].options.layer_definition.layers[0].options.cartocss;
 
 var map;
 
@@ -282,7 +277,7 @@ var provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
   user: 'osm',
   table: 'planet',
   columns: ['tags->\'highway\' AS highway'],
-  filter: '(tags->\'highway\' = \'motorway\' OR tags->\'highway\' = \'primary\' OR tags->\'highway\' = \'secondary\' OR tags->\'highway\' = \'standard\' OR tags->\'highway\' = \'trunk\')',
+  filter: 'tags->\'highway\' != \'\'',
   debug: false,
   bufferSize: 50
 });
@@ -300,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
   map = new L.Map('map').setView(viz.center, viz.zoom-1);
 
   new L.TileLayer(
-    'http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png',
+    'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
     {
       subdomains: 'abc',
       attribution: '&copy; Stamen Toner',
