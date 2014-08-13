@@ -17,6 +17,9 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
   var geom_column = '"the_geom"';
   var geom_column_orig = '"the_geom"';
   var id_column = '"cartodb_id"';
+  if (table === 'planet') {
+    id_column = 'osm_id AS cartodb_id';
+  }
 
   var tileSize = 256; // = L.Browser.retina ? 512 : 256;
   var tile_pixel_width = tileSize;
