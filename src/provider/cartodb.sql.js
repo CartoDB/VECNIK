@@ -97,7 +97,7 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
   }
 
   var columns = id_column +','+ geom_column +' as the_geom';
-  if (options.columns) {
+  if (options.columns && options.columns.length) {
     columns += ','+ options.columns.join(',') +' ';
   }
 
