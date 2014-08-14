@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vecnik - Choropleth</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="lib/leaflet08/leaflet.css">
+<style type="text/css">
+html, body {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#map {
+  height: 100%;
+}
+
+#tooltip {
+  position: absolute;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: sans-serif;
+  font-size: 14px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.property {
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.property .key {
+  display: block;
+  font-weight: bold;
+  color: #999999;
+}
+</style>
+
+<script src="lib/leaflet08/leaflet-src.js"></script>
+<script src="../vecnik.debug.js"></script>
+<script src="lib/underscore.js"></script>
+<script src="lib/carto.js"></script>
+<script>
+// https://viz2.cartodb.com/viz/78c9ecce-ed61-11e3-b81e-0e73339ffa50/public_map
+
+var viz = {
+  "id": "3fb1361a-ed5f-11e3-abe6-0e230854a1cb",
+  "version": "0.1.0",
+  "title": "vecnik_huge_polygon",
+  "description": "US Zip Codes full resolution",
+  "scrollwheel": true,
+  "legends": true,
+  "url": null,
+  "map_provider": "leaflet",
+  "bounds": [
+    [43.74728909225906, -87.86865234374999],
+    [46.12274903582433, -80.83740234375]
+  ],
+  "center": [44.94730538740607, -84.35302734375],
+  "zoom": 9,
+  "updated_at": "2014-06-06T09:45:37+00:00",
+  "layers": [{
+    "options": {
+      "type": "Plain",
+      "base_type": "plain",
+      "className": "plain",
+      "color": "#333333",
+      "image": "",
+      "maxZoom": 28,
+      "id": "6baab144-50c6-4b1d-89e6-a53fe83640c7",
+      "order": 0
+    },
+    "infowindow": null,
+    "tooltip": null,
+    "id": "0797cbc2-bfef-4fdd-93e8-7e3df4c98fb9",
+    "order": 0,
+    "type": "background"
+  }, {
+    "type": "layergroup",
+    "options": {
+//      "user_name": "viz2",
+      "user_name": "osmbuildings",
+      "tiler_protocol": "http",
+      "tiler_domain": "cartodb.com",
+      "tiler_port": "80",
+      "sql_api_protocol": "http",
+      "sql_api_domain": "cartodb.com",
+      "sql_api_endpoint": "/api/v2/sql",
+      "sql_api_port": 80,
+      "cdn_url": {
+        "http": "api.cartocdn.com",
+        "https": "cartocdn.global.ssl.fastly.net"
+      },
+      "layer_definition": {
+        "stat_tag": "3fb1361a-ed5f-11e3-abe6-0e230854a1cb",
+        "version": "1.0.1",
+        "layers": [{
+          "id": "491b866e-81eb-43f7-b08e-48457eba85c6",
+          "type": "CartoDB",
+          "infowindow": {
+            "fields": [],
+            "template_name": "table/views/infowindow_light",
+            "template": "<div class=\"cartodb-popup v2\">\n  <a href=\"#close\" class=\"cartodb-popup-close-button close\">x</a>\n  <div class=\"cartodb-popup-content-wrapper\">\n    <div class=\"cartodb-popup-content\">\n      {{#content.fields}}\n        {{#title}}<h4>{{title}}</h4>{{/title}}\n        {{#value}}\n          <p {{#type}}class=\"{{ type }}\"{{/type}}>{{{ value }}}</p>\n        {{/value}}\n        {{^value}}\n          <p class=\"empty\">null</p>\n        {{/value}}\n      {{/content.fields}}\n    </div>\n  </div>\n  <div class=\"cartodb-popup-tip-container\"></div>\n</div>\n",
+            "alternative_names": {},
+            "width": 226,
+            "maxHeight": 180
+          },
+          "tooltip": null,
+          "legend": {
+            "type": "choropleth",
+            "show_title": false,
+            "title": "",
+            "template": "",
+            "items": [{
+              "name": "Left label",
+              "visible": true,
+              "value": "8726850.00",
+              "type": "text"
+            }, {
+              "name": "Right label",
+              "visible": true,
+              "value": "34785906652.01",
+              "type": "text"
+            }, {
+              "name": "Color",
+              "visible": true,
+              "value": "#0080ff",
+              "type": "color"
+            }, {
+              "name": "Color",
+              "visible": true,
+              "value": "#40a0ff",
+              "type": "color"
+            }, {
+              "name": "Color",
+              "visible": true,
+              "value": "#7fbfff",
+              "type": "color"
+            }, {
+              "name": "Color",
+              "visible": true,
+              "value": "#fff2cc",
+              "type": "color"
+            }, {
+              "name": "Color",
+              "visible": true,
+              "value": "#ffa6a6",
+              "type": "color"
+            }, {
+              "name": "Color",
+              "visible": true,
+              "value": "#ff7a7a",
+              "type": "color"
+            }, {
+              "name": "Color",
+              "visible": true,
+              "value": "#ff4d4d",
+              "type": "color"
+            }]
+          },
+          "order": 2,
+          "visible": true,
+          "options": {
+            "sql": "select * from tl_2013_us_zcta510_001",
+            "layer_name": "tl_2013_us_zcta510_001",
+            "cartocss": "/** choropleth visualization */\n\n#tl_2013_us_zcta510_001{\n  polygon-fill: #0080ff;\n  polygon-opacity: 0.8;\n  line-color: #FFF;\n  line-width: 0.1;\n  line-opacity: 1;\n}\n#tl_2013_us_zcta510_001 [ aland10 <= 34785906652.01] {\n   polygon-fill: #ff4d4d;\n}\n#tl_2013_us_zcta510_001 [ aland10 <= 366219966] {\n   polygon-fill: #ff7a7a;\n}\n#tl_2013_us_zcta510_001 [ aland10 <= 199228941] {\n   polygon-fill: #ffa6a6;\n}\n#tl_2013_us_zcta510_001 [ aland10 <= 119576077] {\n   polygon-fill: #fff2cc;\n}\n#tl_2013_us_zcta510_001 [ aland10 <= 69445753] {\n   polygon-fill: #7fbfff;\n}\n#tl_2013_us_zcta510_001 [ aland10 <= 30445142] {\n   polygon-fill: #40a0ff;\n}\n#tl_2013_us_zcta510_001 [ aland10 <= 8726850] {\n   polygon-fill: #0080ff;\n}",
+            "cartocss_version": "2.1.1",
+            "interactivity": "cartodb_id",
+            "table_name": "\"\"."
+          }
+        }]
+      }
+    }
+  }],
+  "overlays": [{
+    "type": "loader",
+    "order": 8,
+    "options": {
+      "display": true,
+      "x": 20,
+      "y": 150
+    },
+    "template": "<div class=\"loader\" original-title=\"\"></div>"
+  }, {
+    "type": "zoom",
+    "order": 6,
+    "options": {
+      "display": true,
+      "x": 20,
+      "y": 20
+    },
+    "template": "<a href=\"#zoom_in\" class=\"zoom_in\">+</a> <a href=\"#zoom_out\" class=\"zoom_out\">-</a>"
+  }]
+};
+
+var cartocss =
+'#layer {\n'+
+'  polygon-fill: #E31A1C;\n'+
+'  line-color: #FFFFFF;\n'+
+'  line-width: 0.5;\n'+
+'  [region=2]{\n'+
+'    polygon-fill: #A6CEE3;\n'+
+'  }\n'+
+'  [region=19]{\n'+
+'    polygon-fill: #1F78B4;\n'+
+'  }\n'+
+'  [region=150]{\n'+
+'    polygon-fill: #B2DF8A;\n'+
+'  }\n'+
+'  [region=142]{\n'+
+'    polygon-fill: #33A02C;\n'+
+'  }\n'+
+'  [region=9]{\n'+
+'    polygon-fill: #FB9A99;\n'+
+'  }\n'+
+'}'
+;
+
+var map;
+
+var providerOptions = viz.layers[0].options;
+
+var provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
+  user: providerOptions.user_name,
+  table: providerOptions.named_map.layers[0].layer_name,
+  columns: ['region'],
+  debug: false,
+  bufferSize: 50
+});
+
+var shader = new VECNIK.CartoShader(cartocss);
+
+var vlayer = new VECNIK.Layer({
+  provider: provider,
+  renderer: new VECNIK.Renderer({ shader: shader }),
+  interaction: true,
+  detectRetina: true
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  map = new L.Map('map').setView(viz.center, viz.zoom-1);
+
+  var tooltip = document.querySelector('#tooltip');
+
+  vlayer.addTo(map)
+    .on('featureEnter', function(e) {
+      tooltip.style.display = 'block';
+      var innerHTML = '';
+      for (var key in e.feature) {
+        innerHTML += '<div class="property"><span class="key">'+ key +'</span>'+ e.feature[key] +'</div>';
+      }
+      tooltip.innerHTML     = innerHTML;
+      tooltip.style.left    = (e.x+10) +'px';
+      tooltip.style.top     = (e.y+10) +'px';
+    })
+    .on('featureOver', function(e) {
+      tooltip.style.left = (e.x+10) +'px';
+      tooltip.style.top  = (e.y+10) +'px';
+    })
+    .on('featureOut', function(e) {
+      tooltip.style.display = 'none';
+    });
+
+  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
+});
+
+</script>
+</head>
+
+<body>
+<div id="map"></div>
+<div id="tooltip"></div>
+</body>
+</html>
