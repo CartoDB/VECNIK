@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Points</title>
+    <title>Bubbles</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css">
@@ -13,7 +13,7 @@
     <script src="lib/underscore.js"></script>
     <script src="lib/carto.js"></script>
     <script src="vecnik-adapter.js"></script>
-    <style>
+     <style>
     #tooltip {
       position: absolute;
       padding: 5px 10px;
@@ -49,7 +49,7 @@
     <div class="row">
       <div class="col span2 empty"><p></p></div>
       <div class="col span12">
-        <h1>Points</h1>
+        <h1>Bubbles</h1>
         <p>The double panel map is perfect for comparing datasets.<br>
         Mapnik on the left, VECNIK on the right.</p>
       </div>
@@ -76,13 +76,13 @@
     <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js"></script>
 
     <script>
-    var map1, map2, vizUrl = 'https://viz2.cartodb.com/api/v2/viz/fa3a62aa-ed63-11e3-a243-0e10bcd91c2b/viz.json';
+    var map1, map2, vizUrl = 'https://viz2.cartodb.com/api/v2/viz/f174c730-ed60-11e3-8ff3-0edbca4b5057/viz.json';
 
     cartodb.createVis('map1', vizUrl)
       .done(function(vis, layers) {
         map1 = vis.mapView.map;
         map2 = initVecnikAdapter('map2', vizUrl, map1,
-         ['adm0_a3','adm0cap','adm0name','capalt','capin','diffascii','featurecla','labelrank','megacity','name','namealt','nameascii','namepar','natscale','sov0name','sov_a3','worldcity']
+          ['iso3','un','name','area','pop2005','iso2','subregion','lon','lat','fips','region']
         );
       });
     </script>

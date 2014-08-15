@@ -75,7 +75,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              radius = style.markerSize;
+              radius = style.markerSize/2;
               bbox = { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 };
               hasCollision = !style.markerAllowOverlap && layer.hasCollision(symbolizer, bbox);
 

@@ -3074,12 +3074,9 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
 
   var projection = new Mercator();
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
-  var geom_column = '"the_geom"';
-  var geom_column_orig = '"the_geom"';
-  var id_column = '"cartodb_id"';
-  if (table === 'planet') {
-    id_column = 'osm_id AS cartodb_id';
-  }
+  var id_column = (table === 'planet') ? 'osm_id' : 'cartodb_id';
+  var geom_column = 'the_geom';
+  var geom_column_orig = 'the_geom';
 
   var tileSize = 256; // = L.Browser.retina ? 512 : 256;
   var tile_pixel_width = tileSize;
@@ -3156,9 +3153,9 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
     geom_column = 'ST_Intersection('+ geom_column +', '+ sql_env_exp +')';
   }
 
-  var columns = id_column +','+ geom_column +' as the_geom';
+  var columns = id_column +' AS cartodb_id,'+ geom_column +' AS the_geom';
   if (options.columns && options.columns.length) {
-    columns += ','+ options.columns.join(',') +' ';
+    columns += ','+ options.columns.join(',');
   }
 
   // profiling only
@@ -3550,7 +3547,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
         switch (symbolizer) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              radius = style.markerSize;
+              radius = style.markerSize/2;
               bbox = { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 };
               hasCollision = !style.markerAllowOverlap && layer.hasCollision(symbolizer, bbox);
 

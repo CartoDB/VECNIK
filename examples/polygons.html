@@ -1,255 +1,90 @@
 <!DOCTYPE html>
-<html>
-<head>
-<title>Vecnik - Polygons</title>
-<meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="stylesheet" href="lib/leaflet08/leaflet.css">
-<style type="text/css">
-html, body {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-#map {
-  height: 100%;
-}
-
-#tooltip {
-  position: absolute;
-  padding: 5px 10px;
-  background: rgba(255, 255, 255, 0.7);
-  font-family: sans-serif;
-  font-size: 14px;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.property {
-  width: 100%;
-  margin-bottom: 10px;
-  font-size: 12px;
-}
-
-.property .key {
-  display: block;
-  font-weight: bold;
-  color: #999999;
-}
-</style>
-
-<script src="lib/leaflet08/leaflet-src.js"></script>
-<script src="../vecnik.debug.js"></script>
-<script src="lib/underscore.js"></script>
-<script src="lib/carto.js"></script>
-<script>
-// https://viz2.cartodb.com/viz/78c9ecce-ed61-11e3-b81e-0e73339ffa50/public_map
-
-var viz = {
-  "id": "8c50f6d0-ed60-11e3-abe6-0e230854a1cb",
-  "version": "0.1.0",
-  "title": "vecnik_small_poly",
-  "description": null,
-  "scrollwheel": true,
-  "legends": true,
-  "url": null,
-  "map_provider": "leaflet",
-  "bounds": [
-    [-87.57006500951655, -158.90625],
-    [87.0066046875775, 346.64062499999994]
-  ],
-  "center": [-5.9657536710655235, 93.8671875],
-  "zoom": 2,
-  "updated_at": "2014-06-06T09:55:03+00:00",
-  "layers": [{
-    "options": {
-      "visible": true,
-      "type": "Tiled",
-      "urlTemplate": "https://{s}.maps.nlp.nokia.com/maptile/2.1/maptile/newest/normal.day/{z}/{x}/{y}/256/png8?lg=eng&token=A7tBPacePg9Mj_zghvKt9Q&app_id=KuYppsdXZznpffJsKT24",
-      "name": "Nokia Day",
-      "className": "nokia_day",
-      "attribution": "\u00a92012 Nokia <a href='http://here.net/services/terms' target='_blank'>Terms of use</a>",
-      "subdomains": "1234"
-    },
-    "infowindow": null,
-    "tooltip": null,
-    "id": "fd0894e0-276a-43a3-9fe6-d95d12bc00a2",
-    "order": 0,
-    "type": "tiled"
-  }, {
-    "type": "namedmap",
-    "order": 1,
-    "options": {
-      "type": "namedmap",
-//      "user_name": "viz2",
-      "user_name": "osmbuildings",
-      "tiler_protocol": "http",
-      "tiler_domain": "cartodb.com",
-      "tiler_port": "80",
-      "cdn_url": {
-        "http": "api.cartocdn.com",
-        "https": "cartocdn.global.ssl.fastly.net"
-      },
-      "named_map": {
-        "name": "tpl_8c50f6d0_ed60_11e3_abe6_0e230854a1cb",
-        "stat_tag": "8c50f6d0-ed60-11e3-abe6-0e230854a1cb",
-        "params": {
-          "layer0": 1
-        },
-        "layers": [{
-//          "layer_name": "tm_world_borders_simpl_0_7",
-          "layer_name": "world_borders",
-          "interactivity": "cartodb_id",
-          "visible": true,
-          "legend": {
-            "type": "category",
-            "show_title": false,
-            "title": "",
-            "template": "",
-            "items": [{
-              "name": 2,
-              "visible": true,
-              "value": "#A6CEE3"
-            }, {
-              "name": 19,
-              "visible": true,
-              "value": "#1F78B4"
-            }, {
-              "name": 150,
-              "visible": true,
-              "value": "#B2DF8A"
-            }, {
-              "name": 142,
-              "visible": true,
-              "value": "#33A02C"
-            }, {
-              "name": 9,
-              "visible": true,
-              "value": "#FB9A99"
-            }, {
-              "name": 0,
-              "visible": true,
-              "value": "#E31A1C"
-            }]
-          }
-        }]
-      }
+<html lang="en">
+  <head>
+    <title>Polygons</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css">
+    <link rel="stylesheet" href="css/makeitresponsive.css">
+    <link rel="stylesheet" href="css/dark-theme.css">
+    <link rel="stylesheet" href="lib/leaflet08/leaflet.css">
+    <script src="lib/leaflet08/leaflet.js"></script>
+    <script src="../vecnik.debug.js"></script>
+    <script src="lib/underscore.js"></script>
+    <script src="lib/carto.js"></script>
+    <script src="vecnik-adapter.js"></script>
+    <style>
+    #tooltip {
+      position: absolute;
+      padding: 5px 10px;
+      background: rgba(255, 255, 255, 0.7);
+      font-family: sans-serif;
+      z-index: 100;
+      pointer-events: none;
+      color: #000000;
     }
-  }],
-  "overlays": [{
-    "type": "loader",
-    "order": 8,
-    "options": {
-      "display": true,
-      "x": 20,
-      "y": 150
-    },
-    "template": "<div class=\"loader\" original-title=\"\"></div>"
-  }, {
-    "type": "zoom",
-    "order": 6,
-    "options": {
-      "display": true,
-      "x": 20,
-      "y": 20
-    },
-    "template": "<a href=\"#zoom_in\" class=\"zoom_in\">+</a> <a href=\"#zoom_out\" class=\"zoom_out\">-</a>"
-  }]
-};
 
-var cartocss =
-'#layer {\n'+
-'  polygon-fill: #E31A1C;\n'+
-'  line-color: #FFFFFF;\n'+
-'  line-width: 0.5;\n'+
-'  [region=2]{\n'+
-'    polygon-fill: #A6CEE3;\n'+
-'  }\n'+
-'  [region=19]{\n'+
-'    polygon-fill: #1F78B4;\n'+
-'  }\n'+
-'  [region=150]{\n'+
-'    polygon-fill: #B2DF8A;\n'+
-'  }\n'+
-'  [region=142]{\n'+
-'    polygon-fill: #33A02C;\n'+
-'  }\n'+
-'  [region=9]{\n'+
-'    polygon-fill: #FB9A99;\n'+
-'  }\n'+
-'}'
-;
+    .property {
+      width: 100%;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
 
-var map;
+    .property .key {
+      display: block;
+      font-weight: bold;
+      font-size: 10px;
+      color: #999999;
+    }
+    </style>
+  </head>
 
-var providerOptions = viz.layers[1].options;
+  <body>
+    <div class="row">
+      <div class="col span2 empty"><p></p></div>
+      <div class="col span12 context subheader"><p></p></div>
+      <div class="col span2 empty"><p></p></div>
+    </div>
 
-var provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
-  user: providerOptions.user_name,
-  table: providerOptions.named_map.layers[0].layer_name,
-  columns: ['region'],
-  debug: false,
-  bufferSize: 50
-});
+    <div class="row">
+      <div class="col span2 empty"><p></p></div>
+      <div class="col span12">
+        <h1>Polygons</h1>
+        <p>The double panel map is perfect for comparing datasets.<br>
+        Mapnik on the left, VECNIK on the right.</p>
+      </div>
+      <div class="col span2 empty"><p></p></div>
+    </div>
 
-var shader = new VECNIK.CartoShader(cartocss);
+    <div class="row">
+      <div class="col span8 map" id="map1"></div>
+      <div class="col span8 map" id="map2"></div>
+    </div>
 
-var vlayer = new VECNIK.Layer({
-  provider: provider,
-  renderer: new VECNIK.Renderer({ shader: shader }),
-  interaction: true,
-  detectRetina: true
-});
+    <!--Play fair and keep the attributions. If you do so, we will love you even more. :)-->
+    <div class="row">
+      <div class="col span2 empty"><p></p></div>
+      <div class="col span12 context footer">
+        <p>Create your maps with ease using <a href="http://cartodb.com">CartoDB</a></p>
+      </div>
+      <div class="col span2 empty"><p></p></div>
+    </div>
 
-document.addEventListener('DOMContentLoaded', function() {
-  map = new L.Map('map').setView(viz.center, viz.zoom-1);
+    <div id="tooltip"></div>
 
-  var baseTiles = viz.layers[0].options;
+    <script src="https://maps.googleapis.com/maps/api/js?sensor=false&v=3.8"></script>
+    <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js"></script>
 
-  new L.TileLayer(
-    baseTiles.urlTemplate,
-    {
-      subdomains: baseTiles.subdomains,
-      name: baseTiles.name,
-      attribution: baseTiles.attribution,
-      maxZoom: 20
-    })
-    .addTo(map);
+    <script>
+    var map1, map2, vizUrl = 'https://viz2.cartodb.com/api/v2/viz/8c50f6d0-ed60-11e3-abe6-0e230854a1cb/viz.json';
 
-  var tooltip = document.querySelector('#tooltip');
-
-  vlayer.addTo(map)
-    .on('featureEnter', function(e) {
-      tooltip.style.display = 'block';
-      var innerHTML = '';
-      for (var key in e.feature) {
-        innerHTML += '<div class="property"><span class="key">'+ key +'</span>'+ e.feature[key] +'</div>';
-      }
-      tooltip.innerHTML     = innerHTML;
-      tooltip.style.left    = (e.x+10) +'px';
-      tooltip.style.top     = (e.y+10) +'px';
-    })
-    .on('featureOver', function(e) {
-      tooltip.style.left = (e.x+10) +'px';
-      tooltip.style.top  = (e.y+10) +'px';
-    })
-    .on('featureOut', function(e) {
-      tooltip.style.display = 'none';
-    });
-
-  L.control.layers({}, { VECNIK: vlayer }).addTo(map);
-});
-
-</script>
-</head>
-
-<body>
-<div id="map"></div>
-<div id="tooltip"></div>
-</body>
+    cartodb.createVis('map1', vizUrl)
+      .done(function(vis, layers) {
+        map1 = vis.mapView.map;
+        map2 = initVecnikAdapter('map2', vizUrl, map1,
+          ['iso3','un','name','area','pop2005','iso2','subregion','lon','lat','fips','region']
+        );
+      });
+    </script>
+  </body>
 </html>
