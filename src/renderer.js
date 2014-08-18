@@ -53,7 +53,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
     i, il, r, rl, s, sl,
     feature, coordinates,
 		pos,
-    radius, bbox, hasCollision,
+    radius, bbox,
     textWidth;
 
   canvas.clear();
@@ -75,19 +75,24 @@ proto.render = function(tile, canvas, collection, mapContext) {
         style = shaderLayer.getStyle(feature.properties, mapContext);
         switch (symbolizer) {
           case Shader.POINT:
-            if ((pos = layer.getCentroid(feature)) && style.markerSize && style.markerFill) {
-              radius = style.markerSize/2;
-              bbox = { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 };
-              hasCollision = !style.markerAllowOverlap && layer.hasCollision(symbolizer, bbox);
-              if (!hasCollision) {
-                canvas.setDrawStyle(
-                  style.markerLineColor,
-                  style.markerLineWidth,
-                  style.markerFill,
-                  style.markerOpacity
-                );
-                canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
-                layer.addBBox(symbolizer, bbox);
+            if ((pos = layer.getCentroid(feature)) && style.markerSize && (style.markerFill || style.markerFile)) {
+              if (style.markerFile) {
+                // no collisian check for bitmaps at the moment, as we don't know their height
+                // could be solved by preloading images
+                canvas.drawImage(style.markerFile, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.markerSize);
+              } else {
+                radius = style.markerSize/2;
+                bbox = { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 };
+                if (style.markerAllowOverlap || !layer.hasCollision(symbolizer, bbox)) {
+                  canvas.setDrawStyle({
+                    strokeStyle: style.markerLineColor,
+                    lineWidth: style.markerLineWidth,
+                    fillStyle: style.markerFill,
+                    globalOpacity: style.markerOpacity
+                  });
+                  canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
+                  layer.addBBox(symbolizer, bbox);
+                }
               }
             }
           break;
@@ -97,24 +102,23 @@ proto.render = function(tile, canvas, collection, mapContext) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-              canvas.setDrawStyle(
-                style.lineColor,
-                style.lineWidth,
-                undefined,
-                style.lineOpacity
-              );
+              canvas.setDrawStyle({
+                strokeStyle: style.lineColor,
+                lineWidth: style.lineWidth,
+                globalOpacity: style.lineOpacity
+              });
               canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
             if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill)) {
-              canvas.setDrawStyle(
-                style.lineColor,
-                style.lineWidth,
-                style.polygonFill,
-                style.polygonOpacity
-              );
+              canvas.setDrawStyle({
+                strokeStyle: style.lineColor,
+                lineWidth: style.lineWidth,
+                fillStyle: style.polygonFill,
+                globalOpacity: style.polygonOpacity
+              });
               canvas.drawPolygon(coordinates, strokeFillOrder);
             }
           break;
@@ -124,14 +128,13 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setFont(style.fontSize, style.fontFace);
               textWidth = canvas._context.measureText(style.textContent).width;
               bbox = { id: feature.id, x: pos.x, y: pos.y, w: textWidth, h: style.fontSize };
-              hasCollision = !style.textAllowOverlap && layer.hasCollision(symbolizer, bbox);
-              if (!hasCollision) {
-                canvas.setDrawStyle(
-                  style.textOutlineColor,
-                  style.textOutlineWidth,
-                  style.textFill,
-                  style.textOpacity
-                );
+              if (style.textAllowOverlap || !layer.hasCollision(symbolizer, bbox)) {
+                canvas.setDrawStyle({
+                  strokeStyle: style.textOutlineColor,
+                  lineWidth: style.textOutlineWidth,
+                  fillStyle: style.textFill,
+                  globalOpacity: style.textOpacity
+                });
                 canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
                 layer.addBBox(symbolizer, bbox);
               }

@@ -67,10 +67,12 @@ proto.drawPolygon = function(coordinates, strokeFillOrder) {
   }
 };
 
-proto.drawText = function(text, x, y, align, stroke) {
+proto.drawText = function(text, x, y, textAlign, stroke) {
   this._finishBatch();
 
-  this.setStyle('textAlign', align);
+  if (textAlign && this._state.textAlign !== textAlign) {
+    this._context.textAlign = (this._state.textAlign = textAlign);
+  }
 
   if (stroke) {
     this._context.strokeText(text, x, y);
@@ -79,21 +81,44 @@ proto.drawText = function(text, x, y, align, stroke) {
   this._context.fillText(text, x, y);
 };
 
-// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
-proto.setStyle = function(prop, value) {
-  // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
-  if (typeof value !== undefined && this._state[prop] !== value) {
-    // finish previous stroke/fill operations, if any
-    this._finishBatch();
-    this._context[prop] = (this._state[prop] = value);
-  }
+proto.drawImage = function(url, x, y, width) {
+  var context = this._context;
+  var img = new Image();
+  img.onload = function() {
+    var
+      w = this.width,
+      h = this.height,
+      height = width/w*h;
+    context.drawImage(this, 0, 0, w, h, x-width/2, y-height/2, width, height);
+  };
+  img.src = url;
 };
 
-proto.setDrawStyle = function(strokeStyle, lineWidth, fillStyle, globalAlpha) {
-  this.setStyle('strokeStyle', strokeStyle);
-  this.setStyle('lineWidth',   lineWidth);
-  this.setStyle('fillStyle',   fillStyle);
-  this.setStyle('globalAlpha', globalAlpha);
+//// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
+//proto.setStyle = function(prop, value) {
+//  // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
+//  if (typeof value !== undefined && this._state[prop] !== value) {
+//    // finish previous stroke/fill operations, if any
+//    this._finishBatch();
+//    this._context[prop] = (this._state[prop] = value);
+//  }
+//};
+
+// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
+proto.setDrawStyle = function(style) {
+  var value, batchWasFinished = false;
+  for (var prop in style) {
+    value = style[prop];
+    // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
+    if (typeof value !== undefined && this._state[prop] !== value) {
+      // finish previous stroke/fill operations, if any - but only once per setDrawStyle()
+      if (!batchWasFinished) {
+        this._finishBatch();
+        batchWasFinished = true;
+      }
+      this._context[prop] = (this._state[prop] = value);
+    }
+  }
 };
 
 proto.setFont = function(size, face) {

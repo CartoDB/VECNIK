@@ -14,6 +14,7 @@ var propertyMapping = {
   'marker-line-width': 'markerLineWidth',
 //  'marker-line-opacity': 'markerLineOpacity',
   'marker-allow-overlap': 'markerAllowOverlap',
+  'marker-file': 'markerFile',
 
   'line-color': 'lineColor',
   'line-width': 'lineWidth',
@@ -128,6 +129,13 @@ proto.getShadingOrder = function() {
 proto.createHitShaderLayer = function() {
   var hitLayer = this.clone();
   for (var prop in hitLayer._compiled) {
+    // removing bitmap images as they break cors rules whne reading hit canvas
+    // those get replaced by circular markers of same width
+    if (prop === 'markerFile') {
+      delete hitLayer._compiled.markerFile;
+      hitLayer._compiled.markerFill = '#000000';
+    }
+
     if (~hitShaderProperties.indexOf(prop)) {
       hitLayer._compiled[prop] = function(featureProperties, mapContext) {
         return 'rgb(' + Int2RGB(featureProperties.cartodb_id + 1).join(',') + ')';
