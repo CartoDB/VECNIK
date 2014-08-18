@@ -2158,6 +2158,25 @@ proto.setStyle = function(prop, value) {
   }
 };
 
+proto.setDrawStyle = function(strokeStyle, lineWidth, fillStyle, globalAlpha) {
+  this.setStyle('strokeStyle', strokeStyle);
+  this.setStyle('lineWidth',   lineWidth);
+  this.setStyle('fillStyle',   fillStyle);
+  this.setStyle('globalAlpha', globalAlpha);
+};
+
+proto.setFont = function(size, face) {
+  if (typeof size !== undefined || typeof face !== undefined) {
+    size = size || this._state.fontSize;
+    face = face || this._state.fontFace;
+    if (this._state.fontSize !== size || this._state.fontFace !== face) {
+      this._state.fontSize = size;
+      this._state.fontFace = face;
+      this._context.font = size +'px '+ face;
+      return true;
+    }
+  }
+};
 
 proto._strokeFillMapping = {
   S: 'stroke',
@@ -2191,18 +2210,6 @@ proto._finishBatch = function() {
   this._strokeFillOrder = null;
 };
 
-proto.setFont = function(size, face) {
-  if (typeof size !== undefined || typeof face !== undefined) {
-    size = size || this._state.fontSize;
-    face = face || this._state.fontFace;
-    if (this._state.fontSize !== size || this._state.fontFace !== face) {
-      this._state.fontSize = size;
-      this._state.fontFace = face;
-      this._context.font = size +'px '+ face;
-      return true;
-    }
-  }
-};
 
 proto.finishAll = function() {
   this._finishBatch();
@@ -3525,7 +3532,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
     i, il, r, rl, s, sl,
     feature, coordinates,
 		pos,
-    radius, bbox, hasCollision;
+    radius, bbox, hasCollision,
+    textWidth;
 
   canvas.clear();
 
@@ -3550,13 +3558,14 @@ proto.render = function(tile, canvas, collection, mapContext) {
               radius = style.markerSize/2;
               bbox = { id: feature.id, x: pos.x-radius, y: pos.y-radius, w: radius*2, h: radius*2 };
               hasCollision = !style.markerAllowOverlap && layer.hasCollision(symbolizer, bbox);
-
               if (!hasCollision) {
-                canvas.setStyle('strokeStyle', style.markerLineColor);
-                canvas.setStyle('lineWidth',   style.markerLineWidth);
-                canvas.setStyle('fillStyle',   style.markerFill);
+                canvas.setDrawStyle(
+                  style.markerLineColor,
+                  style.markerLineWidth,
+                  style.markerFill,
+                  style.markerOpacity
+                );
                 canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
-
                 layer.addBBox(symbolizer, bbox);
               }
             }
@@ -3567,36 +3576,41 @@ proto.render = function(tile, canvas, collection, mapContext) {
               if (feature.type === Geometry.POLYGON) {
                 coordinates = coordinates[0];
               }
-
-              canvas.setStyle('strokeStyle', style.lineColor);
-              canvas.setStyle('lineWidth',   style.lineWidth);
-
+              canvas.setDrawStyle(
+                style.lineColor,
+                style.lineWidth,
+                undefined,
+                style.lineOpacity
+              );
               canvas.drawLine(coordinates);
             }
           break;
 
           case Shader.POLYGON:
             if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill)) {
-              canvas.setStyle('strokeStyle', style.lineColor);
-              canvas.setStyle('lineWidth',   style.lineWidth);
-              canvas.setStyle('fillStyle',   style.polygonFill);
-
+              canvas.setDrawStyle(
+                style.lineColor,
+                style.lineWidth,
+                style.polygonFill,
+                style.polygonOpacity
+              );
               canvas.drawPolygon(coordinates, strokeFillOrder);
             }
           break;
 
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
-              bbox = { id: feature.id, x: pos.x, y: pos.y, w: 100, h: style.fontSize };
+              canvas.setFont(style.fontSize, style.fontFace);
+              textWidth = canvas._context.measureText(style.textContent).width;
+              bbox = { id: feature.id, x: pos.x, y: pos.y, w: textWidth, h: style.fontSize };
               hasCollision = !style.textAllowOverlap && layer.hasCollision(symbolizer, bbox);
-
               if (!hasCollision) {
-                canvas.setFont(style.fontSize, style.fontFace);
-                canvas.setStyle('strokeStyle', style.textOutlineColor);
-                canvas.setStyle('lineWidth',   style.textOutlineWidth);
-                canvas.setStyle('fillStyle',   style.textFill);
-// TODO: get real text width
-// var len = context.measureText(text);
+                canvas.setDrawStyle(
+                  style.textOutlineColor,
+                  style.textOutlineWidth,
+                  style.textFill,
+                  style.textOpacity
+                );
                 canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
                 layer.addBBox(symbolizer, bbox);
               }
@@ -3678,23 +3692,25 @@ var Shader = _dereq_('./shader');
 
 var propertyMapping = {
   'marker-width': 'markerSize',
+  'marker-color': 'markerFill',
+  'marker-opacity': 'markerOpacity',
   'marker-fill': 'markerFill',
+  'marker-fill-opacity': 'markerOpacity',
   'marker-line-color': 'markerLineColor',
   'marker-line-width': 'markerLineWidth',
-  'marker-color': 'markerFill',
-  'marker-opacity': 'markerAlpha', // does that exist?
+//  'marker-line-opacity': 'markerLineOpacity',
   'marker-allow-overlap': 'markerAllowOverlap',
 
   'line-color': 'lineColor',
   'line-width': 'lineWidth',
-  'line-opacity': 'lineAlpha',
+  'line-opacity': 'lineOpacity',
   'polygon-fill': 'polygonFill',
-  'polygon-opacity': 'polygonAlpha',
+  'polygon-opacity': 'polygonOpacity',
 
   'text-face-name': 'fontFace',
   'text-size': 'fontSize',
   'text-fill': 'textFill',
-  'text-opacity': 'textAlpha',
+  'text-opacity': 'textOpacity',
   'text-halo-fill': 'textOutlineColor',
   'text-halo-radius': 'textOutlineWidth',
   'text-align': 'textAlign',

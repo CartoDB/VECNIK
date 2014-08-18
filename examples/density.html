@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Density</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css">
+    <link rel="stylesheet" href="css/makeitresponsive.css">
+    <link rel="stylesheet" href="css/dark-theme.css">
+    <link rel="stylesheet" href="css/tooltip.css">
+    <link rel="stylesheet" href="lib/leaflet08/leaflet.css">
+    <script src="lib/leaflet08/leaflet.js"></script>
+    <script src="../vecnik.debug.js"></script>
+    <script src="lib/underscore.js"></script>
+    <script src="lib/carto.js"></script>
+    <script src="vecnik-adapter.js"></script>
+  </head>
+
+  <body>
+    <div class="row">
+      <div class="col span2 empty"><p></p></div>
+      <div class="col span12 context subheader"><p></p></div>
+      <div class="col span2 empty"><p></p></div>
+    </div>
+
+    <div class="row">
+      <div class="col span2 empty"><p></p></div>
+      <div class="col span12">
+        <h1>Density</h1>
+        <p>The double panel map is perfect for comparing datasets.<br>
+        Mapnik on the left, VECNIK on the right.</p>
+      </div>
+      <div class="col span2 empty"><p></p></div>
+    </div>
+
+    <div class="row">
+      <div class="col span8 map" id="map1"></div>
+      <div class="col span8 map" id="map2"></div>
+    </div>
+
+    <!--Play fair and keep the attributions. If you do so, we will love you even more. :)-->
+    <div class="row">
+      <div class="col span2 empty"><p></p></div>
+      <div class="col span12 context footer">
+        <p>Create your maps with ease using <a href="http://cartodb.com">CartoDB</a></p>
+      </div>
+      <div class="col span2 empty"><p></p></div>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?sensor=false&v=3.8"></script>
+    <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js"></script>
+
+    <script>
+    var map1, map2, vizUrl = 'https://viz2.cartodb.com/api/v2/viz/6a6e5e7e-23be-11e4-af57-0edbca4b5057/viz.json';
+
+    cartodb.createVis('map1', vizUrl)
+      .done(function(vis, layers) {
+        map1 = vis.mapView.map;
+        map2 = initVecnikAdapter('map2', vizUrl, map1,
+          ['coordina_1', 'coordinate', 'database', 'fell_found', 'mass_g', 'place', 'type_of_me', 'year']
+        );
+      });
+    </script>
+  </body>
+</html>

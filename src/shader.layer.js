@@ -6,23 +6,25 @@ var Shader = require('./shader');
 
 var propertyMapping = {
   'marker-width': 'markerSize',
+  'marker-color': 'markerFill',
+  'marker-opacity': 'markerOpacity',
   'marker-fill': 'markerFill',
+  'marker-fill-opacity': 'markerOpacity',
   'marker-line-color': 'markerLineColor',
   'marker-line-width': 'markerLineWidth',
-  'marker-color': 'markerFill',
-  'marker-opacity': 'markerAlpha', // does that exist?
+//  'marker-line-opacity': 'markerLineOpacity',
   'marker-allow-overlap': 'markerAllowOverlap',
 
   'line-color': 'lineColor',
   'line-width': 'lineWidth',
-  'line-opacity': 'lineAlpha',
+  'line-opacity': 'lineOpacity',
   'polygon-fill': 'polygonFill',
-  'polygon-opacity': 'polygonAlpha',
+  'polygon-opacity': 'polygonOpacity',
 
   'text-face-name': 'fontFace',
   'text-size': 'fontSize',
   'text-fill': 'textFill',
-  'text-opacity': 'textAlpha',
+  'text-opacity': 'textOpacity',
   'text-halo-fill': 'textOutlineColor',
   'text-halo-radius': 'textOutlineWidth',
   'text-align': 'textAlign',

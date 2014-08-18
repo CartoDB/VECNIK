@@ -89,6 +89,25 @@ proto.setStyle = function(prop, value) {
   }
 };
 
+proto.setDrawStyle = function(strokeStyle, lineWidth, fillStyle, globalAlpha) {
+  this.setStyle('strokeStyle', strokeStyle);
+  this.setStyle('lineWidth',   lineWidth);
+  this.setStyle('fillStyle',   fillStyle);
+  this.setStyle('globalAlpha', globalAlpha);
+};
+
+proto.setFont = function(size, face) {
+  if (typeof size !== undefined || typeof face !== undefined) {
+    size = size || this._state.fontSize;
+    face = face || this._state.fontFace;
+    if (this._state.fontSize !== size || this._state.fontFace !== face) {
+      this._state.fontSize = size;
+      this._state.fontFace = face;
+      this._context.font = size +'px '+ face;
+      return true;
+    }
+  }
+};
 
 proto._strokeFillMapping = {
   S: 'stroke',
@@ -122,18 +141,6 @@ proto._finishBatch = function() {
   this._strokeFillOrder = null;
 };
 
-proto.setFont = function(size, face) {
-  if (typeof size !== undefined || typeof face !== undefined) {
-    size = size || this._state.fontSize;
-    face = face || this._state.fontFace;
-    if (this._state.fontSize !== size || this._state.fontFace !== face) {
-      this._state.fontSize = size;
-      this._state.fontFace = face;
-      this._context.font = size +'px '+ face;
-      return true;
-    }
-  }
-};
 
 proto.finishAll = function() {
   this._finishBatch();
