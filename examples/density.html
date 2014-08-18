@@ -58,9 +58,8 @@
     cartodb.createVis('map1', vizUrl)
       .done(function(vis, layers) {
         map1 = vis.mapView.map;
-        map2 = initVecnikAdapter('map2', vizUrl, map1,
-          ['coordina_1', 'coordinate', 'database', 'fell_found', 'mass_g', 'place', 'type_of_me', 'year']
-        );
+        map2 = initVecnikAdapter('map2', vizUrl, map1);
+//      ['coordina_1', 'coordinate', 'database', 'fell_found', 'mass_g', 'place', 'type_of_me', 'year']
       });
     </script>
   </body>

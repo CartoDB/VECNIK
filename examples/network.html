@@ -57,9 +57,8 @@
     cartodb.createVis('map1', vizUrl)
       .done(function(vis, layers) {
         map1 = vis.mapView.map;
-        map2 = initVecnikAdapter('map2', vizUrl, map1,
-          []
-        );
+        map2 = initVecnikAdapter('map2', vizUrl, map1);
+//      ['access', 'aerialway', 'aeroway', 'amenity', 'area', 'barrier', 'bicycle', 'boundary', 'brand', 'bridge', 'building', 'covered', 'culvert', 'cutting', 'disused', 'embankment', 'fake_date', 'foot', 'harbour', 'highway', 'historic', 'horse', 'junction', 'landuse', 'layer', 'leisure', 'lock', 'man_made', 'military', 'motorcar', 'name', 'natural', 'oneway', 'operator', 'osm_id', 'place', 'population', 'power', 'railway', 'ref', 'religion', 'route', 'service', 'shop', 'sport', 'surface', 'toll', 'tourism', 'towertype', 'tracktype', 'tunnel', 'water', 'waterway', 'way_area', 'wetland', 'width', 'wood', 'z_order']
       });
     </script>
   </body>

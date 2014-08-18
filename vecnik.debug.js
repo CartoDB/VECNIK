@@ -3106,9 +3106,10 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
 
   var projection = new Mercator();
   var bbox = projection.tileBBox(x, y, zoom, options.bufferSize);
-  var id_column = (table === 'planet') ? 'osm_id' : 'cartodb_id';
+  var id_column = (table === 'planet') ? 'osm_id AS cartodb_id' : 'cartodb_id';
   var geom_column = 'the_geom';
   var geom_column_orig = 'the_geom';
+  var extra_columns = options.columns || [];
 
   var tileSize = 256; // = L.Browser.retina ? 512 : 256;
   var tile_pixel_width = tileSize;
@@ -3185,9 +3186,13 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
     geom_column = 'ST_Intersection('+ geom_column +', '+ sql_env_exp +')';
   }
 
-  var columns = id_column +' AS cartodb_id,'+ geom_column +' AS the_geom';
-  if (options.columns && options.columns.length) {
-    columns += ','+ options.columns.join(',');
+  var columns = id_column;
+  if (extra_columns.length) {
+    if (extra_columns[0] === '*') {
+      columns += ',*';
+    } else {
+      columns += ','+ geom_column +' AS the_geom,"' + extra_columns.join('","') +'"';
+    }
   }
 
   // profiling only
@@ -3195,7 +3200,7 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
     columns = x +' AS x, '+ y +' AS y, SUM(st_npoints('+ geom_column +')) AS the_geom';
   }
 
-  return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter; // +' LIMIT 100';
+  return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter;// +' LIMIT 100';
 };
 
 },{"../mercator":17}],21:[function(_dereq_,module,exports){
