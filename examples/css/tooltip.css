@@ -6,6 +6,8 @@
   z-index: 100;
   pointer-events: none;
   color: #000000;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .property {

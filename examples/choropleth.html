@@ -58,9 +58,8 @@
     cartodb.createVis('map1', vizUrl)
       .done(function(vis, layers) {
         map1 = vis.mapView.map;
-        map2 = initVecnikAdapter('map2', vizUrl, map1,
-          ['aland10','classfp10','funcstat10','geoid10','mtfcc10','zcta5ce10']
-        );
+        map2 = initVecnikAdapter('map2', vizUrl, map1);
+//      ['aland10','classfp10','funcstat10','geoid10','mtfcc10','zcta5ce10']
       });
     </script>
   </body>

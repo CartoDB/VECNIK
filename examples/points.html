@@ -58,9 +58,8 @@
     cartodb.createVis('map1', vizUrl)
       .done(function(vis, layers) {
         map1 = vis.mapView.map;
-        map2 = initVecnikAdapter('map2', vizUrl, map1,
-         ['adm0_a3','adm0cap','adm0name','capalt','capin','diffascii','featurecla','labelrank','megacity','name','namealt','nameascii','namepar','natscale','sov0name','sov_a3','worldcity']
-        );
+        map2 = initVecnikAdapter('map2', vizUrl, map1);
+//     ['adm0_a3','adm0cap','adm0name','capalt','capin','diffascii','featurecla','labelrank','megacity','name','namealt','nameascii','namepar','natscale','sov0name','sov_a3','worldcity']
       });
     </script>
   </body>
