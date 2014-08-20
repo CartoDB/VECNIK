@@ -27,6 +27,69 @@ var Renderer = module.exports = function(options) {
   this._shader = options.shader;
 };
 
+// CANVAS
+//source-over
+//source-in
+//source-out
+//source-atop
+//destination-over
+//destination-in
+//destination-out
+//destination-atop
+//lighter
+//darker
+//copy
+//xor
+
+// MAPNIK
+//src
+//dst
+//src-over
+//dst-over
+//src-in
+//dst-in
+//src-out
+//dst-out
+//src-atop
+//dst-atop
+//xor
+//plus
+//minus
+//difference
+//exclusion
+//multiply
+//contrast
+//screen
+//invert
+//overlay
+//invert-rgb
+//darken
+//grain-merge
+//lighten
+//grain-extract
+//color-dodge
+//hue
+//color-burn
+//saturation
+//hard-light
+//color
+//soft-light
+//value
+
+var compOpMapping = {
+  'src-over': 'source-over',
+  'dst-over': 'destination-over',
+  'src-in': 'source-in',
+  'dst-in': 'destination-in',
+  'src-out': 'source-out',
+  'dst-out': 'destination-out',
+  'src-atop': 'source-atop',
+  'dst-atop': 'destination-atop',
+  'darken': 'darker',
+  'lighten': 'lighter',
+  'xor': 'xor'
+};
+
 var proto = Renderer.prototype;
 
 proto.setShader = function(shader) {
@@ -88,7 +151,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                     strokeStyle: style.markerLineColor,
                     lineWidth: style.markerLineWidth,
                     fillStyle: style.markerFill,
-                    globalOpacity: style.markerOpacity
+                    globalOpacity: style.markerOpacity,
+                    globalCompositeOperation: compOpMapping[style.markerCompOp]
                   });
                   canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
                   layer.addBBox(symbolizer, bbox);
@@ -105,7 +169,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setDrawStyle({
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
-                globalOpacity: style.lineOpacity
+                globalOpacity: style.lineOpacity,
+                globalCompositeOperation: compOpMapping[style.lineCompOp]
               });
               canvas.drawLine(coordinates);
             }
@@ -117,7 +182,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
                 fillStyle: style.polygonFill,
-                globalOpacity: style.polygonOpacity
+                globalOpacity: style.polygonOpacity,
+                globalCompositeOperation: compOpMapping[style.polygonCompOp]
               });
               canvas.drawPolygon(coordinates, strokeFillOrder);
             }
@@ -133,7 +199,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                   strokeStyle: style.textOutlineColor,
                   lineWidth: style.textOutlineWidth,
                   fillStyle: style.textFill,
-                  globalOpacity: style.textOpacity
+                  globalOpacity: style.textOpacity,
+                  globalCompositeOperation: compOpMapping[style.textCompOp]
                 });
                 canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
                 layer.addBBox(symbolizer, bbox);

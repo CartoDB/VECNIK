@@ -2179,7 +2179,6 @@ proto.drawImage = function(url, x, y, width) {
   img.src = url;
 };
 
-//// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
 //proto.setStyle = function(prop, value) {
 //  // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
 //  if (typeof value !== undefined && this._state[prop] !== value) {
@@ -2189,7 +2188,6 @@ proto.drawImage = function(url, x, y, width) {
 //  }
 //};
 
-// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
 proto.setDrawStyle = function(style) {
   var value, batchWasFinished = false;
   for (var prop in style) {
@@ -2202,6 +2200,7 @@ proto.setDrawStyle = function(style) {
         batchWasFinished = true;
       }
       this._context[prop] = (this._state[prop] = value);
+if (prop === 'globalCompositeOperation') console.log('COMP OP', value)
     }
   }
 };
@@ -3580,6 +3579,69 @@ var Renderer = module.exports = function(options) {
   this._shader = options.shader;
 };
 
+// CANVAS
+//source-over
+//source-in
+//source-out
+//source-atop
+//destination-over
+//destination-in
+//destination-out
+//destination-atop
+//lighter
+//darker
+//copy
+//xor
+
+// MAPNIK
+//src
+//dst
+//src-over
+//dst-over
+//src-in
+//dst-in
+//src-out
+//dst-out
+//src-atop
+//dst-atop
+//xor
+//plus
+//minus
+//difference
+//exclusion
+//multiply
+//contrast
+//screen
+//invert
+//overlay
+//invert-rgb
+//darken
+//grain-merge
+//lighten
+//grain-extract
+//color-dodge
+//hue
+//color-burn
+//saturation
+//hard-light
+//color
+//soft-light
+//value
+
+var compOpMapping = {
+  'src-over': 'source-over',
+  'dst-over': 'destination-over',
+  'src-in': 'source-in',
+  'dst-in': 'destination-in',
+  'src-out': 'source-out',
+  'dst-out': 'destination-out',
+  'src-atop': 'source-atop',
+  'dst-atop': 'destination-atop',
+  'darken': 'darker',
+  'lighten': 'lighter',
+  'xor': 'xor'
+};
+
 var proto = Renderer.prototype;
 
 proto.setShader = function(shader) {
@@ -3641,7 +3703,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                     strokeStyle: style.markerLineColor,
                     lineWidth: style.markerLineWidth,
                     fillStyle: style.markerFill,
-                    globalOpacity: style.markerOpacity
+                    globalOpacity: style.markerOpacity,
+                    globalCompositeOperation: compOpMapping[style.markerCompOp]
                   });
                   canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
                   layer.addBBox(symbolizer, bbox);
@@ -3658,7 +3721,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setDrawStyle({
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
-                globalOpacity: style.lineOpacity
+                globalOpacity: style.lineOpacity,
+                globalCompositeOperation: compOpMapping[style.lineCompOp]
               });
               canvas.drawLine(coordinates);
             }
@@ -3670,7 +3734,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
                 fillStyle: style.polygonFill,
-                globalOpacity: style.polygonOpacity
+                globalOpacity: style.polygonOpacity,
+                globalCompositeOperation: compOpMapping[style.polygonCompOp]
               });
               canvas.drawPolygon(coordinates, strokeFillOrder);
             }
@@ -3686,7 +3751,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                   strokeStyle: style.textOutlineColor,
                   lineWidth: style.textOutlineWidth,
                   fillStyle: style.textFill,
-                  globalOpacity: style.textOpacity
+                  globalOpacity: style.textOpacity,
+                  globalCompositeOperation: compOpMapping[style.textCompOp]
                 });
                 canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
                 layer.addBBox(symbolizer, bbox);
@@ -3771,6 +3837,7 @@ var propertyMapping = {
   'marker-width': 'markerSize',
   'marker-color': 'markerFill',
   'marker-opacity': 'markerOpacity',
+  'marker-comp-op': 'markerCompOp',
   'marker-fill': 'markerFill',
   'marker-fill-opacity': 'markerOpacity',
   'marker-line-color': 'markerLineColor',
@@ -3782,13 +3849,16 @@ var propertyMapping = {
   'line-color': 'lineColor',
   'line-width': 'lineWidth',
   'line-opacity': 'lineOpacity',
+  'line-comp-op': 'lineCompOp',
   'polygon-fill': 'polygonFill',
   'polygon-opacity': 'polygonOpacity',
+  'polygon-comp-op': 'polygonCompOp',
 
   'text-face-name': 'fontFace',
   'text-size': 'fontSize',
   'text-fill': 'textFill',
   'text-opacity': 'textOpacity',
+  'text-comp-op': 'textCompOp',
   'text-halo-fill': 'textOutlineColor',
   'text-halo-radius': 'textOutlineWidth',
   'text-align': 'textAlign',
