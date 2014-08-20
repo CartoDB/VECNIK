@@ -99,7 +99,7 @@ var VectorTile = module.exports = {};
 VectorTile.load = function(url, tile, callback) {
 //  if (!VectorTile.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    VECNIK.load(url, 'arraybuffer', function(buffer) {
+    VECNIK.loadBinary(url, function(buffer) {
       callback(_convertAndReproject(buffer));
     });
   } else {

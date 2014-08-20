@@ -81,15 +81,31 @@ proto.drawText = function(text, x, y, textAlign, stroke) {
   this._context.fillText(text, x, y);
 };
 
+proto._images = {};
+
+proto._drawImage = function(img, x, y, width) {
+  var
+    w = img.width,
+    h = img.height,
+    height = width/w*h;
+  this._context.drawImage(img, 0, 0, w, h, x-width/2, y-height/2, width, height);
+};
+
 proto.drawImage = function(url, x, y, width) {
-  var context = this._context;
-  var img = new Image();
+  var
+    images = this._images,
+    img;
+
+  if ((img = images[url])) {
+    this._drawImage(img, x, y, width);
+    return;
+  }
+
+  img = new Image();
+  var self = this;
   img.onload = function() {
-    var
-      w = this.width,
-      h = this.height,
-      height = width/w*h;
-    context.drawImage(this, 0, 0, w, h, x-width/2, y-height/2, width, height);
+    images[url] = this;
+    self._drawImage(this, x, y, width);
   };
   img.src = url;
 };

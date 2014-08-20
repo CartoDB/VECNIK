@@ -3,6 +3,26 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
+		// TODO: turn this into s specific make-carto task
+    concat: {
+      options: {
+        separator: '\n'
+      },
+      dist: {
+        src: [
+          'lib/underscore.js',
+          'lib/carto/browser/*.js',
+          'lib/carto/lib/carto/parser.js',
+          'lib/carto/lib/carto/tree.js',
+          'lib/carto/lib/carto/tree/*.js',
+          'lib/carto/lib/carto/functions.js',
+          'lib/carto/lib/carto/renderer_js.js'
+        ],
+        dest: 'examples/lib/carto-bundle.js'
+      }
+    },
+
+
 //    concat: {
 //      options: {
 //        separator: '\n'
@@ -60,7 +80,7 @@ module.exports = function(grunt) {
     }
   });
 
-//  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
 //  grunt.loadNpmTasks('grunt-closure-compiler');
 //  grunt.loadNpmTasks('grunt-contrib-jasmine');
@@ -86,6 +106,10 @@ module.exports = function(grunt) {
     // grunt.task.run('lint');
     grunt.task.run('uglify');
     // grunt.task.run('test');
+  });
+
+  grunt.registerTask('make-carto', 'Make Carto', function() {
+    grunt.task.run('concat');
   });
 
   grunt.registerTask('default', 'Development build', function() {

@@ -2150,15 +2150,31 @@ proto.drawText = function(text, x, y, textAlign, stroke) {
   this._context.fillText(text, x, y);
 };
 
+proto._images = {};
+
+proto._drawImage = function(img, x, y, width) {
+  var
+    w = img.width,
+    h = img.height,
+    height = width/w*h;
+  this._context.drawImage(img, 0, 0, w, h, x-width/2, y-height/2, width, height);
+};
+
 proto.drawImage = function(url, x, y, width) {
-  var context = this._context;
-  var img = new Image();
+  var
+    images = this._images,
+    img;
+
+  if ((img = images[url])) {
+    this._drawImage(img, x, y, width);
+    return;
+  }
+
+  img = new Image();
+  var self = this;
   img.onload = function() {
-    var
-      w = this.width,
-      h = this.height,
-      height = width/w*h;
-    context.drawImage(this, 0, 0, w, h, x-width/2, y-height/2, width, height);
+    images[url] = this;
+    self._drawImage(this, x, y, width);
   };
   img.src = url;
 };
@@ -2260,7 +2276,35 @@ prop = props[i];
 
 var Core = module.exports = {};
 
-Core.load = function(url, type, onSuccess, onError) {
+Core.loadJSON = function(url, onSuccess, onError) {
+  var xhr = new XMLHttpRequest();
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) {
+      return;
+    }
+
+    if (!xhr.status || xhr.status < 200 || xhr.status > 299) {
+      if (onError) {
+        onError(xhr);
+      }
+      return;
+    }
+
+    if (onSuccess) {
+      try {
+        onSuccess(JSON.parse(xhr.responseText));
+      } catch(ex) {};
+    }
+  };
+
+  xhr.open('GET', url, true);
+  xhr.send(null);
+  return xhr;
+};
+
+// TODO: check this with MSIE and Firefox
+Core.loadBinary = function(url, onSuccess, onError) {
   var xhr = new XMLHttpRequest();
 
   xhr.onreadystatechange = function() {
@@ -2280,7 +2324,7 @@ Core.load = function(url, type, onSuccess, onError) {
     }
   };
 
-  xhr.responseType = type;
+  xhr.responseType = 'arraybuffer';
   xhr.open('GET', url, true);
   xhr.send(null);
   return xhr;
@@ -3370,7 +3414,7 @@ var GeoJSON = module.exports = {};
 GeoJSON.load = function(url, tile, callback) {
 //  if (!GeoJSON.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    VECNIK.load(url, 'json', function(collection) {
+    VECNIK.loadJSON(url, function(collection) {
       callback(_convertAndReproject(collection, tile));
     });
   } else {
@@ -3489,7 +3533,7 @@ var VectorTile = module.exports = {};
 VectorTile.load = function(url, tile, callback) {
 //  if (!VectorTile.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
-    VECNIK.load(url, 'arraybuffer', function(buffer) {
+    VECNIK.loadBinary(url, function(buffer) {
       callback(_convertAndReproject(buffer));
     });
   } else {

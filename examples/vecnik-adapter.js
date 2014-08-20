@@ -1,3 +1,9 @@
+/***
+ *
+ * This is just a very basic CartoDB framework mock up in order to demo Vecnik integration
+ *
+ **/
+
 var JSONP = function(global) {
   // (C) WebReflection Essential - Mit Style
 	// 216 bytes minified + gzipped via Google Closure Compiler
