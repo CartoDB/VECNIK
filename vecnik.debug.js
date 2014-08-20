@@ -3244,7 +3244,7 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
     columns = x +' AS x, '+ y +' AS y, SUM(st_npoints('+ geom_column +')) AS the_geom';
   }
 
-  return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter+' LIMIT 100';
+  return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter;// +' LIMIT 100';
 };
 
 },{"../mercator":17}],21:[function(_dereq_,module,exports){
