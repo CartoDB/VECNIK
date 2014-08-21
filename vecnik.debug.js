@@ -2151,33 +2151,37 @@ proto.drawText = function(text, x, y, textAlign, stroke) {
   this._context.fillText(text, x, y);
 };
 
+// TODO: image cache is per tile-canvas now. Should be moved upwards to layer.
+
 proto._images = {};
 
-proto._drawImage = function(img, x, y, width) {
-  var
-    w = img.width,
-    h = img.height,
-    height = width/w*h;
-  this._context.drawImage(img, 0, 0, w, h, x-width/2, y-height/2, width, height);
-};
-
-proto.drawImage = function(url, x, y, width) {
+proto._loadImage = function(url, callback) {
   var
     images = this._images,
     img;
 
   if ((img = images[url])) {
-    this._drawImage(img, x, y, width);
+    callback(img);
     return;
   }
 
   img = new Image();
-  var self = this;
   img.onload = function() {
     images[url] = this;
-    self._drawImage(this, x, y, width);
+    callback(this);
   };
   img.src = url;
+};
+
+proto.drawImage = function(url, x, y, width) {
+  var self = this;
+  this._loadImage(url, function(img) {
+    var
+      w = img.width,
+      h = img.height,
+      height = width/w*h;
+    self._context.drawImage(img, 0, 0, w, h, x-width/2, y-height/2, width, height);
+  });
 };
 
 //proto.setStyle = function(prop, value) {
@@ -2244,6 +2248,18 @@ proto._finishBatch = function() {
   var strokeFillOrder = this._strokeFillOrder;
 
   for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
+
+if (strokeFillOrder[i] === 'F') {
+  var url = 'http://thumb9.shutterstock.com/display_pic_with_logo/953902/125126216/stock-vector-paisley-pattern-125126216.jpg';
+  var self = this;
+  this._loadImage(url, function(img) {
+    self._context.fillStyle = self._context.createPattern(img, 'repeat');
+    console.log(self._context.fillStyle)
+    self._context.fill();
+  });
+  continue;
+}
+
     this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
