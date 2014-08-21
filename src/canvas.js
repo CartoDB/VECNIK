@@ -1,23 +1,24 @@
 
-var Canvas = module.exports = function(options) {
-  options = options || {};
-
+function createCanvas(width, height) {
   var
-    canvas  = this._canvas  = document.createElement('CANVAS'),
-    context = this._context = canvas.getContext('2d');
-
-  canvas.width  = options.width  || options.size || 0;
-  canvas.height = options.height || options.size || 0;
+    canvas  = document.createElement('CANVAS'),
+    context = canvas.getContext('2d');
+  canvas.width  = width || 0;
+  canvas.height = height || 0;
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
-
   context.mozImageSmoothingEnabled    = false;
   context.webkitImageSmoothingEnabled = false;
   context.imageSmoothingEnabled       = false;
-
   context.lineCap  = 'round';
   context.lineJoin = 'round';
+  return canvas;
+}
 
+var Canvas = module.exports = function(options) {
+  options = options || {};
+  this._canvas = createCanvas(options.width || options.size, options.height || options.size);
+  this._context = this._canvas.getContext('2d');
   this._state = {};
 };
 
@@ -110,7 +111,6 @@ proto.drawImage = function(url, x, y, width) {
   img.src = url;
 };
 
-//// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
 //proto.setStyle = function(prop, value) {
 //  // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
 //  if (typeof value !== undefined && this._state[prop] !== value) {
@@ -120,7 +120,6 @@ proto.drawImage = function(url, x, y, width) {
 //  }
 //};
 
-// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
 proto.setDrawStyle = function(style) {
   var value, batchWasFinished = false;
   for (var prop in style) {
@@ -133,6 +132,7 @@ proto.setDrawStyle = function(style) {
         batchWasFinished = true;
       }
       this._context[prop] = (this._state[prop] = value);
+// if (prop === 'globalCompositeOperation') console.log('COMP OP', value)
     }
   }
 };
@@ -181,7 +181,6 @@ proto._finishBatch = function() {
   this._operation = null;
   this._strokeFillOrder = null;
 };
-
 
 proto.finishAll = function() {
   this._finishBatch();
