@@ -132,7 +132,7 @@ proto.setDrawStyle = function(style) {
         batchWasFinished = true;
       }
       this._context[prop] = (this._state[prop] = value);
-// if (prop === 'globalCompositeOperation') console.log('COMP OP', value)
+// console.log(prop, this._context[prop]);
     }
   }
 };

@@ -18,14 +18,6 @@ function getStrokeFillOrder(shadingOrder) {
   return res;
 }
 
-var Renderer = module.exports = function(options) {
-  options = options || {};
-  if (!options.shader) {
-    throw new Error('VECNIK.Renderer requires a shader');
-  }
-
-  this._shader = options.shader;
-};
 
 // CANVAS
 //source-over
@@ -90,6 +82,29 @@ var compOpMapping = {
   'xor': 'xor'
 };
 
+var defaultProperties = {
+  globalOpacity: 1,
+  globalCompositeOperation: 'source-over'
+};
+
+function getOpacity(value) {
+  return value !== undefined ? value : 1;
+}
+
+function getCompOp(value) {
+  return compOpMapping[value] ? compOpMapping[value] : 'source-over';
+}
+
+
+var Renderer = module.exports = function(options) {
+  options = options || {};
+  if (!options.shader) {
+    throw new Error('VECNIK.Renderer requires a shader');
+  }
+
+  this._shader = options.shader;
+};
+
 var proto = Renderer.prototype;
 
 proto.setShader = function(shader) {
@@ -151,8 +166,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                     strokeStyle: style.markerLineColor,
                     lineWidth: style.markerLineWidth,
                     fillStyle: style.markerFill,
-                    globalOpacity: style.markerOpacity,
-                    globalCompositeOperation: compOpMapping[style.markerCompOp]
+                    globalOpacity: getOpacity(style.markerOpacity),
+                    globalCompositeOperation: getCompOp(style.markerCompOp)
                   });
                   canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
                   layer.addBBox(symbolizer, bbox);
@@ -169,8 +184,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setDrawStyle({
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
-                globalOpacity: style.lineOpacity,
-                globalCompositeOperation: compOpMapping[style.lineCompOp]
+                globalOpacity: getOpacity(style.lineOpacity),
+                globalCompositeOperation: getCompOp(style.lineCompOp)
               });
               canvas.drawLine(coordinates);
             }
@@ -182,8 +197,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
                 fillStyle: style.polygonFill,
-                globalOpacity: style.polygonOpacity,
-                globalCompositeOperation: compOpMapping[style.polygonCompOp]
+                globalOpacity: getOpacity(style.polygonFill),
+                globalCompositeOperation: getCompOp(style.polygonCompOp)
               });
               canvas.drawPolygon(coordinates, strokeFillOrder);
             }
@@ -199,8 +214,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                   strokeStyle: style.textOutlineColor,
                   lineWidth: style.textOutlineWidth,
                   fillStyle: style.textFill,
-                  globalOpacity: style.textOpacity,
-                  globalCompositeOperation: compOpMapping[style.textCompOp]
+                  globalOpacity: getOpacity(style.textOpacity),
+                  globalCompositeOperation: getCompOp(style.textCompOp)
                 });
                 canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
                 layer.addBBox(symbolizer, bbox);
