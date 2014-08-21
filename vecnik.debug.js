@@ -2068,25 +2068,26 @@ Point.convert = function (a) {
 
 },{}],11:[function(_dereq_,module,exports){
 
-var Canvas = module.exports = function(options) {
-  options = options || {};
-
+function createCanvas(width, height) {
   var
-    canvas  = this._canvas  = document.createElement('CANVAS'),
-    context = this._context = canvas.getContext('2d');
-
-  canvas.width  = options.width  || options.size || 0;
-  canvas.height = options.height || options.size || 0;
+    canvas  = document.createElement('CANVAS'),
+    context = canvas.getContext('2d');
+  canvas.width  = width || 0;
+  canvas.height = height || 0;
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
-
   context.mozImageSmoothingEnabled    = false;
   context.webkitImageSmoothingEnabled = false;
   context.imageSmoothingEnabled       = false;
-
   context.lineCap  = 'round';
   context.lineJoin = 'round';
+  return canvas;
+}
 
+var Canvas = module.exports = function(options) {
+  options = options || {};
+  this._canvas = createCanvas(options.width || options.size, options.height || options.size);
+  this._context = this._canvas.getContext('2d');
   this._state = {};
 };
 
@@ -2200,7 +2201,7 @@ proto.setDrawStyle = function(style) {
         batchWasFinished = true;
       }
       this._context[prop] = (this._state[prop] = value);
-if (prop === 'globalCompositeOperation') console.log('COMP OP', value)
+// if (prop === 'globalCompositeOperation') console.log('COMP OP', value)
     }
   }
 };
@@ -2249,7 +2250,6 @@ proto._finishBatch = function() {
   this._operation = null;
   this._strokeFillOrder = null;
 };
-
 
 proto.finishAll = function() {
   this._finishBatch();
