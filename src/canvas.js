@@ -1,4 +1,6 @@
 
+var VECNIK = require('./core/core');
+
 function createCanvas(width, height) {
   var
     canvas  = document.createElement('CANVAS'),
@@ -82,31 +84,9 @@ proto.drawText = function(text, x, y, textAlign, stroke) {
   this._context.fillText(text, x, y);
 };
 
-// TODO: image cache is per tile-canvas, should be moved upwards to layer.
-
-proto._images = {};
-
-proto._loadImage = function(url, callback) {
-  var
-    images = this._images,
-    img;
-
-  if ((img = images[url])) {
-    callback(img);
-    return;
-  }
-
-  img = new Image();
-  img.onload = function() {
-    images[url] = this;
-    callback(this);
-  };
-  img.src = url;
-};
-
 proto.drawImage = function(url, x, y, width) {
   var self = this;
-  this._loadImage(url, function(img) {
+  VECNIK.loadImage(url, function(img) {
     var
       w = img.width,
       h = img.height,
@@ -180,15 +160,15 @@ proto._finishBatch = function() {
 
   for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
 
-if (strokeFillOrder[i] === 'F') {
-  var url = 'http://thumb9.shutterstock.com/display_pic_with_logo/953902/125126216/stock-vector-paisley-pattern-125126216.jpg';
-  var self = this;
-  this._loadImage(url, function(img) {
-    self._context.fillStyle = self._context.createPattern(img, 'repeat');
-    self._context.fill();
-  });
-  continue;
-}
+//if (strokeFillOrder[i] === 'F') {
+//  var url = 'http://thumb9.shutterstock.com/display_pic_with_logo/953902/125126216/stock-vector-paisley-pattern-125126216.jpg';
+//  var self = this;
+//  VECNIK.loadImage(url, function(img) {
+//    self._context.fillStyle = self._context.createPattern(img, 'repeat');
+//    self._context.fill();
+//  });
+//  continue;
+//}
 
     this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
