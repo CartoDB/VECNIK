@@ -3202,14 +3202,14 @@ tree.Definition.prototype.toXML = function(env, existing) {
     return xml;
 };
 
-tree.Definition.prototype.toJS = function() {
+tree.Definition.prototype.toJS = function(env) {
   var shaderAttrs = {};
 
   // merge conditions from filters with zoom condition of the
   // definition
   var zoom = "(" + this.zoom + " & (1 << ctx.zoom))";
   var frame_offset = this.frame_offset;
-  var _if = this.filters.toJS();
+  var _if = this.filters.toJS(env);
   var filters = [zoom];
   if(_if) filters.push(_if);
   if(frame_offset) filters.push('ctx["frame-offset"] === ' + frame_offset);
@@ -3224,19 +3224,19 @@ tree.Definition.prototype.toJS = function() {
         };
 
         if (_if) {
-          r.js = "if(" + _if + "){" + rule.value.toJS() + "}"
+          r.js = "if(" + _if + "){" + rule.value.toJS(env) + "}"
         } else {
-          r.js = rule.value.toJS();
+          r.js = rule.value.toJS(env);
         }
 
-        r.constant = rule.value.ev().is !== 'field';
+        r.constant = rule.value.ev(env).is !== 'field';
         r.filtered = !!_if;
 
         shaderAttrs[rule.name].push(r);
       } else {
         throw new Error("Ruleset not supported");
         //if (rule instanceof tree.Ruleset) {
-          //var sh = rule.toJS();
+          //var sh = rule.toJS(env);
           //for(var v in sh) {
             //shaderAttrs[v] = shaderAttrs[v] || [];
             //for(var attr in sh[v]) {
@@ -3589,11 +3589,10 @@ tree.Filterset.prototype.toJS = function(env) {
     if(filter._val !== undefined) {
       val = filter._val.toString(true);
     }
-
     var attrs = "data";
-    return attrs + "." + filter.key.value  + " " + op + " " + val;
+    return attrs + "." + filter.key.value  + " " + op + " " + (val.is === 'string' ? "'"+ val +"'" : val);
   }).join(' && ');
-}
+};
 
 // Returns true when the new filter can be added, false otherwise.
 // It can also return null, and on the other side we test for === true or
@@ -4765,9 +4764,9 @@ tree.Value.prototype = {
         return obj;
     },
 
-    toJS: function() {
+    toJS: function(env) {
       //var v = this.value[0].value[0];
-      var val = this.ev();
+      var val = this.ev(env);
       var v = val.toString();
       if(val.is === "color" || val.is === 'uri' || val.is === 'string' || val.is === 'keyword') {
         v = "'" + v + "'";
@@ -5214,7 +5213,7 @@ CartoCSS.Layer.prototype = {
   },
 
   /**
-   * return the symbolizers that need to be rendered with 
+   * return the symbolizers that need to be rendered with
    * this style. The order is the rendering order.
    * @returns a list with 3 possible values 'line', 'marker', 'polygon'
    */
@@ -5256,7 +5255,7 @@ CartoCSS.Layer.prototype = {
 
   //
   // given a geoemtry type returns the transformed one acording the CartoCSS
-  // For points there are two kind of types: point and sprite, the first one 
+  // For points there are two kind of types: point and sprite, the first one
   // is a circle, second one is an image sprite
   //
   // the other geometry types are the same than geojson (polygon, linestring...)
@@ -5358,7 +5357,7 @@ CartoCSS.prototype = {
         });
         layer.frames = [];
         layer.zoom = tree.Zoom.all;
-        var props = def.toJS();
+        var props = def.toJS(parse_env);
         console.log("props", props);
         for(var v in props) {
           var lyr = layer[v] = layer[v] || {

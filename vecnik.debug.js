@@ -2068,25 +2068,28 @@ Point.convert = function (a) {
 
 },{}],11:[function(_dereq_,module,exports){
 
-var Canvas = module.exports = function(options) {
-  options = options || {};
+var VECNIK = _dereq_('./core/core');
 
+function createCanvas(width, height) {
   var
-    canvas  = this._canvas  = document.createElement('CANVAS'),
-    context = this._context = canvas.getContext('2d');
-
-  canvas.width  = options.width  || options.size || 0;
-  canvas.height = options.height || options.size || 0;
+    canvas  = document.createElement('CANVAS'),
+    context = canvas.getContext('2d');
+  canvas.width  = width || 0;
+  canvas.height = height || 0;
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
-
   context.mozImageSmoothingEnabled    = false;
   context.webkitImageSmoothingEnabled = false;
   context.imageSmoothingEnabled       = false;
-
   context.lineCap  = 'round';
   context.lineJoin = 'round';
+  return canvas;
+}
 
+var Canvas = module.exports = function(options) {
+  options = options || {};
+  this._canvas = createCanvas(options.width || options.size, options.height || options.size);
+  this._context = this._canvas.getContext('2d');
   this._state = {};
 };
 
@@ -2150,36 +2153,17 @@ proto.drawText = function(text, x, y, textAlign, stroke) {
   this._context.fillText(text, x, y);
 };
 
-proto._images = {};
-
-proto._drawImage = function(img, x, y, width) {
-  var
-    w = img.width,
-    h = img.height,
-    height = width/w*h;
-  this._context.drawImage(img, 0, 0, w, h, x-width/2, y-height/2, width, height);
-};
-
 proto.drawImage = function(url, x, y, width) {
-  var
-    images = this._images,
-    img;
-
-  if ((img = images[url])) {
-    this._drawImage(img, x, y, width);
-    return;
-  }
-
-  img = new Image();
   var self = this;
-  img.onload = function() {
-    images[url] = this;
-    self._drawImage(this, x, y, width);
-  };
-  img.src = url;
+  VECNIK.loadImage(url, function(img) {
+    var
+      w = img.width,
+      h = img.height,
+      height = width/w*h;
+    self._context.drawImage(img, 0, 0, w, h, x-width/2, y-height/2, width, height);
+  });
 };
 
-//// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
 //proto.setStyle = function(prop, value) {
 //  // checking for preset styles, for performance impacts see http://jsperf.com/osmb-context-props
 //  if (typeof value !== undefined && this._state[prop] !== value) {
@@ -2189,7 +2173,6 @@ proto.drawImage = function(url, x, y, width) {
 //  }
 //};
 
-// TODO: rethink, whether a (newly) undefined value should cause this._finishBatch()
 proto.setDrawStyle = function(style) {
   var value, batchWasFinished = false;
   for (var prop in style) {
@@ -2202,6 +2185,7 @@ proto.setDrawStyle = function(style) {
         batchWasFinished = true;
       }
       this._context[prop] = (this._state[prop] = value);
+// console.log(prop, this._context[prop]);
     }
   }
 };
@@ -2244,13 +2228,23 @@ proto._finishBatch = function() {
   var strokeFillOrder = this._strokeFillOrder;
 
   for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
+
+//if (strokeFillOrder[i] === 'F') {
+//  var url = 'http://thumb9.shutterstock.com/display_pic_with_logo/953902/125126216/stock-vector-paisley-pattern-125126216.jpg';
+//  var self = this;
+//  VECNIK.loadImage(url, function(img) {
+//    self._context.fillStyle = self._context.createPattern(img, 'repeat');
+//    self._context.fill();
+//  });
+//  continue;
+//}
+
     this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
   this._operation = null;
   this._strokeFillOrder = null;
 };
-
 
 proto.finishAll = function() {
   this._finishBatch();
@@ -2272,7 +2266,7 @@ prop = props[i];
 // ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
 ***/
 
-},{}],12:[function(_dereq_,module,exports){
+},{"./core/core":12}],12:[function(_dereq_,module,exports){
 
 var Core = module.exports = {};
 
@@ -2328,6 +2322,42 @@ Core.loadBinary = function(url, onSuccess, onError) {
   xhr.open('GET', url, true);
   xhr.send(null);
   return xhr;
+};
+
+Core._images = {};
+Core._imagesLoading = {};
+
+Core.loadImage = function(url, onSuccess) {
+  var
+    images = this._images,
+    img;
+
+  if ((img = images[url])) {
+    if (onSuccess) {
+      onSuccess(img);
+    }
+    return;
+  }
+
+  if (this._imagesLoading[url]) {
+    this._imagesLoading[url].push(onSuccess);
+    return;
+  }
+
+  this._imagesLoading[url] = [onSuccess];
+
+  img = new Image();
+  var self = this;
+  img.onload = function() {
+    images[url] = this;
+    var callbacks = self._imagesLoading[url];
+    for (var i = 0, il = callbacks.length; i < il; i++) {
+      callbacks[i](this);
+    }
+    delete self._imagesLoading[url];
+  };
+
+  img.src = url;
 };
 
 },{}],13:[function(_dereq_,module,exports){
@@ -3571,6 +3601,84 @@ function getStrokeFillOrder(shadingOrder) {
   return res;
 }
 
+
+// CANVAS
+//source-over
+//source-in
+//source-out
+//source-atop
+//destination-over
+//destination-in
+//destination-out
+//destination-atop
+//lighter
+//darker
+//copy
+//xor
+
+// MAPNIK
+//src
+//dst
+//src-over
+//dst-over
+//src-in
+//dst-in
+//src-out
+//dst-out
+//src-atop
+//dst-atop
+//xor
+//plus
+//minus
+//difference
+//exclusion
+//multiply
+//contrast
+//screen
+//invert
+//overlay
+//invert-rgb
+//darken
+//grain-merge
+//lighten
+//grain-extract
+//color-dodge
+//hue
+//color-burn
+//saturation
+//hard-light
+//color
+//soft-light
+//value
+
+var compOpMapping = {
+  'src-over': 'source-over',
+  'dst-over': 'destination-over',
+  'src-in': 'source-in',
+  'dst-in': 'destination-in',
+  'src-out': 'source-out',
+  'dst-out': 'destination-out',
+  'src-atop': 'source-atop',
+  'dst-atop': 'destination-atop',
+  'darken': 'darker',
+  'lighten': 'lighter',
+  'xor': 'xor'
+};
+
+var defaultProperties = {
+  globalOpacity: 1,
+  globalCompositeOperation: 'source-over'
+};
+
+function getOpacity(value) {
+  return value !== undefined ? value : 1;
+}
+
+function getCompOp(value) {
+  return compOpMapping[value] ? compOpMapping[value] : 'source-over';
+}
+
+
 var Renderer = module.exports = function(options) {
   options = options || {};
   if (!options.shader) {
@@ -3641,7 +3749,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                     strokeStyle: style.markerLineColor,
                     lineWidth: style.markerLineWidth,
                     fillStyle: style.markerFill,
-                    globalOpacity: style.markerOpacity
+                    globalOpacity: getOpacity(style.markerOpacity),
+                    globalCompositeOperation: getCompOp(style.markerCompOp)
                   });
                   canvas.drawCircle(pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, radius, 'FS' /*strokeFillOrder*/);
                   layer.addBBox(symbolizer, bbox);
@@ -3658,7 +3767,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
               canvas.setDrawStyle({
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
-                globalOpacity: style.lineOpacity
+                globalOpacity: getOpacity(style.lineOpacity),
+                globalCompositeOperation: getCompOp(style.lineCompOp)
               });
               canvas.drawLine(coordinates);
             }
@@ -3670,7 +3780,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                 strokeStyle: style.lineColor,
                 lineWidth: style.lineWidth,
                 fillStyle: style.polygonFill,
-                globalOpacity: style.polygonOpacity
+                globalOpacity: getOpacity(style.polygonFill),
+                globalCompositeOperation: getCompOp(style.polygonCompOp)
               });
               canvas.drawPolygon(coordinates, strokeFillOrder);
             }
@@ -3686,7 +3797,8 @@ proto.render = function(tile, canvas, collection, mapContext) {
                   strokeStyle: style.textOutlineColor,
                   lineWidth: style.textOutlineWidth,
                   fillStyle: style.textFill,
-                  globalOpacity: style.textOpacity
+                  globalOpacity: getOpacity(style.textOpacity),
+                  globalCompositeOperation: getCompOp(style.textCompOp)
                 });
                 canvas.drawText(style.textContent, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.textAlign, !!style.textOutlineColor);
                 layer.addBBox(symbolizer, bbox);
@@ -3771,6 +3883,7 @@ var propertyMapping = {
   'marker-width': 'markerSize',
   'marker-color': 'markerFill',
   'marker-opacity': 'markerOpacity',
+  'marker-comp-op': 'markerCompOp',
   'marker-fill': 'markerFill',
   'marker-fill-opacity': 'markerOpacity',
   'marker-line-color': 'markerLineColor',
@@ -3782,13 +3895,16 @@ var propertyMapping = {
   'line-color': 'lineColor',
   'line-width': 'lineWidth',
   'line-opacity': 'lineOpacity',
+  'line-comp-op': 'lineCompOp',
   'polygon-fill': 'polygonFill',
   'polygon-opacity': 'polygonOpacity',
+  'polygon-comp-op': 'polygonCompOp',
 
   'text-face-name': 'fontFace',
   'text-size': 'fontSize',
   'text-fill': 'textFill',
   'text-opacity': 'textOpacity',
+  'text-comp-op': 'textCompOp',
   'text-halo-fill': 'textOutlineColor',
   'text-halo-radius': 'textOutlineWidth',
   'text-align': 'textAlign',

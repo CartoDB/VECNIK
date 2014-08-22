@@ -30,10 +30,6 @@ var JSONP = function(global) {
   return JSONP;
 }(this);
 
-function addBackgroundLayer(options) {
-  return L.rectangle([[-90, -180], [90, 180]], { fillColor: options.color });
-}
-
 function addTileLayer(options) {
   return new L.TileLayer(options.urlTemplate, {
     subdomains: '1234',
@@ -43,11 +39,11 @@ function addTileLayer(options) {
 }
 
 function addVecnikLayer(options) {
-  var layerOptions = options.layer_definition.layers[0].options
+  var layerOptions = options.layer_definition.layers[0].options;
   var sql = layerOptions.sql;
   var table = sql.replace(/^.+\sFROM\s+/i, '');
 
-console.log(table);
+// console.log(table);
 
   var provider = new VECNIK.CartoDB.API(VECNIK.GeoJSON, {
     user: options.user_name,
@@ -58,54 +54,9 @@ console.log(table);
   });
 
   var cartocss = layerOptions.cartocss;
-/***
 
-cartocss = '#layer { line-color:#ff0000;line-width:5; }';
+// console.log(cartocss);
 
-cartocss =
-'#network[zoom>=5][zoom<=8] {\
-  line-color: rgba(0, 0, 0, 0);\
-  [highway=\'"motorway"\'] { line-color: #000; }\
-  [highway=\'"trunk"\'] { line-color: #300; }\
-  [zoom=5] {\
-    [highway=\'"motorway"\'] { line-width: 0.4; }\
-    [highway=\'"trunk"\'] { line-width: 0.2; } }\
-  [zoom=6] {\
-    [highway=\'"motorway"\'] { line-width: 0.5; }\
-    [highway=\'"trunk"\'] { line-width: 0.25; } }\
-  [zoom=7] {\
-    [highway=\'"motorway"\'] { line-width: 0.6; }\
-    [highway=\'"trunk"\'] { line-width: 0.3; } }\
-  [zoom=8] {\
-    [highway=\'"motorway"\'] { line-width: 1; }\
-    [highway=\'"trunk"\'] { line-width: 0.5; } }\
-}\
-\
-#network[zoom>=9][zoom<=14] {\
-  line-color: rgba(0, 0, 0, 0);\
-  [highway=\'"motorway"\'], [highway=\'"motorway_link"\'] {\
-    line-color: #000;\
-  }\
-  [highway=\'"trunk"\'], [highway=\'"trunk_link"\'] {\
-    line-color: #300;\
-  }\
-  [highway=\'"primary"\'] { line-color: #000; }\
-  [highway=\'"secondary"\'] { line-color: #000; }\
-  [highway=\'"tertiary"\'] { line-color: #C00; }\
-  [zoom=9] {\
-    [highway=\'"motorway"\'],[highway=\'"trunk"\'] { line-width: 1.4; }\
-    [highway=\'"primary"\'],[highway=\'"secondary"\'],\
-    [highway=\'"motorway_link"\'],[highway=\'"trunk_link"\'] { line-width: 0.6; }\
-  }\
-  [zoom=10] {\
-    [highway=\'"motorway"\'],[highway=\'"trunk"\'] { line-width: 1.8; }\
-    [highway=\'"primary"\'],[highway=\'"secondary"\'],\
-    [highway=\'"motorway_link"\'],[highway=\'"trunk_link"\'] { line-width: 0.8; }\
-  }\
-}';
-
-***/
-console.log(cartocss);
   var shader = new VECNIK.CartoShader(cartocss);
 
   var layer = new VECNIK.Layer({
@@ -148,21 +99,6 @@ function initVecnikAdapter(containerId, vizUrl, refMap) {
     var layer;
     for (var i = 0; i < viz.layers.length; i++) {
       layer = viz.layers[i];
-//      if (layer.type === 'background') {
-//        addBackgroundLayer(layer.options).addTo(map);
-//      }
-
-      // exclusive replacement for gmaps layer in 'network' example
-      if (layer.type === 'gmapsbase') {
-        new L.TileLayer(
-          'http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png',
-          {
-            subdomains: 'abc',
-            attribution: '&copy; Stamen Toner',
-            maxZoom: 18
-          })
-          .addTo(map);
-      }
 
       if (layer.type === 'tiled') {
         addTileLayer(layer.options).addTo(map);
