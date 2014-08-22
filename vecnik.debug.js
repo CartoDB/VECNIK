@@ -2185,12 +2185,11 @@ proto.setDrawStyle = function(style) {
         batchWasFinished = true;
       }
       this._context[prop] = (this._state[prop] = value);
-// console.log(prop, this._context[prop]);
     }
   }
 };
 
-proto.setFont = function(size, face) {
+proto.setFontStyle = function(size, face) {
   if (typeof size !== undefined || typeof face !== undefined) {
     size = size || this._state.fontSize;
     face = face || this._state.fontFace;
@@ -2200,6 +2199,21 @@ proto.setFont = function(size, face) {
       this._context.font = size +'px '+ face;
       return true;
     }
+  }
+};
+
+proto.setFillPattern = function(url, callback) {
+  if (typeof url !== undefined && this._state.fillStyle !== url) {
+    var self = this;
+    VECNIK.loadImage(url, function(img) {
+      // finish previous stroke/fill operations
+      self._finishBatch();
+      // we verify _state.fillStyle against a pattern url or a color string,
+      // when getting an url, we need to *create* a pattern and set it only to context
+      self._state.fillStyle = url;
+      self._context.fillStyle = self._context.createPattern(img, 'repeat');
+      callback();
+    });
   }
 };
 
@@ -2228,17 +2242,6 @@ proto._finishBatch = function() {
   var strokeFillOrder = this._strokeFillOrder;
 
   for (var i = 0, il = strokeFillOrder.length; i < il; i++) {
-
-//if (strokeFillOrder[i] === 'F') {
-//  var url = 'http://thumb9.shutterstock.com/display_pic_with_logo/953902/125126216/stock-vector-paisley-pattern-125126216.jpg';
-//  var self = this;
-//  VECNIK.loadImage(url, function(img) {
-//    self._context.fillStyle = self._context.createPattern(img, 'repeat');
-//    self._context.fill();
-//  });
-//  continue;
-//}
-
     this._context[ this._strokeFillMapping[ strokeFillOrder[i] ] ]();
   }
 
@@ -3775,21 +3778,34 @@ proto.render = function(tile, canvas, collection, mapContext) {
           break;
 
           case Shader.POLYGON:
-            if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill)) {
-              canvas.setDrawStyle({
-                strokeStyle: style.lineColor,
-                lineWidth: style.lineWidth,
-                fillStyle: style.polygonFill,
-                globalOpacity: getOpacity(style.polygonFill),
-                globalCompositeOperation: getCompOp(style.polygonCompOp)
-              });
-              canvas.drawPolygon(coordinates, strokeFillOrder);
+            if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill || style.polygonPatternFile)) {
+              if (style.polygonPatternFile) {
+                canvas.setFillPattern(style.polygonPatternFile, function() {
+                  canvas.setDrawStyle({
+                    strokeStyle: style.lineColor,
+                    lineWidth: style.lineWidth,
+                    // do not set fillStyle here again. it's already done
+                    globalOpacity: getOpacity(style.polygonFill),
+                    globalCompositeOperation: getCompOp(style.polygonCompOp)
+                  });
+                  canvas.drawPolygon(coordinates, strokeFillOrder);
+                });
+              } else {
+                canvas.setDrawStyle({
+                  strokeStyle: style.lineColor,
+                  lineWidth: style.lineWidth,
+                  fillStyle: style.polygonFill,
+                  globalOpacity: getOpacity(style.polygonFill),
+                  globalCompositeOperation: getCompOp(style.polygonCompOp)
+                });
+                canvas.drawPolygon(coordinates, strokeFillOrder);
+              }
             }
           break;
 
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
-              canvas.setFont(style.fontSize, style.fontFace);
+              canvas.setFontStyle(style.fontSize, style.fontFace);
               textWidth = canvas._context.measureText(style.textContent).width;
               bbox = { id: feature.id, x: pos.x, y: pos.y, w: textWidth, h: style.fontSize };
               if (style.textAllowOverlap || !layer.hasCollision(symbolizer, bbox)) {
@@ -3899,6 +3915,8 @@ var propertyMapping = {
   'polygon-fill': 'polygonFill',
   'polygon-opacity': 'polygonOpacity',
   'polygon-comp-op': 'polygonCompOp',
+  'polygon-pattern-file': 'polygonPatternFile',
+  'polygon-pattern-comp-op': 'polygonCompOp',
 
   'text-face-name': 'fontFace',
   'text-size': 'fontSize',
