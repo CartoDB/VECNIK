@@ -24,6 +24,8 @@ var propertyMapping = {
   'polygon-fill': 'polygonFill',
   'polygon-opacity': 'polygonOpacity',
   'polygon-comp-op': 'polygonCompOp',
+  'polygon-pattern-file': 'polygonPatternFile',
+  'polygon-pattern-comp-op': 'polygonCompOp',
 
   'text-face-name': 'fontFace',
   'text-size': 'fontSize',

@@ -192,21 +192,34 @@ proto.render = function(tile, canvas, collection, mapContext) {
           break;
 
           case Shader.POLYGON:
-            if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill)) {
-              canvas.setDrawStyle({
-                strokeStyle: style.lineColor,
-                lineWidth: style.lineWidth,
-                fillStyle: style.polygonFill,
-                globalOpacity: getOpacity(style.polygonFill),
-                globalCompositeOperation: getCompOp(style.polygonCompOp)
-              });
-              canvas.drawPolygon(coordinates, strokeFillOrder);
+            if (feature.type === Geometry.POLYGON && (style.lineColor || style.polygonFill || style.polygonPatternFile)) {
+              if (style.polygonPatternFile) {
+                canvas.setFillPattern(style.polygonPatternFile, function() {
+                  canvas.setDrawStyle({
+                    strokeStyle: style.lineColor,
+                    lineWidth: style.lineWidth,
+                    // do not set fillStyle here again. it's already done
+                    globalOpacity: getOpacity(style.polygonFill),
+                    globalCompositeOperation: getCompOp(style.polygonCompOp)
+                  });
+                  canvas.drawPolygon(coordinates, strokeFillOrder);
+                });
+              } else {
+                canvas.setDrawStyle({
+                  strokeStyle: style.lineColor,
+                  lineWidth: style.lineWidth,
+                  fillStyle: style.polygonFill,
+                  globalOpacity: getOpacity(style.polygonFill),
+                  globalCompositeOperation: getCompOp(style.polygonCompOp)
+                });
+                canvas.drawPolygon(coordinates, strokeFillOrder);
+              }
             }
           break;
 
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
-              canvas.setFont(style.fontSize, style.fontFace);
+              canvas.setFontStyle(style.fontSize, style.fontFace);
               textWidth = canvas._context.measureText(style.textContent).width;
               bbox = { id: feature.id, x: pos.x, y: pos.y, w: textWidth, h: style.fontSize };
               if (style.textAllowOverlap || !layer.hasCollision(symbolizer, bbox)) {
