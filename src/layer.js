@@ -1,12 +1,11 @@
 
 var Geometry = require('./geometry');
+var Tile     = require('./tile');
+var Profiler = require('./profiler');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
 if (typeof L !== 'undefined') {
-  var Tile = require('./tile');
-  var Profiler = require('./profiler');
-
-  var Layer = module.exports = L.TileLayer.extend({
+   var Layer = module.exports = L.TileLayer.extend({
 
     options: {
       maxZoom: 22
