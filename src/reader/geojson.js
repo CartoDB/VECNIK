@@ -38,17 +38,9 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
-  var stats = {
-    conversion_time: 0,
-    feature_count: 0
-  };
-
-  var profiler = new Profiler('vector_tile');
-  profiler.start('conversion_time');
+  var profiler = VECNIK.Profiler.metric('conversion.geojson').start();
 
   var dataByRef = [], feature;
-
-  stats.feature_count = collection.features.length;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
     feature = collection.features[i];
@@ -66,7 +58,7 @@ function _convertAndReproject(collection, tile) {
     );
   }
 
-  stats.conversion_time = profiler.end();
+  profiler.end();
   return dataByRef;
 }
 
@@ -146,10 +138,12 @@ function _clone(obj) {
 var GeoJSON = module.exports = {};
 
 GeoJSON.load = function(url, tile, callback) {
-//  if (!GeoJSON.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.loadJSON(url, function(collection) {
-      callback(_convertAndReproject(collection, tile));
+      var metric = VECNIK.Profiler.metric('conversion.geojson').start();
+      var data = _convertAndReproject(collection, tile);
+      metric.end();
+      callback(data);
     });
   } else {
     var worker = new Worker('../src/reader/geojson.worker.js');
@@ -162,5 +156,9 @@ GeoJSON.load = function(url, tile, callback) {
 };
 
 GeoJSON.convertForWorker = function(collection, tile) {
-  return _convertAndReproject(collection, tile);
+  var metric = VECNIK.Profiler.metric('conversion.geojson').start();
+  var data = _convertAndReproject(collection, tile);
+  metric.end();
+console.log(metric.name);
+  return data;
 };

@@ -37,13 +37,7 @@ function _addPolygon(coordinates, id, properties, dataByRef) {
 }
 
 function _convertAndReproject(buffer) {
-  var stats = {
-    conversion_time: 0,
-    feature_count: 0
-  };
-
-  var profiler = new Profiler('vector_tile');
-  profiler.start('conversion_time');
+  var profiler = Profiler.metric('conversion.vectortile').start();
 
   buffer = new PBF(new Uint8Array(buffer));
 
@@ -53,7 +47,6 @@ function _convertAndReproject(buffer) {
 
   for (var l in vTile.layers) {
     numFeatures = vTile.layers[l].length;
-    stats.feature_count += numFeatures;
 
     for (f = 0; f < numFeatures; f++) {
       feature = vTile.layers[l].feature(f);
@@ -71,7 +64,7 @@ function _convertAndReproject(buffer) {
     }
   }
 
-  stats.conversion_time = profiler.end();
+  profiler.end();
   return dataByRef;
 }
 

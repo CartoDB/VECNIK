@@ -2523,13 +2523,12 @@ function getLargestPart(featureParts) {
 },{}],15:[function(_dereq_,module,exports){
 
 var Geometry = _dereq_('./geometry');
+var Tile     = _dereq_('./tile');
+var Profiler = _dereq_('./profiler');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
 if (typeof L !== 'undefined') {
-  var Tile = _dereq_('./tile');
-  var Profiler = _dereq_('./profiler');
-
-  var Layer = module.exports = L.TileLayer.extend({
+   var Layer = module.exports = L.TileLayer.extend({
 
     options: {
       maxZoom: 22
@@ -2654,7 +2653,7 @@ if (typeof L !== 'undefined') {
     _hoverProperties: null,
 
     onAdd: function(map) {
-console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+// console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
@@ -2763,16 +2762,18 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
     },
 
     redraw: function(forceReload) {
+      var profiler;
       this._renderQueue = [];
       this._qTree = {};
 
       if (!!forceReload) {
         this._centroidPositions = {};
+        profiler = Profiler.metric('viewport.reload').start();
         L.TileLayer.prototype.redraw.call(this);
+        profiler.end();
         return this;
       }
 
-      var timer = Profiler.metric('tiles.render.time').start();
 
       // get viewport tile bounds in order to render immediately, when visible
       var
@@ -2784,11 +2785,11 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         ),
         tiles = this._tileObjects[this._map.getZoom()];
 
+      profiler = Profiler.metric('viewport.redraw').start();
       for (var key in tiles) {
         this._addToRenderQueue(key, tileBounds.contains(this._keyToTileCoords(key)));
       }
-
-      timer.end();
+      profiler.end();
 
       return this;
     },
@@ -3310,8 +3311,9 @@ proto.update = function() {};
 
 },{"../mercator":17}],22:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('../core/core');
+var VECNIK   = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
+var Profiler = _dereq_('../profiler');
 var Mercator = _dereq_('../mercator');
 
 var projection = new Mercator();
@@ -3348,6 +3350,8 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
+  var profiler = VECNIK.Profiler.metric('conversion.geojson').start();
+
   var dataByRef = [], feature;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
@@ -3366,6 +3370,7 @@ function _convertAndReproject(collection, tile) {
     );
   }
 
+  profiler.end();
   return dataByRef;
 }
 
@@ -3445,10 +3450,12 @@ function _clone(obj) {
 var GeoJSON = module.exports = {};
 
 GeoJSON.load = function(url, tile, callback) {
-//  if (!GeoJSON.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.loadJSON(url, function(collection) {
-      callback(_convertAndReproject(collection, tile));
+      var metric = VECNIK.Profiler.metric('conversion.geojson').start();
+      var data = _convertAndReproject(collection, tile);
+      metric.end();
+      callback(data);
     });
   } else {
     var worker = new Worker('../src/reader/geojson.worker.js');
@@ -3461,16 +3468,20 @@ GeoJSON.load = function(url, tile, callback) {
 };
 
 GeoJSON.convertForWorker = function(collection, tile) {
-  return _convertAndReproject(collection, tile);
+  var metric = VECNIK.Profiler.metric('conversion.geojson').start();
+  var data = _convertAndReproject(collection, tile);
+  metric.end();
+console.log(metric.name);
+  return data;
 };
 
-},{"../core/core":12,"../geometry":14,"../mercator":17}],23:[function(_dereq_,module,exports){
+},{"../core/core":12,"../geometry":14,"../mercator":17,"../profiler":18}],23:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('../core/core');
+var VECNIK   = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
-
-var PBF = _dereq_('pbf');
-var VT = _dereq_('vector-tile').VectorTile;
+var Profiler = _dereq_('../profiler');
+var PBF      = _dereq_('pbf');
+var VT       = _dereq_('vector-tile').VectorTile;
 
 function _addPoint(coordinates, id, properties, dataByRef) {
   dataByRef.push({
@@ -3504,6 +3515,8 @@ function _addPolygon(coordinates, id, properties, dataByRef) {
 }
 
 function _convertAndReproject(buffer) {
+  var profiler = Profiler.metric('conversion.vectortile').start();
+
   buffer = new PBF(new Uint8Array(buffer));
 
   var vTile = new VT(buffer);
@@ -3529,6 +3542,7 @@ function _convertAndReproject(buffer) {
     }
   }
 
+  profiler.end();
   return dataByRef;
 }
 
@@ -3583,7 +3597,7 @@ VectorTile.convertForWorker = function(buffer) {
   return _convertAndReproject(buffer);
 };
 
-},{"../core/core":12,"../geometry":14,"pbf":4,"vector-tile":6}],24:[function(_dereq_,module,exports){
+},{"../core/core":12,"../geometry":14,"../profiler":18,"pbf":4,"vector-tile":6}],24:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Geometry = _dereq_('./geometry');
@@ -4073,7 +4087,8 @@ ShaderLayer.Int2RGB = Int2RGB;
 },{"./core/events":13,"./shader":25}],27:[function(_dereq_,module,exports){
 
 var ShaderLayer = _dereq_('./shader.layer');
-var Canvas = _dereq_('./canvas');
+var Canvas      = _dereq_('./canvas');
+var Profiler    = _dereq_('./profiler');
 
 var Tile = module.exports = function(options) {
   options = options || {};
@@ -4125,7 +4140,9 @@ proto.render = function() {
     mapContext.clicked = clicked;
   }
 
+  var profiler = Profiler.metric('tile.rendertime').start();
   this._renderer.render(this, this._canvas, this._data, mapContext);
+  profiler.end();
 };
 
 /**
@@ -4199,6 +4216,6 @@ proto.getFeature = function(cartodb_id) {
   return;
 };
 
-},{"./canvas":11,"./shader.layer":26}]},{},[16])
+},{"./canvas":11,"./profiler":18,"./shader.layer":26}]},{},[16])
 (16)
 });

@@ -130,7 +130,7 @@ if (typeof L !== 'undefined') {
     _hoverProperties: null,
 
     onAdd: function(map) {
-console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+// console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
@@ -239,16 +239,18 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
     },
 
     redraw: function(forceReload) {
+      var profiler;
       this._renderQueue = [];
       this._qTree = {};
 
       if (!!forceReload) {
         this._centroidPositions = {};
+        profiler = Profiler.metric('viewport.reload').start();
         L.TileLayer.prototype.redraw.call(this);
+        profiler.end();
         return this;
       }
 
-      var timer = Profiler.metric('tiles.render.time').start();
 
       // get viewport tile bounds in order to render immediately, when visible
       var
@@ -260,11 +262,11 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         ),
         tiles = this._tileObjects[this._map.getZoom()];
 
+      profiler = Profiler.metric('viewport.redraw').start();
       for (var key in tiles) {
         this._addToRenderQueue(key, tileBounds.contains(this._keyToTileCoords(key)));
       }
-
-      timer.end();
+      profiler.end();
 
       return this;
     },

@@ -20,12 +20,6 @@ var Tile = module.exports = function(options) {
     self._data = data;
     self.render();
   });
-
-  this._profiler = new Profiler('tile_render');
-
-  this._stats = {
-    rendering_time: 0
-  };
 };
 
 var proto = Tile.prototype;
@@ -59,9 +53,9 @@ proto.render = function() {
     mapContext.clicked = clicked;
   }
 
-  this._profiler.start('render');
+  var profiler = Profiler.metric('tile.rendertime').start();
   this._renderer.render(this, this._canvas, this._data, mapContext);
-  this._stats.rendering_time = this._profiler.end();
+  profiler.end();
 };
 
 /**
