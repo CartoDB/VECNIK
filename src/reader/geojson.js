@@ -1,6 +1,7 @@
 
-var VECNIK = require('../core/core');
+var VECNIK   = require('../core/core');
 var Geometry = require('../geometry');
+var Profiler = require('../profiler');
 var Mercator = require('../mercator');
 
 var projection = new Mercator();
@@ -37,7 +38,17 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
+  var stats = {
+    conversion_time: 0,
+    feature_count: 0
+  };
+
+  var profiler = new Profiler('vector_tile');
+  profiler.start('conversion_time');
+
   var dataByRef = [], feature;
+
+  stats.feature_count = collection.features.length;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
     feature = collection.features[i];
@@ -55,6 +66,7 @@ function _convertAndReproject(collection, tile) {
     );
   }
 
+  stats.conversion_time = profiler.end();
   return dataByRef;
 }
 

@@ -1,6 +1,7 @@
 
 var ShaderLayer = require('./shader.layer');
-var Canvas = require('./canvas');
+var Canvas      = require('./canvas');
+var Profiler    = require('./profiler');
 
 var Tile = module.exports = function(options) {
   options = options || {};
@@ -19,6 +20,12 @@ var Tile = module.exports = function(options) {
     self._data = data;
     self.render();
   });
+
+  this._profiler = new Profiler('tile_render');
+
+  this._stats = {
+    rendering_time: 0
+  };
 };
 
 var proto = Tile.prototype;
@@ -52,7 +59,9 @@ proto.render = function() {
     mapContext.clicked = clicked;
   }
 
+  this._profiler.start('render');
   this._renderer.render(this, this._canvas, this._data, mapContext);
+  this._stats.rendering_time = this._profiler.end();
 };
 
 /**

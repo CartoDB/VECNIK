@@ -1,9 +1,9 @@
 
-var VECNIK = require('../core/core');
+var VECNIK   = require('../core/core');
 var Geometry = require('../geometry');
-
-var PBF = require('pbf');
-var VT = require('vector-tile').VectorTile;
+var Profiler = require('../profiler');
+var PBF      = require('pbf');
+var VT       = require('vector-tile').VectorTile;
 
 function _addPoint(coordinates, id, properties, dataByRef) {
   dataByRef.push({
@@ -37,6 +37,14 @@ function _addPolygon(coordinates, id, properties, dataByRef) {
 }
 
 function _convertAndReproject(buffer) {
+  var stats = {
+    conversion_time: 0,
+    feature_count: 0
+  };
+
+  var profiler = new Profiler('vector_tile');
+  profiler.start('conversion_time');
+
   buffer = new PBF(new Uint8Array(buffer));
 
   var vTile = new VT(buffer);
@@ -45,6 +53,7 @@ function _convertAndReproject(buffer) {
 
   for (var l in vTile.layers) {
     numFeatures = vTile.layers[l].length;
+    stats.feature_count += numFeatures;
 
     for (f = 0; f < numFeatures; f++) {
       feature = vTile.layers[l].feature(f);
@@ -62,6 +71,7 @@ function _convertAndReproject(buffer) {
     }
   }
 
+  stats.conversion_time = profiler.end();
   return dataByRef;
 }
 
