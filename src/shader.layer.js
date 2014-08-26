@@ -39,6 +39,7 @@ var propertyMapping = {
   'text-allow-overlap': 'textAllowOverlap'
 };
 
+// these are relevant and identify interactive areas
 var hitShaderProperties = [
   'markerFill',
   'markerLineColor',
@@ -47,6 +48,14 @@ var hitShaderProperties = [
   'textFill',
   'textOutlineColor'
 ];
+
+// these are unwanted and will be replaced by something useful
+// i.e. removing bitmap images as they violate cors when accessing hit canvas data
+var hitShaderSkipProperties = [
+  'markerFile',
+  'polygonPatternFile'
+];
+
 
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
@@ -90,7 +99,6 @@ proto.compile = function(shaderSrc) {
 // the style to apply to canvas context
 // TODO: optimize this to not evaluate when featureProperties do not
 // contain values involved in the shader
-// TODO: hover / click should just complement existing properties
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
@@ -98,10 +106,6 @@ proto.getStyle = function(featureProperties, mapContext) {
 
   if (nameAttachment === 'hover' &&
      (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
-    return {};
-  }
-  if (nameAttachment === 'click' &&
-     (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
 
@@ -135,13 +139,10 @@ proto.getShadingOrder = function() {
 proto.createHitShaderLayer = function() {
   var hitLayer = this.clone();
   for (var prop in hitLayer._compiled) {
-    // removing bitmap images as they break cors rules whne reading hit canvas
-    // those get replaced by circular markers of same width
-    if (prop === 'markerFile') {
-      delete hitLayer._compiled.markerFile;
+    if (~hitShaderSkipProperties.indexOf(prop)) {
+      delete hitLayer._compiled[prop];
       hitLayer._compiled.markerFill = '#000000';
     }
-
     if (~hitShaderProperties.indexOf(prop)) {
       hitLayer._compiled[prop] = function(featureProperties, mapContext) {
         return 'rgb(' + Int2RGB(featureProperties.cartodb_id + 1).join(',') + ')';

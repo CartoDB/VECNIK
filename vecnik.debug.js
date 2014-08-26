@@ -2523,13 +2523,12 @@ function getLargestPart(featureParts) {
 },{}],15:[function(_dereq_,module,exports){
 
 var Geometry = _dereq_('./geometry');
+var Tile     = _dereq_('./tile');
+var Profiler = _dereq_('./profiler');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
 if (typeof L !== 'undefined') {
-  var Tile = _dereq_('./tile');
-  var Profiler = _dereq_('./profiler');
-
-  var Layer = module.exports = L.TileLayer.extend({
+   var Layer = module.exports = L.TileLayer.extend({
 
     options: {
       maxZoom: 22
@@ -2566,6 +2565,10 @@ if (typeof L !== 'undefined') {
             tiles[key].render();
           }
 
+          if (self._renderQueue.length === 1 && self.metric) {
+            self.metric.end();
+            delete self.metric;
+          }
           self._renderQueue.pop();
         }
       };
@@ -2642,37 +2645,31 @@ if (typeof L !== 'undefined') {
     _renderAffectedTiles: function(cartodb_id) {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
+        var metric = Profiler.metric('hover.rendertime').start();
         for (var key in tiles) {
           if (!!tiles[key].getFeature(cartodb_id)) {
             tiles[key].render();
           }
         }
+        metric.end();
       });
     },
 
     _hoverProperties: null,
-    _hoverProperties: null,
 
     onAdd: function(map) {
-console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+// console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
         }
 
-        // render previously highlighted tiles as normal
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-        }
+        var clickProperties = this._getPropertiesFromPos(map.project(e.latlng));
 
-        this._hoverProperties = this._getPropertiesFromPos(map.project(e.latlng));
-
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-
+        if (clickProperties) {
           this.fireEvent('featureClick', {
-            feature: this._hoverProperties,
+            feature: clickProperties,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
@@ -2772,8 +2769,6 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         return this;
       }
 
-      var timer = Profiler.metric('tiles.render.time').start();
-
       // get viewport tile bounds in order to render immediately, when visible
       var
         mapBounds = this._map.getPixelBounds(),
@@ -2784,11 +2779,10 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         ),
         tiles = this._tileObjects[this._map.getZoom()];
 
+      this.metric = Profiler.metric('layer.rendertime').start();
       for (var key in tiles) {
         this._addToRenderQueue(key, tileBounds.contains(this._keyToTileCoords(key)));
       }
-
-      timer.end();
 
       return this;
     },
@@ -3014,7 +3008,7 @@ Profiler.get = function(name) {
   };
 };
 
-Profiler.new_value = function (name, value) {
+Profiler.new_value = function(name, value) {
   var t = Profiler.metrics[name] = Profiler.get(name);
 
   t.max = Math.max(t.max, value);
@@ -3025,7 +3019,7 @@ Profiler.new_value = function (name, value) {
   t.history[t.count%MAX_HISTORY] = value;
 };
 
-Profiler.print_stats = function () {
+Profiler.print_stats = function() {
   for (var k in Profiler.metrics) {
     var t = Profiler.metrics[k];
     console.log(" === " + k + " === ");
@@ -3054,7 +3048,7 @@ Metric.prototype = {
   },
 
   // elapsed time since start was called
-  _elapsed: function() {
+  elapsed: function() {
     return +new Date() - this.t0;
   },
 
@@ -3065,7 +3059,7 @@ Metric.prototype = {
   //
   end: function() {
     if (this.t0 !== null) {
-      Profiler.new_value(this.name, this._elapsed());
+      Profiler.new_value(this.name, this.elapsed());
       this.t0 = null;
     }
   },
@@ -3097,7 +3091,7 @@ Metric.prototype = {
       this.start();
       return;
     }
-    var elapsed = this._elapsed();
+    var elapsed = this.elapsed();
     if(elapsed > 1) {
       Profiler.new_value(this.name, this.count);
       this.count = 0;
@@ -3111,7 +3105,6 @@ Profiler.metric = function(name) {
 };
 
 module.exports = Profiler;
-
 
 },{}],19:[function(_dereq_,module,exports){
 
@@ -3310,8 +3303,9 @@ proto.update = function() {};
 
 },{"../mercator":17}],22:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('../core/core');
+var VECNIK   = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
+var Profiler = _dereq_('../profiler');
 var Mercator = _dereq_('../mercator');
 
 var projection = new Mercator();
@@ -3348,6 +3342,7 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
+
   var dataByRef = [], feature;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
@@ -3445,17 +3440,19 @@ function _clone(obj) {
 var GeoJSON = module.exports = {};
 
 GeoJSON.load = function(url, tile, callback) {
-//  if (!GeoJSON.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.loadJSON(url, function(collection) {
-      callback(_convertAndReproject(collection, tile));
+      var metric = VECNIK.Profiler.metric('conversion.geojson').start();
+      var data = _convertAndReproject(collection, tile);
+      metric.end();
+      callback(data);
     });
   } else {
     var worker = new Worker('../src/reader/geojson.worker.js');
     worker.onmessage = function(e) {
-      callback(e.data);
+      Profiler.new_value('conversion.geojson', e.data.elapsed);
+      callback(e.data.collection);
     };
-
     worker.postMessage({ url: url, tile: tile });
   }
 };
@@ -3464,13 +3461,13 @@ GeoJSON.convertForWorker = function(collection, tile) {
   return _convertAndReproject(collection, tile);
 };
 
-},{"../core/core":12,"../geometry":14,"../mercator":17}],23:[function(_dereq_,module,exports){
+},{"../core/core":12,"../geometry":14,"../mercator":17,"../profiler":18}],23:[function(_dereq_,module,exports){
 
-var VECNIK = _dereq_('../core/core');
+var VECNIK   = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
-
-var PBF = _dereq_('pbf');
-var VT = _dereq_('vector-tile').VectorTile;
+var Profiler = _dereq_('../profiler');
+var PBF      = _dereq_('pbf');
+var VT       = _dereq_('vector-tile').VectorTile;
 
 function _addPoint(coordinates, id, properties, dataByRef) {
   dataByRef.push({
@@ -3504,6 +3501,7 @@ function _addPolygon(coordinates, id, properties, dataByRef) {
 }
 
 function _convertAndReproject(buffer) {
+
   buffer = new PBF(new Uint8Array(buffer));
 
   var vTile = new VT(buffer);
@@ -3564,17 +3562,19 @@ function _toBuffer(coordinates) {
 var VectorTile = module.exports = {};
 
 VectorTile.load = function(url, tile, callback) {
-//  if (!VectorTile.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.loadBinary(url, function(buffer) {
-      callback(_convertAndReproject(buffer));
+      var metric = VECNIK.Profiler.metric('conversion.vectortile').start();
+      var data = _convertAndReproject(buffer);
+      metric.end();
+      callback(data);
     });
   } else {
     var worker = new Worker('../src/reader/vectortile.worker.js');
     worker.onmessage = function(e) {
-      callback(e.data);
+      Profiler.new_value('conversion.vectortile', e.data.elapsed);
+      callback(e.data.collection);
     };
-
     worker.postMessage({ url: url });
   }
 };
@@ -3583,7 +3583,7 @@ VectorTile.convertForWorker = function(buffer) {
   return _convertAndReproject(buffer);
 };
 
-},{"../core/core":12,"../geometry":14,"pbf":4,"vector-tile":6}],24:[function(_dereq_,module,exports){
+},{"../core/core":12,"../geometry":14,"../profiler":18,"pbf":4,"vector-tile":6}],24:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Geometry = _dereq_('./geometry');
@@ -3930,6 +3930,7 @@ var propertyMapping = {
   'text-allow-overlap': 'textAllowOverlap'
 };
 
+// these are relevant and identify interactive areas
 var hitShaderProperties = [
   'markerFill',
   'markerLineColor',
@@ -3938,6 +3939,14 @@ var hitShaderProperties = [
   'textFill',
   'textOutlineColor'
 ];
+
+// these are unwanted and will be replaced by something useful
+// i.e. removing bitmap images as they violate cors when accessing hit canvas data
+var hitShaderSkipProperties = [
+  'markerFile',
+  'polygonPatternFile'
+];
+
 
 var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
@@ -3981,7 +3990,6 @@ proto.compile = function(shaderSrc) {
 // the style to apply to canvas context
 // TODO: optimize this to not evaluate when featureProperties do not
 // contain values involved in the shader
-// TODO: hover / click should just complement existing properties
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
@@ -3989,10 +3997,6 @@ proto.getStyle = function(featureProperties, mapContext) {
 
   if (nameAttachment === 'hover' &&
      (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
-    return {};
-  }
-  if (nameAttachment === 'click' &&
-     (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
 
@@ -4026,13 +4030,10 @@ proto.getShadingOrder = function() {
 proto.createHitShaderLayer = function() {
   var hitLayer = this.clone();
   for (var prop in hitLayer._compiled) {
-    // removing bitmap images as they break cors rules whne reading hit canvas
-    // those get replaced by circular markers of same width
-    if (prop === 'markerFile') {
-      delete hitLayer._compiled.markerFile;
+    if (~hitShaderSkipProperties.indexOf(prop)) {
+      delete hitLayer._compiled[prop];
       hitLayer._compiled.markerFill = '#000000';
     }
-
     if (~hitShaderProperties.indexOf(prop)) {
       hitLayer._compiled[prop] = function(featureProperties, mapContext) {
         return 'rgb(' + Int2RGB(featureProperties.cartodb_id + 1).join(',') + ')';
@@ -4067,7 +4068,8 @@ ShaderLayer.Int2RGB = Int2RGB;
 },{"./core/events":13,"./shader":25}],27:[function(_dereq_,module,exports){
 
 var ShaderLayer = _dereq_('./shader.layer');
-var Canvas = _dereq_('./canvas');
+var Canvas      = _dereq_('./canvas');
+var Profiler    = _dereq_('./profiler');
 
 var Tile = module.exports = function(options) {
   options = options || {};
@@ -4109,17 +4111,15 @@ proto.getSize = function() {
 proto.render = function() {
   var
     mapContext = { zoom: this._coords.z },
-    hovered, clicked;
+    hovered;
 
   if (hovered = this._layer.getHoveredFeature()) {
     mapContext.hovered = hovered;
   }
 
-  if (clicked = this._layer.getClickedFeature()) {
-    mapContext.clicked = clicked;
-  }
-
+  var profiler = Profiler.metric('tile.rendertime').start();
   this._renderer.render(this, this._canvas, this._data, mapContext);
+  profiler.end();
 };
 
 /**
@@ -4193,6 +4193,6 @@ proto.getFeature = function(cartodb_id) {
   return;
 };
 
-},{"./canvas":11,"./shader.layer":26}]},{},[16])
+},{"./canvas":11,"./profiler":18,"./shader.layer":26}]},{},[16])
 (16)
 });

@@ -1,12 +1,11 @@
 
 var Geometry = require('./geometry');
+var Tile     = require('./tile');
+var Profiler = require('./profiler');
 
 // do this only when Leaflet exists (aka don't when run in web worker)
 if (typeof L !== 'undefined') {
-  var Tile = require('./tile');
-  var Profiler = require('./profiler');
-
-  var Layer = module.exports = L.TileLayer.extend({
+   var Layer = module.exports = L.TileLayer.extend({
 
     options: {
       maxZoom: 22
@@ -43,6 +42,10 @@ if (typeof L !== 'undefined') {
             tiles[key].render();
           }
 
+          if (self._renderQueue.length === 1 && self.metric) {
+            self.metric.end();
+            delete self.metric;
+          }
           self._renderQueue.pop();
         }
       };
@@ -119,37 +122,31 @@ if (typeof L !== 'undefined') {
     _renderAffectedTiles: function(cartodb_id) {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
+        var metric = Profiler.metric('hover.rendertime').start();
         for (var key in tiles) {
           if (!!tiles[key].getFeature(cartodb_id)) {
             tiles[key].render();
           }
         }
+        metric.end();
       });
     },
 
     _hoverProperties: null,
-    _hoverProperties: null,
 
     onAdd: function(map) {
-console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
+// console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
 
       map.on('mousedown', function (e) {
         if (!this.options.interaction) {
           return;
         }
 
-        // render previously highlighted tiles as normal
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-        }
+        var clickProperties = this._getPropertiesFromPos(map.project(e.latlng));
 
-        this._hoverProperties = this._getPropertiesFromPos(map.project(e.latlng));
-
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-
+        if (clickProperties) {
           this.fireEvent('featureClick', {
-            feature: this._hoverProperties,
+            feature: clickProperties,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
@@ -249,8 +246,6 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         return this;
       }
 
-      var timer = Profiler.metric('tiles.render.time').start();
-
       // get viewport tile bounds in order to render immediately, when visible
       var
         mapBounds = this._map.getPixelBounds(),
@@ -261,11 +256,10 @@ console.log('Retina: '+ L.Browser.retina +' Tile size: '+ this._getTileSize());
         ),
         tiles = this._tileObjects[this._map.getZoom()];
 
+      this.metric = Profiler.metric('layer.rendertime').start();
       for (var key in tiles) {
         this._addToRenderQueue(key, tileBounds.contains(this._keyToTileCoords(key)));
       }
-
-      timer.end();
 
       return this;
     },

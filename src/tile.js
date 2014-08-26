@@ -1,6 +1,7 @@
 
 var ShaderLayer = require('./shader.layer');
-var Canvas = require('./canvas');
+var Canvas      = require('./canvas');
+var Profiler    = require('./profiler');
 
 var Tile = module.exports = function(options) {
   options = options || {};
@@ -42,17 +43,15 @@ proto.getSize = function() {
 proto.render = function() {
   var
     mapContext = { zoom: this._coords.z },
-    hovered, clicked;
+    hovered;
 
   if (hovered = this._layer.getHoveredFeature()) {
     mapContext.hovered = hovered;
   }
 
-  if (clicked = this._layer.getClickedFeature()) {
-    mapContext.clicked = clicked;
-  }
-
+  var profiler = Profiler.metric('tile.rendertime').start();
   this._renderer.render(this, this._canvas, this._data, mapContext);
+  profiler.end();
 };
 
 /**

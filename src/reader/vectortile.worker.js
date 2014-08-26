@@ -1,8 +1,13 @@
 importScripts('../../vecnik.debug.js');
 
 self.onmessage = function(e) {
-  VECNIK.load(e.data.url, 'arraybuffer', function(buffer) {
-    self.postMessage(VECNIK.VectorTile.convertForWorker(buffer));
+  VECNIK.loadBinary(e.data.url, function(buffer) {
+    var metric = VECNIK.Profiler.metric('conversion').start();
+    var collection = VECNIK.VectorTile.convertForWorker(buffer);
+    self.postMessage({
+      collection: collection,
+      elapsed: metric.elapsed()
+    });
     self.close();
   });
 };

@@ -1,6 +1,7 @@
 
-var VECNIK = require('../core/core');
+var VECNIK   = require('../core/core');
 var Geometry = require('../geometry');
+var Profiler = require('../profiler');
 var Mercator = require('../mercator');
 
 var projection = new Mercator();
@@ -37,6 +38,7 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
+
   var dataByRef = [], feature;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
@@ -134,17 +136,19 @@ function _clone(obj) {
 var GeoJSON = module.exports = {};
 
 GeoJSON.load = function(url, tile, callback) {
-//  if (!GeoJSON.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.loadJSON(url, function(collection) {
-      callback(_convertAndReproject(collection, tile));
+      var metric = VECNIK.Profiler.metric('conversion.geojson').start();
+      var data = _convertAndReproject(collection, tile);
+      metric.end();
+      callback(data);
     });
   } else {
     var worker = new Worker('../src/reader/geojson.worker.js');
     worker.onmessage = function(e) {
-      callback(e.data);
+      Profiler.new_value('conversion.geojson', e.data.elapsed);
+      callback(e.data.collection);
     };
-
     worker.postMessage({ url: url, tile: tile });
   }
 };
