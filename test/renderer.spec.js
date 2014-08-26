@@ -58,7 +58,7 @@ module('renderer');
 
   test('should render as text', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  text-name: test;\n'+
         '}'
@@ -75,7 +75,7 @@ module('renderer');
 
   test('should render as polygon', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  polygon-fill: #000;\n'+
         '}'
@@ -91,7 +91,7 @@ module('renderer');
 
   test('should render as line', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  line-color: #fff;\n'+
         '}'
@@ -107,7 +107,7 @@ module('renderer');
 
   test('should render as circle', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  marker-fill: #ffcc00;\n'+
         '  marker-width: 10px;\n'+
@@ -124,7 +124,7 @@ module('renderer');
 
   test('should not render at all', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {}'
       )
     });

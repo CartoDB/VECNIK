@@ -6,10 +6,10 @@ module('shader');
   QUnit.testStart(function() {});
 
   test('Symbolizer types need to be defined', function() {
-    equal(VECNIK.CartoShader.LINE,    'line');
-    equal(VECNIK.CartoShader.POLYGON, 'polygon');
-    equal(VECNIK.CartoShader.POINT,   'markers');
-    equal(VECNIK.CartoShader.TEXT,    'text');
+    equal(VECNIK.Shader.LINE,    'line');
+    equal(VECNIK.Shader.POLYGON, 'polygon');
+    equal(VECNIK.Shader.POINT,   'markers');
+    equal(VECNIK.Shader.TEXT,    'text');
   });
 
 }());

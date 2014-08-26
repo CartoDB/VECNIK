@@ -21,8 +21,8 @@ var VECNIK = require('./core/core');
 
 VECNIK.Geometry    = require('./geometry');
 VECNIK.Canvas      = require('./canvas');
-VECNIK.CartoShader = require('./shader');
-VECNIK.CartoShaderLayer = require('./shader.layer');
+VECNIK.Shader      = require('./shader');
+VECNIK.CartoShader = require('./cartoshader');
 VECNIK.Renderer    = require('./renderer');
 
 // Providers
