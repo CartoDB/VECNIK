@@ -155,7 +155,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && (style.markerFill || style.markerFile)) {
               if (style.markerFile) {
-                // no collisian check for bitmaps at the moment, as we don't know their height
+                // no collision check for bitmaps at the moment, as we don't know their height
                 // could be solved by preloading images
                 canvas.drawImage(style.markerFile, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.markerSize);
               } else {
