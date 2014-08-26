@@ -7,9 +7,9 @@ module('core');
 
   // doesn't work from command line but browser is fine
   asyncTest('JSON XHR', function() {
-    var expectedRes = JSON.stringify({ test: 123 });
+    var expectedRes = { test: 123 };
     VECNIK.loadJSON('data/test.json', function(res) {
-      equal(JSON.stringify(res), expectedRes);
+      deepEqual(res, expectedRes);
       start();
     });
   });

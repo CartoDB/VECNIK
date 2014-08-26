@@ -2590,7 +2590,7 @@ proto.getCentroid = function(featureParts) {
   if (featureParts.length === 1) {
     part = featureParts[0];
   } else {
-    part = getLargestPart(featureParts);
+    part = _getLargestPart(featureParts);
   }
 
   if (!part) {
@@ -2645,7 +2645,7 @@ proto.getCentroid = function(featureParts) {
   };
 };
 
-function getBBox(coordinates) {
+function _getBBox(coordinates) {
   var
     min = Math.min,
     max = Math.max,
@@ -2664,7 +2664,7 @@ function getBBox(coordinates) {
   return { minX:minX, minY:minY, maxX:maxX, maxY:maxY };
 }
 
-function getArea(coordinates) {
+function _getArea(coordinates) {
   if (coordinates.length < 6) {
     return 0;
   }
@@ -2676,7 +2676,7 @@ function getArea(coordinates) {
   return -sum/2;
 }
 
-function getLargestPart(featureParts) {
+function _getLargestPart(featureParts) {
   var
     area, maxArea = -Infinity,
     part, maxPart,
@@ -2686,11 +2686,15 @@ function getLargestPart(featureParts) {
     part = featureParts[i];
     coordinates = part.feature.coordinates;
 
+    if (part.feature.type === Geometry.POINT) {
+      return part;
+    }
+
     if (part.feature.type === Geometry.POLYGON) {
       coordinates = coordinates[0];
     }
 
-    area = getArea(coordinates);
+    area = _getArea(coordinates);
 
     if (area > maxArea) {
       maxArea = area;
@@ -4143,7 +4147,7 @@ proto._renderHitGrid = function() {
   var data = this._hitCanvas.getData();
 
   // check, whether something has been drawn
-  // TODO: maybe shader was not ready. try to check this instead
+  // TODO: try to check the shader instead
   for (var i = 0; i < data.length; i++) {
     if (data[i]) {
       return data;

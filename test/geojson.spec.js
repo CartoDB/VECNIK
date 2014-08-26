@@ -22,5 +22,17 @@ test('Should load GeoJSON and return formatted objects', function() {
   };
 
 });
+//  module('geojson');
+//
+//  test('parseGeoJSON', function() {
+//    var g = vecnik.geo().parseGeoJSON(JSON.parse(geojson).features[0].geometry);
+//    equal(g.children().length, 1)
+//    ok(g.children()[0].x().length > 0)
+//  });
+//
+//  test('parseGeoJSON with features', function() {
+//    var g = vecnik.geo().parseGeoJSON(JSON.parse(geojson));
+//    equal(g.children().length, 2)
+//  });
 
 ***/
