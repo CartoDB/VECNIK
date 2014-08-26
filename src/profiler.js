@@ -44,7 +44,7 @@ Profiler.get = function(name) {
   };
 };
 
-Profiler.new_value = function (name, value) {
+Profiler.new_value = function(name, value) {
   var t = Profiler.metrics[name] = Profiler.get(name);
 
   t.max = Math.max(t.max, value);
@@ -55,7 +55,7 @@ Profiler.new_value = function (name, value) {
   t.history[t.count%MAX_HISTORY] = value;
 };
 
-Profiler.print_stats = function () {
+Profiler.print_stats = function() {
   for (var k in Profiler.metrics) {
     var t = Profiler.metrics[k];
     console.log(" === " + k + " === ");
@@ -84,7 +84,7 @@ Metric.prototype = {
   },
 
   // elapsed time since start was called
-  _elapsed: function() {
+  elapsed: function() {
     return +new Date() - this.t0;
   },
 
@@ -95,7 +95,7 @@ Metric.prototype = {
   //
   end: function() {
     if (this.t0 !== null) {
-      Profiler.new_value(this.name, this._elapsed());
+      Profiler.new_value(this.name, this.elapsed());
       this.t0 = null;
     }
   },
@@ -127,7 +127,7 @@ Metric.prototype = {
       this.start();
       return;
     }
-    var elapsed = this._elapsed();
+    var elapsed = this.elapsed();
     if(elapsed > 1) {
       Profiler.new_value(this.name, this.count);
       this.count = 0;
@@ -141,4 +141,3 @@ Profiler.metric = function(name) {
 };
 
 module.exports = Profiler;
-

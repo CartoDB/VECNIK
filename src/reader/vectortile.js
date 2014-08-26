@@ -100,17 +100,19 @@ function _toBuffer(coordinates) {
 var VectorTile = module.exports = {};
 
 VectorTile.load = function(url, tile, callback) {
-//  if (!VectorTile.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.loadBinary(url, function(buffer) {
-      callback(_convertAndReproject(buffer));
+      var metric = VECNIK.Profiler.metric('conversion.vectortile').start();
+      var data = _convertAndReproject(buffer);
+      metric.end();
+      callback(data);
     });
   } else {
     var worker = new Worker('../src/reader/vectortile.worker.js');
     worker.onmessage = function(e) {
-      callback(e.data);
+      Profiler.new_value('conversion.vectortile', e.data.elapsed);
+      callback(e.data.collection);
     };
-
     worker.postMessage({ url: url });
   }
 };

@@ -148,17 +148,13 @@ GeoJSON.load = function(url, tile, callback) {
   } else {
     var worker = new Worker('../src/reader/geojson.worker.js');
     worker.onmessage = function(e) {
-      callback(e.data);
+      Profiler.new_value('conversion.geojson', e.data.elapsed);
+      callback(e.data.collection);
     };
-
     worker.postMessage({ url: url, tile: tile });
   }
 };
 
 GeoJSON.convertForWorker = function(collection, tile) {
-  var metric = VECNIK.Profiler.metric('conversion.geojson').start();
-  var data = _convertAndReproject(collection, tile);
-  metric.end();
-console.log(metric.name);
-  return data;
+  return _convertAndReproject(collection, tile);
 };

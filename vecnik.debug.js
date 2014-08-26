@@ -3015,7 +3015,7 @@ Profiler.get = function(name) {
   };
 };
 
-Profiler.new_value = function (name, value) {
+Profiler.new_value = function(name, value) {
   var t = Profiler.metrics[name] = Profiler.get(name);
 
   t.max = Math.max(t.max, value);
@@ -3026,7 +3026,7 @@ Profiler.new_value = function (name, value) {
   t.history[t.count%MAX_HISTORY] = value;
 };
 
-Profiler.print_stats = function () {
+Profiler.print_stats = function() {
   for (var k in Profiler.metrics) {
     var t = Profiler.metrics[k];
     console.log(" === " + k + " === ");
@@ -3055,7 +3055,7 @@ Metric.prototype = {
   },
 
   // elapsed time since start was called
-  _elapsed: function() {
+  elapsed: function() {
     return +new Date() - this.t0;
   },
 
@@ -3066,7 +3066,7 @@ Metric.prototype = {
   //
   end: function() {
     if (this.t0 !== null) {
-      Profiler.new_value(this.name, this._elapsed());
+      Profiler.new_value(this.name, this.elapsed());
       this.t0 = null;
     }
   },
@@ -3098,7 +3098,7 @@ Metric.prototype = {
       this.start();
       return;
     }
-    var elapsed = this._elapsed();
+    var elapsed = this.elapsed();
     if(elapsed > 1) {
       Profiler.new_value(this.name, this.count);
       this.count = 0;
@@ -3112,7 +3112,6 @@ Profiler.metric = function(name) {
 };
 
 module.exports = Profiler;
-
 
 },{}],19:[function(_dereq_,module,exports){
 
@@ -3460,19 +3459,15 @@ GeoJSON.load = function(url, tile, callback) {
   } else {
     var worker = new Worker('../src/reader/geojson.worker.js');
     worker.onmessage = function(e) {
-      callback(e.data);
+      Profiler.new_value('conversion.geojson', e.data.elapsed);
+      callback(e.data.collection);
     };
-
     worker.postMessage({ url: url, tile: tile });
   }
 };
 
 GeoJSON.convertForWorker = function(collection, tile) {
-  var metric = VECNIK.Profiler.metric('conversion.geojson').start();
-  var data = _convertAndReproject(collection, tile);
-  metric.end();
-console.log(metric.name);
-  return data;
+  return _convertAndReproject(collection, tile);
 };
 
 },{"../core/core":12,"../geometry":14,"../mercator":17,"../profiler":18}],23:[function(_dereq_,module,exports){
@@ -3578,17 +3573,19 @@ function _toBuffer(coordinates) {
 var VectorTile = module.exports = {};
 
 VectorTile.load = function(url, tile, callback) {
-//  if (!VectorTile.WEBWORKERS || typeof Worker === undefined) {
   if (typeof Worker === undefined) {
     VECNIK.loadBinary(url, function(buffer) {
-      callback(_convertAndReproject(buffer));
+      var metric = VECNIK.Profiler.metric('conversion.vectortile').start();
+      var data = _convertAndReproject(buffer);
+      metric.end();
+      callback(data);
     });
   } else {
     var worker = new Worker('../src/reader/vectortile.worker.js');
     worker.onmessage = function(e) {
-      callback(e.data);
+      Profiler.new_value('conversion.vectortile', e.data.elapsed);
+      callback(e.data.collection);
     };
-
     worker.postMessage({ url: url });
   }
 };
