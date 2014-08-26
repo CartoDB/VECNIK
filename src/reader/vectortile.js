@@ -37,7 +37,6 @@ function _addPolygon(coordinates, id, properties, dataByRef) {
 }
 
 function _convertAndReproject(buffer) {
-  var profiler = Profiler.metric('conversion.vectortile').start();
 
   buffer = new PBF(new Uint8Array(buffer));
 
@@ -64,7 +63,6 @@ function _convertAndReproject(buffer) {
     }
   }
 
-  profiler.end();
   return dataByRef;
 }
 

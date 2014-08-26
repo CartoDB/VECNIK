@@ -99,7 +99,6 @@ proto.compile = function(shaderSrc) {
 // the style to apply to canvas context
 // TODO: optimize this to not evaluate when featureProperties do not
 // contain values involved in the shader
-// TODO: hover / click should just complement existing properties
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
@@ -107,10 +106,6 @@ proto.getStyle = function(featureProperties, mapContext) {
 
   if (nameAttachment === 'hover' &&
      (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
-    return {};
-  }
-  if (nameAttachment === 'click' &&
-     (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
 

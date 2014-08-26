@@ -2565,6 +2565,10 @@ if (typeof L !== 'undefined') {
             tiles[key].render();
           }
 
+          if (self._renderQueue.length === 1 && self.metric) {
+            self.metric.end();
+            delete self.metric;
+          }
           self._renderQueue.pop();
         }
       };
@@ -2641,15 +2645,16 @@ if (typeof L !== 'undefined') {
     _renderAffectedTiles: function(cartodb_id) {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
+        var metric = Profiler.metric('hover.rendertime').start();
         for (var key in tiles) {
           if (!!tiles[key].getFeature(cartodb_id)) {
             tiles[key].render();
           }
         }
+        metric.end();
       });
     },
 
-    _hoverProperties: null,
     _hoverProperties: null,
 
     onAdd: function(map) {
@@ -2660,18 +2665,11 @@ if (typeof L !== 'undefined') {
           return;
         }
 
-        // render previously highlighted tiles as normal
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-        }
+        var clickProperties = this._getPropertiesFromPos(map.project(e.latlng));
 
-        this._hoverProperties = this._getPropertiesFromPos(map.project(e.latlng));
-
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-
+        if (clickProperties) {
           this.fireEvent('featureClick', {
-            feature: this._hoverProperties,
+            feature: clickProperties,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
@@ -2762,18 +2760,14 @@ if (typeof L !== 'undefined') {
     },
 
     redraw: function(forceReload) {
-      var profiler;
       this._renderQueue = [];
       this._qTree = {};
 
       if (!!forceReload) {
         this._centroidPositions = {};
-        profiler = Profiler.metric('viewport.reload').start();
         L.TileLayer.prototype.redraw.call(this);
-        profiler.end();
         return this;
       }
-
 
       // get viewport tile bounds in order to render immediately, when visible
       var
@@ -2785,11 +2779,10 @@ if (typeof L !== 'undefined') {
         ),
         tiles = this._tileObjects[this._map.getZoom()];
 
-      profiler = Profiler.metric('viewport.redraw').start();
+      this.metric = Profiler.metric('layer.rendertime').start();
       for (var key in tiles) {
         this._addToRenderQueue(key, tileBounds.contains(this._keyToTileCoords(key)));
       }
-      profiler.end();
 
       return this;
     },
@@ -3349,7 +3342,6 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
-  var profiler = VECNIK.Profiler.metric('conversion.geojson').start();
 
   var dataByRef = [], feature;
 
@@ -3369,7 +3361,6 @@ function _convertAndReproject(collection, tile) {
     );
   }
 
-  profiler.end();
   return dataByRef;
 }
 
@@ -3510,7 +3501,6 @@ function _addPolygon(coordinates, id, properties, dataByRef) {
 }
 
 function _convertAndReproject(buffer) {
-  var profiler = Profiler.metric('conversion.vectortile').start();
 
   buffer = new PBF(new Uint8Array(buffer));
 
@@ -3537,7 +3527,6 @@ function _convertAndReproject(buffer) {
     }
   }
 
-  profiler.end();
   return dataByRef;
 }
 
@@ -4001,7 +3990,6 @@ proto.compile = function(shaderSrc) {
 // the style to apply to canvas context
 // TODO: optimize this to not evaluate when featureProperties do not
 // contain values involved in the shader
-// TODO: hover / click should just complement existing properties
 proto.getStyle = function(featureProperties, mapContext) {
   mapContext = mapContext || {};
 
@@ -4009,10 +3997,6 @@ proto.getStyle = function(featureProperties, mapContext) {
 
   if (nameAttachment === 'hover' &&
      (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
-    return {};
-  }
-  if (nameAttachment === 'click' &&
-     (!mapContext.clicked || mapContext.clicked.cartodb_id !== featureProperties.cartodb_id)) {
     return {};
   }
 
@@ -4127,14 +4111,10 @@ proto.getSize = function() {
 proto.render = function() {
   var
     mapContext = { zoom: this._coords.z },
-    hovered, clicked;
+    hovered;
 
   if (hovered = this._layer.getHoveredFeature()) {
     mapContext.hovered = hovered;
-  }
-
-  if (clicked = this._layer.getClickedFeature()) {
-    mapContext.clicked = clicked;
   }
 
   var profiler = Profiler.metric('tile.rendertime').start();

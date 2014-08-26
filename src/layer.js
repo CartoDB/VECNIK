@@ -42,6 +42,10 @@ if (typeof L !== 'undefined') {
             tiles[key].render();
           }
 
+          if (self._renderQueue.length === 1 && self.metric) {
+            self.metric.end();
+            delete self.metric;
+          }
           self._renderQueue.pop();
         }
       };
@@ -118,15 +122,16 @@ if (typeof L !== 'undefined') {
     _renderAffectedTiles: function(cartodb_id) {
       var tiles = this._tileObjects[this._map.getZoom()];
       requestAnimationFrame(function() {
+        var metric = Profiler.metric('hover.rendertime').start();
         for (var key in tiles) {
           if (!!tiles[key].getFeature(cartodb_id)) {
             tiles[key].render();
           }
         }
+        metric.end();
       });
     },
 
-    _hoverProperties: null,
     _hoverProperties: null,
 
     onAdd: function(map) {
@@ -137,18 +142,11 @@ if (typeof L !== 'undefined') {
           return;
         }
 
-        // render previously highlighted tiles as normal
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-        }
+        var clickProperties = this._getPropertiesFromPos(map.project(e.latlng));
 
-        this._hoverProperties = this._getPropertiesFromPos(map.project(e.latlng));
-
-        if (this._hoverProperties) {
-          this._renderAffectedTiles(this._hoverProperties.cartodb_id);
-
+        if (clickProperties) {
           this.fireEvent('featureClick', {
-            feature: this._hoverProperties,
+            feature: clickProperties,
             geo: e.latlng,
             x: e.originalEvent.x,
             y: e.originalEvent.y
@@ -239,18 +237,14 @@ if (typeof L !== 'undefined') {
     },
 
     redraw: function(forceReload) {
-      var profiler;
       this._renderQueue = [];
       this._qTree = {};
 
       if (!!forceReload) {
         this._centroidPositions = {};
-        profiler = Profiler.metric('viewport.reload').start();
         L.TileLayer.prototype.redraw.call(this);
-        profiler.end();
         return this;
       }
-
 
       // get viewport tile bounds in order to render immediately, when visible
       var
@@ -262,11 +256,10 @@ if (typeof L !== 'undefined') {
         ),
         tiles = this._tileObjects[this._map.getZoom()];
 
-      profiler = Profiler.metric('viewport.redraw').start();
+      this.metric = Profiler.metric('layer.rendertime').start();
       for (var key in tiles) {
         this._addToRenderQueue(key, tileBounds.contains(this._keyToTileCoords(key)));
       }
-      profiler.end();
 
       return this;
     },

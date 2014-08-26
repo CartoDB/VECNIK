@@ -38,7 +38,6 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
-  var profiler = VECNIK.Profiler.metric('conversion.geojson').start();
 
   var dataByRef = [], feature;
 
@@ -58,7 +57,6 @@ function _convertAndReproject(collection, tile) {
     );
   }
 
-  profiler.end();
   return dataByRef;
 }
 
