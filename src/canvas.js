@@ -133,6 +133,10 @@ proto.setFontStyle = function(size, face) {
   }
 };
 
+proto.getTextWidth = function(text) {
+  return this._context.measureText(text).width;
+};
+
 proto.setFillPattern = function(url, callback) {
   if (typeof url !== undefined && this._state.fillStyle !== url) {
     var self = this;

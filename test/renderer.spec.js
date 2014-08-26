@@ -29,7 +29,7 @@ module('renderer');
 
     canvas = {
       clear: function() {},
-      setStyle: function() {},
+      setDrawStyle: function() {},
       drawCircle: function() {
         circleDone++;
       },
@@ -39,8 +39,8 @@ module('renderer');
       drawPolygon: function() {
         polygonDone++;
       },
-
-      setFont: function() {},
+      setFontStyle: function() {},
+      getTextWidth: function() {},
       drawText: function() {
         textDone++;
       },
@@ -48,8 +48,8 @@ module('renderer');
     };
 
     collection = [
-      { type: VECNIK.Geometry.POINT,   id: 123, coordinates: [0,1], properties: {}},
-      { type: VECNIK.Geometry.LINE,    id: 456, coordinates: [[0,1], [2,3]], properties: {}},
+      { type: VECNIK.Geometry.POINT,   id: 123, coordinates:   [0,1],                 properties: {}},
+      { type: VECNIK.Geometry.LINE,    id: 456, coordinates:  [[0,1], [2,3]       ],  properties: {}},
       { type: VECNIK.Geometry.POLYGON, id: 789, coordinates: [[[0,1], [2,3], [0,1]]], properties: {}}
     ];
   });

@@ -220,7 +220,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFontStyle(style.fontSize, style.fontFace);
-              textWidth = canvas._context.measureText(style.textContent).width;
+              textWidth = canvas.getTextWidth(style.textContent);
               bbox = { id: feature.id, x: pos.x, y: pos.y, w: textWidth, h: style.fontSize };
               if (style.textAllowOverlap || !layer.hasCollision(symbolizer, bbox)) {
                 canvas.setDrawStyle({
