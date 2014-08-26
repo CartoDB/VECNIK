@@ -8,15 +8,22 @@ module('core');
   // doesn't work from command line but browser is fine
   asyncTest('JSON XHR', function() {
     var expectedRes = JSON.stringify({ test: 123 });
-    VECNIK.loadJSON('test.json', function(res) {
+    VECNIK.loadJSON('data/test.json', function(res) {
       equal(JSON.stringify(res), expectedRes);
       start();
     });
   });
 
   asyncTest('Binary XHR', function() {
-    VECNIK.loadBinary('test.pbf', function(res) {
+    VECNIK.loadBinary('data/test.pbf', function(res) {
       equal(res instanceof ArrayBuffer && res.byteLength === 0, true);
+      start();
+    });
+  });
+
+  asyncTest('Load images', function() {
+    VECNIK.loadImage('data/test.jpg', function(img) {
+      equal(img instanceof Image, true);
       start();
     });
   });

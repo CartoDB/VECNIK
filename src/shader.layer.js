@@ -57,7 +57,7 @@ var hitShaderSkipProperties = [
 ];
 
 
-var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
+var CartoShader = module.exports = function(name, shaderSrc, shadingOrder) {
   Events.prototype.constructor.call(this);
 
   this._name = name || '';
@@ -73,10 +73,10 @@ var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
   ];
 };
 
-var proto = ShaderLayer.prototype = new Events();
+var proto = CartoShader.prototype = new Events();
 
 proto.clone = function() {
-  return new ShaderLayer(this._name, this._shaderSrc, this._shadingOrder);
+  return new CartoShader(this._name, this._shaderSrc, this._shadingOrder);
 };
 
 proto.compile = function(shaderSrc) {
@@ -171,5 +171,5 @@ var Int2RGB = function(input) {
   return [r, g, b];
 };
 
-ShaderLayer.RGB2Int = RGB2Int;
-ShaderLayer.Int2RGB = Int2RGB;
+CartoShader.RGB2Int = RGB2Int;
+CartoShader.Int2RGB = Int2RGB;
