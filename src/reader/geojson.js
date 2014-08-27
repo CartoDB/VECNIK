@@ -114,7 +114,6 @@ function _toBuffer(coordinates, tile) {
     len = coordinates.length,
     point,
     buffer = new Int16Array(len*2);
-
   for (var i = 0; i < len; i++) {
     point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tile.x, tile.y, tile.z);
     buffer[i*2  ] = point.x;

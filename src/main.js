@@ -34,5 +34,7 @@ VECNIK.GeoJSON     = require('./reader/geojson');
 VECNIK.VectorTile  = require('./reader/vectortile');
 
 VECNIK.Layer       = require('./layer');
+VECNIK.Tile        = require('./tile');
 VECNIK.Profiler    = require('./profiler');
+
 module.exports = VECNIK;

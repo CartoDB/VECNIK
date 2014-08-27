@@ -2070,11 +2070,26 @@ Point.convert = function (a) {
 
 var VECNIK = _dereq_('./core/core');
 
+/***
+prop = props[i];
+// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+//
+// color parse (and probably other props) depends on canvas implementation so direct
+// comparasions with context contents can't be done.
+// use an extra object to store current state
+// * chrome 35.0.1916.153:
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+// * ff 29.0.1
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+***/
+
 function createCanvas(width, height) {
   var
     canvas  = document.createElement('CANVAS'),
     context = canvas.getContext('2d');
-  canvas.width  = width || 0;
+  canvas.width  = width  || 0;
   canvas.height = height || 0;
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
@@ -2256,22 +2271,6 @@ proto._finishBatch = function() {
 proto.finishAll = function() {
   this._finishBatch();
 };
-
-
-/***
-prop = props[i];
-// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-//
-// color parse (and probably other props) depends on canvas implementation so direct
-// comparasions with context contents can't be done.
-// use an extra object to store current state
-// * chrome 35.0.1916.153:
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
-// * ff 29.0.1
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
-***/
 
 },{"./core/core":13}],12:[function(_dereq_,module,exports){
 
@@ -3014,10 +3013,6 @@ if (typeof L !== 'undefined') {
 
     getHoveredFeature: function() {
       return this._hoverProperties;
-    },
-
-    getClickedFeature: function() {
-      return this._hoverProperties;
     }
   });
 }
@@ -3060,11 +3055,13 @@ VECNIK.GeoJSON     = _dereq_('./reader/geojson');
 VECNIK.VectorTile  = _dereq_('./reader/vectortile');
 
 VECNIK.Layer       = _dereq_('./layer');
+VECNIK.Tile        = _dereq_('./tile');
 VECNIK.Profiler    = _dereq_('./profiler');
+
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./canvas":11,"./cartoshader":12,"./core/core":13,"./geometry":15,"./layer":16,"./profiler":19,"./provider/cartodb":20,"./provider/tms":22,"./reader/geojson":23,"./reader/vectortile":24,"./renderer":25,"./shader":26}],18:[function(_dereq_,module,exports){
+},{"./canvas":11,"./cartoshader":12,"./core/core":13,"./geometry":15,"./layer":16,"./profiler":19,"./provider/cartodb":20,"./provider/tms":22,"./reader/geojson":23,"./reader/vectortile":24,"./renderer":25,"./shader":26,"./tile":27}],18:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
@@ -3527,7 +3524,6 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
-
   var dataByRef = [], feature;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
@@ -3536,7 +3532,6 @@ function _convertAndReproject(collection, tile) {
     if (!feature.geometry) {
       continue;
     }
-
     _addGeometry(
       feature.geometry,
       feature.id || feature.properties.id || feature.properties.cartodb_id,
@@ -3603,7 +3598,6 @@ function _toBuffer(coordinates, tile) {
     len = coordinates.length,
     point,
     buffer = new Int16Array(len*2);
-
   for (var i = 0; i < len; i++) {
     point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tile.x, tile.y, tile.z);
     buffer[i*2  ] = point.x;
@@ -3926,7 +3920,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && (style.markerFill || style.markerFile)) {
               if (style.markerFile) {
-                // no collisian check for bitmaps at the moment, as we don't know their height
+                // no collision check for bitmaps at the moment, as we don't know their height
                 // could be solved by preloading images
                 canvas.drawImage(style.markerFile, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.markerSize);
               } else {
