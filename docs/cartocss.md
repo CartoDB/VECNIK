@@ -24,7 +24,7 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | CartoCSS property | Shader interface | (Canvas equivalent) |
 | --- | --- | --- |
 | **POINT RELATED** |||
-| marker-width | markerSize | {radius} for arc() |
+| marker-width | markerSize | arc({radius}) |
 | marker-color | markerFill | fillStyle |
 | marker-opacity | markerOpacity | globalOpacity |
 | marker-comp-op | markerCompOp | globalCompositingOperation |
@@ -32,8 +32,8 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | marker-line-color | lineColor | strokeStyle |
 | marker-line-width | markerLineWidth | lineWidth |
 | marker-allow-overlap | markerAllowOverlap | N/A |
-| marker-file | markerFile | drawImage() |
-| *LINE REALATED* |||
+| marker-file | markerFile | drawImage({img.src}) |
+| **LINE REALATED** |||
 | line-color | lineColor | strokeStyle |
 | line-width | lineWidth | lineWidth |
 | line-opacity | lineOpacity | globalOpacity |
@@ -53,7 +53,7 @@ It's basically a defined set of style properties, thats close to Canvas and clos
 | text-halo-fill | textOutlineColor | strokeStyle |
 | text-halo-radius | textOutlineWidth | lineWidth |
 | text-align | textAlign | textAlign |
-| text-name | textContent | strokeText() |
+| text-name | textContent | strokeText({string}) |
 | text-allow-overlap | textAllowOverlap | N/A |
 
 
