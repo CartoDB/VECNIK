@@ -6,12 +6,12 @@ module('cartoshader');
   var shaderLayer;
 
   QUnit.testStart(function() {
-    shaderLayer = new VECNIK.CartoShaderLayer('test', {
+    shaderLayer = new VECNIK.CartoShader('test', {
       'polygon-fill': '#ffcc00'
     });
   });
 
-  test('create an interactivity shader', function() {
+  test('Create an interactivity shader', function() {
     var hitLayer = shaderLayer.createHitShaderLayer();
     var style;
 

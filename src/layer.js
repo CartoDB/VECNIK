@@ -306,10 +306,6 @@ if (typeof L !== 'undefined') {
 
     getHoveredFeature: function() {
       return this._hoverProperties;
-    },
-
-    getClickedFeature: function() {
-      return this._hoverProperties;
     }
   });
 }

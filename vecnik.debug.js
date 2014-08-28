@@ -2070,11 +2070,26 @@ Point.convert = function (a) {
 
 var VECNIK = _dereq_('./core/core');
 
+/***
+prop = props[i];
+// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+//
+// color parse (and probably other props) depends on canvas implementation so direct
+// comparasions with context contents can't be done.
+// use an extra object to store current state
+// * chrome 35.0.1916.153:
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+// * ff 29.0.1
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+***/
+
 function createCanvas(width, height) {
   var
     canvas  = document.createElement('CANVAS'),
     context = canvas.getContext('2d');
-  canvas.width  = width || 0;
+  canvas.width  = width  || 0;
   canvas.height = height || 0;
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
@@ -2202,6 +2217,10 @@ proto.setFontStyle = function(size, face) {
   }
 };
 
+proto.getTextWidth = function(text) {
+  return this._context.measureText(text).width;
+};
+
 proto.setFillPattern = function(url, callback) {
   if (typeof url !== undefined && this._state.fillStyle !== url) {
     var self = this;
@@ -2253,23 +2272,184 @@ proto.finishAll = function() {
   this._finishBatch();
 };
 
+},{"./core/core":13}],12:[function(_dereq_,module,exports){
 
-/***
-prop = props[i];
-// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-//
-// color parse (and probably other props) depends on canvas implementation so direct
-// comparasions with context contents can't be done.
-// use an extra object to store current state
-// * chrome 35.0.1916.153:
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
-// * ff 29.0.1
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
-***/
+var Events = _dereq_('./core/events');
+var Shader = _dereq_('./shader');
 
-},{"./core/core":12}],12:[function(_dereq_,module,exports){
+// https://www.mapbox.com/carto/api/2.3.0/
+
+var propertyMapping = {
+  'marker-width': 'markerSize',
+  'marker-color': 'markerFill',
+  'marker-opacity': 'markerOpacity',
+  'marker-comp-op': 'markerCompOp',
+  'marker-fill': 'markerFill',
+  'marker-fill-opacity': 'markerOpacity',
+  'marker-line-color': 'markerLineColor',
+  'marker-line-width': 'markerLineWidth',
+//  'marker-line-opacity': 'markerLineOpacity',
+  'marker-allow-overlap': 'markerAllowOverlap',
+  'marker-file': 'markerFile',
+
+  'line-color': 'lineColor',
+  'line-width': 'lineWidth',
+  'line-opacity': 'lineOpacity',
+  'line-comp-op': 'lineCompOp',
+  'polygon-fill': 'polygonFill',
+  'polygon-opacity': 'polygonOpacity',
+  'polygon-comp-op': 'polygonCompOp',
+  'polygon-pattern-file': 'polygonPatternFile',
+  'polygon-pattern-comp-op': 'polygonCompOp',
+
+  'text-face-name': 'fontFace',
+  'text-size': 'fontSize',
+  'text-fill': 'textFill',
+  'text-opacity': 'textOpacity',
+  'text-comp-op': 'textCompOp',
+  'text-halo-fill': 'textOutlineColor',
+  'text-halo-radius': 'textOutlineWidth',
+  'text-align': 'textAlign',
+  'text-name': 'textContent',
+  'text-allow-overlap': 'textAllowOverlap'
+};
+
+// these are relevant and identify interactive areas
+var hitShaderProperties = [
+  'markerFill',
+  'markerLineColor',
+  'lineColor',
+  'polygonFill',
+  'textFill',
+  'textOutlineColor'
+];
+
+// these are unwanted and will be replaced by something useful
+// i.e. removing bitmap images as they violate cors when accessing hit canvas data
+var hitShaderSkipProperties = [
+  'markerFile',
+  'polygonPatternFile'
+];
+
+
+var CartoShader = module.exports = function(name, shaderSrc, shadingOrder) {
+  Events.prototype.constructor.call(this);
+
+  this._name = name || '';
+
+  this._compiled = {};
+  this.compile(shaderSrc);
+
+  this._shadingOrder = shadingOrder || [
+    Shader.POINT,
+    Shader.POLYGON,
+    Shader.LINE,
+    Shader.TEXT
+  ];
+};
+
+var proto = CartoShader.prototype = new Events();
+
+proto.clone = function() {
+  return new CartoShader(this._name, this._shaderSrc, this._shadingOrder);
+};
+
+proto.compile = function(shaderSrc) {
+  this._shaderSrc = shaderSrc;
+  if (typeof shaderSrc === 'string') {
+    shaderSrc = function() {
+      return shaderSrc;
+    };
+  }
+  var property;
+  for (var attr in shaderSrc) {
+    if (property = propertyMapping[attr]) {
+      this._compiled[property] = shaderSrc[attr];
+    }
+  }
+  this.emit('change');
+};
+
+// given feature properties and map rendering content returns
+// the style to apply to canvas context
+// TODO: optimize this to not evaluate when featureProperties do not
+// contain values involved in the shader
+proto.getStyle = function(featureProperties, mapContext) {
+  mapContext = mapContext || {};
+
+  var nameAttachment = this._name.split('::')[1];
+
+  if (nameAttachment === 'hover' &&
+     (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
+    return {};
+  }
+
+  var
+    style = {},
+    compiled = this._compiled,
+    // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
+    props = Object.keys(compiled),
+    prop, val;
+
+  for (var i = 0, len = props.length; i < len; ++i) {
+    prop = props[i];
+    val = compiled[prop];
+
+    if (typeof val === 'function') {
+      val = val(featureProperties, mapContext);
+    }
+    style[prop] = val;
+  }
+
+  return style;
+};
+
+proto.getShadingOrder = function() {
+  return this._shadingOrder;
+};
+
+/**
+ * return a shader clone ready for hit test.
+ */
+proto.createHitShaderLayer = function() {
+  var hitLayer = this.clone();
+  for (var prop in hitLayer._compiled) {
+    if (~hitShaderSkipProperties.indexOf(prop)) {
+      delete hitLayer._compiled[prop];
+      hitLayer._compiled.markerFill = '#000000';
+    }
+    if (~hitShaderProperties.indexOf(prop)) {
+      hitLayer._compiled[prop] = function(featureProperties, mapContext) {
+        return 'rgb(' + Int2RGB(featureProperties.cartodb_id + 1).join(',') + ')';
+      };
+    }
+  }
+
+  // clone symbolizers and skip texts in hit layer
+  hitLayer._shadingOrder = [];
+  for (var i = 0, il = this._shadingOrder.length; i < il; i++) {
+    if (this._shadingOrder[i] !== 'text') {
+      hitLayer._shadingOrder.push(this._shadingOrder[i]);
+    }
+  }
+  return hitLayer;
+};
+
+var RGB2Int = function(r, g, b) {
+  return r | (g<<8) | (b<<16);
+};
+
+var Int2RGB = function(input) {
+  var r = input & 0xff;
+  var g = (input >> 8) & 0xff;
+  var b = (input >> 16) & 0xff;
+  return [r, g, b];
+};
+
+CartoShader.RGB2Int = RGB2Int;
+CartoShader.Int2RGB = Int2RGB;
+
+},{"./core/events":14,"./shader":26}],13:[function(_dereq_,module,exports){
 
 var Core = module.exports = {};
 
@@ -2363,7 +2543,7 @@ Core.loadImage = function(url, onSuccess) {
   img.src = url;
 };
 
-},{}],13:[function(_dereq_,module,exports){
+},{}],14:[function(_dereq_,module,exports){
 
 var Events = module.exports = function() {
   this._listeners = {};
@@ -2389,7 +2569,7 @@ proto.emit = function(type, payload) {
   }
 };
 
-},{}],14:[function(_dereq_,module,exports){
+},{}],15:[function(_dereq_,module,exports){
 
 var Geometry = module.exports = {};
 
@@ -2409,7 +2589,7 @@ proto.getCentroid = function(featureParts) {
   if (featureParts.length === 1) {
     part = featureParts[0];
   } else {
-    part = getLargestPart(featureParts);
+    part = _getLargestPart(featureParts);
   }
 
   if (!part) {
@@ -2464,7 +2644,7 @@ proto.getCentroid = function(featureParts) {
   };
 };
 
-function getBBox(coordinates) {
+function _getBBox(coordinates) {
   var
     min = Math.min,
     max = Math.max,
@@ -2483,7 +2663,7 @@ function getBBox(coordinates) {
   return { minX:minX, minY:minY, maxX:maxX, maxY:maxY };
 }
 
-function getArea(coordinates) {
+function _getArea(coordinates) {
   if (coordinates.length < 6) {
     return 0;
   }
@@ -2495,7 +2675,7 @@ function getArea(coordinates) {
   return -sum/2;
 }
 
-function getLargestPart(featureParts) {
+function _getLargestPart(featureParts) {
   var
     area, maxArea = -Infinity,
     part, maxPart,
@@ -2505,11 +2685,15 @@ function getLargestPart(featureParts) {
     part = featureParts[i];
     coordinates = part.feature.coordinates;
 
+    if (part.feature.type === Geometry.POINT) {
+      return part;
+    }
+
     if (part.feature.type === Geometry.POLYGON) {
       coordinates = coordinates[0];
     }
 
-    area = getArea(coordinates);
+    area = _getArea(coordinates);
 
     if (area > maxArea) {
       maxArea = area;
@@ -2520,7 +2704,7 @@ function getLargestPart(featureParts) {
   return maxPart;
 }
 
-},{}],15:[function(_dereq_,module,exports){
+},{}],16:[function(_dereq_,module,exports){
 
 var Geometry = _dereq_('./geometry');
 var Tile     = _dereq_('./tile');
@@ -2829,15 +3013,11 @@ if (typeof L !== 'undefined') {
 
     getHoveredFeature: function() {
       return this._hoverProperties;
-    },
-
-    getClickedFeature: function() {
-      return this._hoverProperties;
     }
   });
 }
 
-},{"./geometry":14,"./profiler":18,"./tile":27}],16:[function(_dereq_,module,exports){
+},{"./geometry":15,"./profiler":19,"./tile":27}],17:[function(_dereq_,module,exports){
 (function (global){
 
 (function(global) {
@@ -2862,8 +3042,8 @@ var VECNIK = _dereq_('./core/core');
 
 VECNIK.Geometry    = _dereq_('./geometry');
 VECNIK.Canvas      = _dereq_('./canvas');
-VECNIK.CartoShader = _dereq_('./shader');
-VECNIK.CartoShaderLayer = _dereq_('./shader.layer');
+VECNIK.Shader      = _dereq_('./shader');
+VECNIK.CartoShader = _dereq_('./cartoshader');
 VECNIK.Renderer    = _dereq_('./renderer');
 
 // Providers
@@ -2875,11 +3055,13 @@ VECNIK.GeoJSON     = _dereq_('./reader/geojson');
 VECNIK.VectorTile  = _dereq_('./reader/vectortile');
 
 VECNIK.Layer       = _dereq_('./layer');
+VECNIK.Tile        = _dereq_('./tile');
 VECNIK.Profiler    = _dereq_('./profiler');
+
 module.exports = VECNIK;
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./canvas":11,"./core/core":12,"./geometry":14,"./layer":15,"./profiler":18,"./provider/cartodb":19,"./provider/tms":21,"./reader/geojson":22,"./reader/vectortile":23,"./renderer":24,"./shader":25,"./shader.layer":26}],17:[function(_dereq_,module,exports){
+},{"./canvas":11,"./cartoshader":12,"./core/core":13,"./geometry":15,"./layer":16,"./profiler":19,"./provider/cartodb":20,"./provider/tms":22,"./reader/geojson":23,"./reader/vectortile":24,"./renderer":25,"./shader":26,"./tile":27}],18:[function(_dereq_,module,exports){
 
 var Tile = _dereq_('./tile');
 
@@ -2961,7 +3143,7 @@ MercatorProjection.prototype.latLonToTilePoint = function(lat, lon, tileX, tileY
   return new Point(Math.round(pixelCoordinate.x-tilePixelPos.x), Math.round(pixelCoordinate.y-tilePixelPos.y));
 };
 
-},{"./tile":27}],18:[function(_dereq_,module,exports){
+},{"./tile":27}],19:[function(_dereq_,module,exports){
 /*
 # metrics profiler
 
@@ -3106,7 +3288,7 @@ Profiler.metric = function(name) {
 
 module.exports = Profiler;
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],20:[function(_dereq_,module,exports){
 
 var CartoDB = module.exports = {};
 
@@ -3159,7 +3341,7 @@ proto.update = function(options) {
   }
 };
 
-},{"./cartodb.sql":20}],20:[function(_dereq_,module,exports){
+},{"./cartodb.sql":21}],21:[function(_dereq_,module,exports){
 
 var Mercator = _dereq_('../mercator');
 
@@ -3273,7 +3455,7 @@ CartoDB.SQL = function(table, x, y, zoom, options) {
   return 'SELECT '+ columns +' FROM '+ table +' WHERE '+ filter;// +' LIMIT 100';
 };
 
-},{"../mercator":17}],21:[function(_dereq_,module,exports){
+},{"../mercator":18}],22:[function(_dereq_,module,exports){
 
 var Projection = _dereq_('../mercator');
 
@@ -3301,7 +3483,7 @@ proto.load = function(tile, callback) {
 
 proto.update = function() {};
 
-},{"../mercator":17}],22:[function(_dereq_,module,exports){
+},{"../mercator":18}],23:[function(_dereq_,module,exports){
 
 var VECNIK   = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
@@ -3418,7 +3600,6 @@ function _toBuffer(coordinates, tile) {
     len = coordinates.length,
     point,
     buffer = new Int16Array(len*2);
-
   for (var i = 0; i < len; i++) {
     point = projection.latLonToTilePoint(coordinates[i][1], coordinates[i][0], tile.x, tile.y, tile.z);
     buffer[i*2  ] = point.x;
@@ -3461,7 +3642,7 @@ GeoJSON.convertForWorker = function(collection, tile) {
   return _convertAndReproject(collection, tile);
 };
 
-},{"../core/core":12,"../geometry":14,"../mercator":17,"../profiler":18}],23:[function(_dereq_,module,exports){
+},{"../core/core":13,"../geometry":15,"../mercator":18,"../profiler":19}],24:[function(_dereq_,module,exports){
 
 var VECNIK   = _dereq_('../core/core');
 var Geometry = _dereq_('../geometry');
@@ -3583,7 +3764,7 @@ VectorTile.convertForWorker = function(buffer) {
   return _convertAndReproject(buffer);
 };
 
-},{"../core/core":12,"../geometry":14,"../profiler":18,"pbf":4,"vector-tile":6}],24:[function(_dereq_,module,exports){
+},{"../core/core":13,"../geometry":15,"../profiler":19,"pbf":4,"vector-tile":6}],25:[function(_dereq_,module,exports){
 
 var Shader = _dereq_('./shader');
 var Geometry = _dereq_('./geometry');
@@ -3741,7 +3922,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           case Shader.POINT:
             if ((pos = layer.getCentroid(feature)) && style.markerSize && (style.markerFill || style.markerFile)) {
               if (style.markerFile) {
-                // no collisian check for bitmaps at the moment, as we don't know their height
+                // no collision check for bitmaps at the moment, as we don't know their height
                 // could be solved by preloading images
                 canvas.drawImage(style.markerFile, pos.x - tileCoords.x*tileSize, pos.y - tileCoords.y*tileSize, style.markerSize);
               } else {
@@ -3806,7 +3987,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
           case Shader.TEXT:
             if ((pos = layer.getCentroid(feature)) && style.textContent) {
               canvas.setFontStyle(style.fontSize, style.fontFace);
-              textWidth = canvas._context.measureText(style.textContent).width;
+              textWidth = canvas.getTextWidth(style.textContent);
               bbox = { id: feature.id, x: pos.x, y: pos.y, w: textWidth, h: style.fontSize };
               if (style.textAllowOverlap || !layer.hasCollision(symbolizer, bbox)) {
                 canvas.setDrawStyle({
@@ -3828,7 +4009,7 @@ proto.render = function(tile, canvas, collection, mapContext) {
   }
 };
 
-},{"./geometry":14,"./shader":25}],25:[function(_dereq_,module,exports){
+},{"./geometry":15,"./shader":26}],26:[function(_dereq_,module,exports){
 
 var Shader = module.exports = function(style) {
   this._layers = [];
@@ -3854,22 +4035,22 @@ proto.createHitShader = function() {
 };
 
 proto.update = function(style) {
-  var cartoShader = new carto.RendererJS().render(style);
+  var shader = new carto.RendererJS().render(style);
 
-  if (!cartoShader || !cartoShader.layers) {
+  if (!shader || !shader.layers) {
     return;
   }
 
   // requiring this late in order to avoid circular reference shader <-> shader.layer
-  var ShaderLayer = _dereq_('./shader.layer');
+  var CartoShader = _dereq_('./cartoshader');
 
-  var cartoShaderLayer;
-  for (var i = 0, il = cartoShader.layers.length; i < il; i++) {
-    cartoShaderLayer = cartoShader.layers[i];
-    this._layers[i] = new ShaderLayer(
-      cartoShaderLayer.fullName(),
-      this._cloneProperties(cartoShaderLayer.getShader()),
-      cartoShaderLayer.getSymbolizers()
+  var shaderLayer;
+  for (var i = 0, il = shader.layers.length; i < il; i++) {
+    shaderLayer = shader.layers[i];
+    this._layers[i] = new CartoShader(
+      shaderLayer.fullName(),
+      this._cloneProperties(shaderLayer.getShader()),
+      shaderLayer.getSymbolizers()
     );
   }
 };
@@ -3888,186 +4069,9 @@ proto.getLayers = function() {
   return this._layers;
 };
 
-},{"./shader.layer":26}],26:[function(_dereq_,module,exports){
+},{"./cartoshader":12}],27:[function(_dereq_,module,exports){
 
-var Events = _dereq_('./core/events');
-var Shader = _dereq_('./shader');
-
-// https://www.mapbox.com/carto/api/2.3.0/
-
-var propertyMapping = {
-  'marker-width': 'markerSize',
-  'marker-color': 'markerFill',
-  'marker-opacity': 'markerOpacity',
-  'marker-comp-op': 'markerCompOp',
-  'marker-fill': 'markerFill',
-  'marker-fill-opacity': 'markerOpacity',
-  'marker-line-color': 'markerLineColor',
-  'marker-line-width': 'markerLineWidth',
-//  'marker-line-opacity': 'markerLineOpacity',
-  'marker-allow-overlap': 'markerAllowOverlap',
-  'marker-file': 'markerFile',
-
-  'line-color': 'lineColor',
-  'line-width': 'lineWidth',
-  'line-opacity': 'lineOpacity',
-  'line-comp-op': 'lineCompOp',
-  'polygon-fill': 'polygonFill',
-  'polygon-opacity': 'polygonOpacity',
-  'polygon-comp-op': 'polygonCompOp',
-  'polygon-pattern-file': 'polygonPatternFile',
-  'polygon-pattern-comp-op': 'polygonCompOp',
-
-  'text-face-name': 'fontFace',
-  'text-size': 'fontSize',
-  'text-fill': 'textFill',
-  'text-opacity': 'textOpacity',
-  'text-comp-op': 'textCompOp',
-  'text-halo-fill': 'textOutlineColor',
-  'text-halo-radius': 'textOutlineWidth',
-  'text-align': 'textAlign',
-  'text-name': 'textContent',
-  'text-allow-overlap': 'textAllowOverlap'
-};
-
-// these are relevant and identify interactive areas
-var hitShaderProperties = [
-  'markerFill',
-  'markerLineColor',
-  'lineColor',
-  'polygonFill',
-  'textFill',
-  'textOutlineColor'
-];
-
-// these are unwanted and will be replaced by something useful
-// i.e. removing bitmap images as they violate cors when accessing hit canvas data
-var hitShaderSkipProperties = [
-  'markerFile',
-  'polygonPatternFile'
-];
-
-
-var ShaderLayer = module.exports = function(name, shaderSrc, shadingOrder) {
-  Events.prototype.constructor.call(this);
-
-  this._name = name || '';
-
-  this._compiled = {};
-  this.compile(shaderSrc);
-
-  this._shadingOrder = shadingOrder || [
-    Shader.POINT,
-    Shader.POLYGON,
-    Shader.LINE,
-    Shader.TEXT
-  ];
-};
-
-var proto = ShaderLayer.prototype = new Events();
-
-proto.clone = function() {
-  return new ShaderLayer(this._name, this._shaderSrc, this._shadingOrder);
-};
-
-proto.compile = function(shaderSrc) {
-  this._shaderSrc = shaderSrc;
-  if (typeof shaderSrc === 'string') {
-    shaderSrc = function() {
-      return shaderSrc;
-    };
-  }
-  var property;
-  for (var attr in shaderSrc) {
-    if (property = propertyMapping[attr]) {
-      this._compiled[property] = shaderSrc[attr];
-    }
-  }
-  this.emit('change');
-};
-
-// given feature properties and map rendering content returns
-// the style to apply to canvas context
-// TODO: optimize this to not evaluate when featureProperties do not
-// contain values involved in the shader
-proto.getStyle = function(featureProperties, mapContext) {
-  mapContext = mapContext || {};
-
-  var nameAttachment = this._name.split('::')[1];
-
-  if (nameAttachment === 'hover' &&
-     (!mapContext.hovered || mapContext.hovered.cartodb_id !== featureProperties.cartodb_id)) {
-    return {};
-  }
-
-  var
-    style = {},
-    compiled = this._compiled,
-    // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
-    props = Object.keys(compiled),
-    prop, val;
-
-  for (var i = 0, len = props.length; i < len; ++i) {
-    prop = props[i];
-    val = compiled[prop];
-
-    if (typeof val === 'function') {
-      val = val(featureProperties, mapContext);
-    }
-    style[prop] = val;
-  }
-
-  return style;
-};
-
-proto.getShadingOrder = function() {
-  return this._shadingOrder;
-};
-
-/**
- * return a shader clone ready for hit test.
- */
-proto.createHitShaderLayer = function() {
-  var hitLayer = this.clone();
-  for (var prop in hitLayer._compiled) {
-    if (~hitShaderSkipProperties.indexOf(prop)) {
-      delete hitLayer._compiled[prop];
-      hitLayer._compiled.markerFill = '#000000';
-    }
-    if (~hitShaderProperties.indexOf(prop)) {
-      hitLayer._compiled[prop] = function(featureProperties, mapContext) {
-        return 'rgb(' + Int2RGB(featureProperties.cartodb_id + 1).join(',') + ')';
-      };
-    }
-  }
-
-  // clone symbolizers and skip texts in hit layer
-  hitLayer._shadingOrder = [];
-  for (var i = 0, il = this._shadingOrder.length; i < il; i++) {
-    if (this._shadingOrder[i] !== 'text') {
-      hitLayer._shadingOrder.push(this._shadingOrder[i]);
-    }
-  }
-  return hitLayer;
-};
-
-var RGB2Int = function(r, g, b) {
-  return r | (g<<8) | (b<<16);
-};
-
-var Int2RGB = function(input) {
-  var r = input & 0xff;
-  var g = (input >> 8) & 0xff;
-  var b = (input >> 16) & 0xff;
-  return [r, g, b];
-};
-
-ShaderLayer.RGB2Int = RGB2Int;
-ShaderLayer.Int2RGB = Int2RGB;
-
-},{"./core/events":13,"./shader":25}],27:[function(_dereq_,module,exports){
-
-var ShaderLayer = _dereq_('./shader.layer');
+var CartoShader = _dereq_('./cartoshader');
 var Canvas      = _dereq_('./canvas');
 var Profiler    = _dereq_('./profiler');
 
@@ -4139,7 +4143,7 @@ proto._renderHitGrid = function() {
   var data = this._hitCanvas.getData();
 
   // check, whether something has been drawn
-  // TODO: maybe shader was not ready. try to check this instead
+  // TODO: try to check the shader instead
   for (var i = 0; i < data.length; i++) {
     if (data[i]) {
       return data;
@@ -4168,7 +4172,7 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  var cartodb_id = ShaderLayer.RGB2Int(
+  var cartodb_id = CartoShader.RGB2Int(
     this._hitGrid[i  ],
     this._hitGrid[i+1],
     this._hitGrid[i+2]
@@ -4193,6 +4197,6 @@ proto.getFeature = function(cartodb_id) {
   return;
 };
 
-},{"./canvas":11,"./profiler":18,"./shader.layer":26}]},{},[16])
-(16)
+},{"./canvas":11,"./cartoshader":12,"./profiler":19}]},{},[17])
+(17)
 });

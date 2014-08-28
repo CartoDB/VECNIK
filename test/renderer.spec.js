@@ -29,7 +29,7 @@ module('renderer');
 
     canvas = {
       clear: function() {},
-      setStyle: function() {},
+      setDrawStyle: function() {},
       drawCircle: function() {
         circleDone++;
       },
@@ -39,8 +39,8 @@ module('renderer');
       drawPolygon: function() {
         polygonDone++;
       },
-
-      setFont: function() {},
+      setFontStyle: function() {},
+      getTextWidth: function() {},
       drawText: function() {
         textDone++;
       },
@@ -48,8 +48,8 @@ module('renderer');
     };
 
     collection = [
-      { type: VECNIK.Geometry.POINT,   id: 123, coordinates: [0,1], properties: {}},
-      { type: VECNIK.Geometry.LINE,    id: 456, coordinates: [[0,1], [2,3]], properties: {}},
+      { type: VECNIK.Geometry.POINT,   id: 123, coordinates:   [0,1],                 properties: {}},
+      { type: VECNIK.Geometry.LINE,    id: 456, coordinates:  [[0,1], [2,3]       ],  properties: {}},
       { type: VECNIK.Geometry.POLYGON, id: 789, coordinates: [[[0,1], [2,3], [0,1]]], properties: {}}
     ];
   });
@@ -58,7 +58,7 @@ module('renderer');
 
   test('should render as text', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  text-name: test;\n'+
         '}'
@@ -75,7 +75,7 @@ module('renderer');
 
   test('should render as polygon', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  polygon-fill: #000;\n'+
         '}'
@@ -91,7 +91,7 @@ module('renderer');
 
   test('should render as line', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  line-color: #fff;\n'+
         '}'
@@ -107,7 +107,7 @@ module('renderer');
 
   test('should render as circle', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {\n'+
         '  marker-fill: #ffcc00;\n'+
         '  marker-width: 10px;\n'+
@@ -124,7 +124,7 @@ module('renderer');
 
   test('should not render at all', function() {
     var renderer = new VECNIK.Renderer({
-      shader: new VECNIK.CartoShader(
+      shader: new VECNIK.Shader(
         '#layer {}'
       )
     });

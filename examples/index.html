@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   cartocssControl.value = State.get('cartocss');
-  shader = new VECNIK.CartoShader(cartocssControl.value);
+  shader = new VECNIK.Shader(cartocssControl.value);
 
   vlayer = new VECNIK.Layer({
     provider: provider,

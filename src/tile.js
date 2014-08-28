@@ -1,5 +1,5 @@
 
-var ShaderLayer = require('./shader.layer');
+var CartoShader = require('./cartoshader');
 var Canvas      = require('./canvas');
 var Profiler    = require('./profiler');
 
@@ -71,7 +71,7 @@ proto._renderHitGrid = function() {
   var data = this._hitCanvas.getData();
 
   // check, whether something has been drawn
-  // TODO: maybe shader was not ready. try to check this instead
+  // TODO: try to check the shader instead
   for (var i = 0; i < data.length; i++) {
     if (data[i]) {
       return data;
@@ -100,7 +100,7 @@ proto.getFeatureAt = function(x, y) {
     return;
   }
 
-  var cartodb_id = ShaderLayer.RGB2Int(
+  var cartodb_id = CartoShader.RGB2Int(
     this._hitGrid[i  ],
     this._hitGrid[i+1],
     this._hitGrid[i+2]

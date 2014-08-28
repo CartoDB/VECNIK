@@ -57,7 +57,7 @@ function addVecnikLayer(options) {
 
 // console.log(cartocss);
 
-  var shader = new VECNIK.CartoShader(cartocss);
+  var shader = new VECNIK.Shader(cartocss);
 
   var layer = new VECNIK.Layer({
     provider: provider,

@@ -1,11 +1,26 @@
 
 var VECNIK = require('./core/core');
 
+/***
+prop = props[i];
+// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
+//
+// color parse (and probably other props) depends on canvas implementation so direct
+// comparasions with context contents can't be done.
+// use an extra object to store current state
+// * chrome 35.0.1916.153:
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
+// * ff 29.0.1
+// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
+***/
+
 function createCanvas(width, height) {
   var
     canvas  = document.createElement('CANVAS'),
     context = canvas.getContext('2d');
-  canvas.width  = width || 0;
+  canvas.width  = width  || 0;
   canvas.height = height || 0;
   canvas.style.width  = canvas.width  +'px';
   canvas.style.height = canvas.height +'px';
@@ -133,6 +148,10 @@ proto.setFontStyle = function(size, face) {
   }
 };
 
+proto.getTextWidth = function(text) {
+  return this._context.measureText(text).width;
+};
+
 proto.setFillPattern = function(url, callback) {
   if (typeof url !== undefined && this._state.fillStyle !== url) {
     var self = this;
@@ -183,19 +202,3 @@ proto._finishBatch = function() {
 proto.finishAll = function() {
   this._finishBatch();
 };
-
-
-/***
-prop = props[i];
-// careful, setter context.fillStyle = '#f00' but getter context.fillStyle === '#ff0000' also upper case, lower case...
-//
-// color parse (and probably other props) depends on canvas implementation so direct
-// comparasions with context contents can't be done.
-// use an extra object to store current state
-// * chrome 35.0.1916.153:
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.09803921568627451)"
-// * ff 29.0.1
-// ctx.strokeStyle = 'rgba(0,0,0,0.1)'
-// ctx.strokeStyle -> "rgba(0, 0, 0, 0.1)"
-***/

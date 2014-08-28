@@ -23,22 +23,22 @@ proto.createHitShader = function() {
 };
 
 proto.update = function(style) {
-  var cartoShader = new carto.RendererJS().render(style);
+  var shader = new carto.RendererJS().render(style);
 
-  if (!cartoShader || !cartoShader.layers) {
+  if (!shader || !shader.layers) {
     return;
   }
 
   // requiring this late in order to avoid circular reference shader <-> shader.layer
-  var ShaderLayer = require('./shader.layer');
+  var CartoShader = require('./cartoshader');
 
-  var cartoShaderLayer;
-  for (var i = 0, il = cartoShader.layers.length; i < il; i++) {
-    cartoShaderLayer = cartoShader.layers[i];
-    this._layers[i] = new ShaderLayer(
-      cartoShaderLayer.fullName(),
-      this._cloneProperties(cartoShaderLayer.getShader()),
-      cartoShaderLayer.getSymbolizers()
+  var shaderLayer;
+  for (var i = 0, il = shader.layers.length; i < il; i++) {
+    shaderLayer = shader.layers[i];
+    this._layers[i] = new CartoShader(
+      shaderLayer.fullName(),
+      this._cloneProperties(shaderLayer.getShader()),
+      shaderLayer.getSymbolizers()
     );
   }
 };

@@ -20,22 +20,22 @@ module('canvas');
     var operation = 'test';
     var strokeFillOrder = 'S';
 
-    canvas.setStyle('strokeStyle', '#ffffff');
+    canvas.setDrawStyle({ strokeStyle: '#ffffff' });
 
     canvas._finishBatch();
     canvas._beginBatch(operation, strokeFillOrder);
     equal(canvas._operation, operation);
 
-    canvas.setStyle('strokeStyle', '#ff0000');
+    canvas.setDrawStyle({ strokeStyle: '#ff0000' });
     equal(canvas._operation, null);
 
     canvas._finishBatch();
-    canvas.setStyle('strokeStyle', 'rgba(0, 0, 0, 0.1)');
+    canvas.setDrawStyle({ strokeStyle: 'rgba(0, 0, 0, 0.1)' });
     canvas._beginBatch(operation, strokeFillOrder);
-    canvas.setStyle('strokeStyle', 'rgba(0, 0, 0, 0.1)');
+    canvas.setDrawStyle({ strokeStyle: 'rgba(0, 0, 0, 0.1)' });
     equal(canvas._operation, operation);
 
-    canvas.setStyle('strokeStyle', '#ff0000');
+    canvas.setDrawStyle({ strokeStyle: '#ff0000' });
     equal(canvas._operation, null);
   });
 
