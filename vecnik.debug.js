@@ -3524,6 +3524,7 @@ function _addPolygon(coordinates, id, properties, tile, dataByRef) {
 }
 
 function _convertAndReproject(collection, tile) {
+
   var dataByRef = [], feature;
 
   for (var i = 0, il = collection.features.length; i < il; i++) {
@@ -3532,6 +3533,7 @@ function _convertAndReproject(collection, tile) {
     if (!feature.geometry) {
       continue;
     }
+
     _addGeometry(
       feature.geometry,
       feature.id || feature.properties.id || feature.properties.cartodb_id,
