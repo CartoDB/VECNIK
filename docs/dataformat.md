@@ -1,50 +1,88 @@
 
-# Data format in Vecnik
+# Data handling in Vecnik
+
+## Providers
 
 Vecnik consumes vector data via providers.
+There are predefined Providers for CartoDB SQL API and data tiles (TMS), but custom providers can be created.
 
-We are creating default providers for [GeoJSON](http://geojson.org) and [Mapnik Vector Tiles](https://github.com/mapbox/vector-tile-spec/tree/master/1.0.0).
-Binary trasfer is possible option.
-
-All providers share an interface about how data is passed to Vecnik.
-It's recommended to implement this by using web workers.
+Providers and readers create a common interface about how data is passed.
 
 
-### Example
+### CartoDB SQL API
+
+It provides you a convenient solution to assemble a CartoDB conformant SQL query.
 
 ```javascript
-var provider = new Provider({ ... });
 new VECNIK.Layer({
-  provider: provider,
+  provider: new VECNIK.CartoDB.API(reader, options),
   ...
 });
 ```
 
-### Interface
+- **reader** {Reader} is one of the supported plugins for data formats, see below
+- **options** {object} is a hash of settings for:
 
-Vecnik triggers Provider.load() with a map tile coordinate object.
-You have to accept a callback method as second parameter in order to return results asynchronously.
+  user - {string} CartoDB account
+  table - {string} table to access
+  columns - {array} extra columns to select, cartodb_id & the_geom are default, use '*' to fetch all
+  filter - {string} extra sql WHERE conditions
+  bufferSize - {number} tolerance for ENABLE_CLIPPING beyond tile borders (see below)
+
+  ENABLE_SIMPLIFY - simplifies geometries according to zoom level
+  ENABLE_SNAPPING - snaps coordinates to a grid of points - less unique values
+  ENABLE_CLIPPING - clips geometries by tile bounds (+ some tolerance beyond)
+  ENABLE_FIXING -
+
+
+### TMS
+
+Manages access to data tiles according to Z/X/Y url schema.
 
 ```javascript
-Provider.load({ x:tileX{float}, y:tileY{float}, z:zoom{int} }, callback{function});
+new VECNIK.Layer({
+  provider: new VECNIK.TMS(template, reader),
+  ...
+});
 ```
+
+- **template** {string} is an url template, i.e. 'http://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6-dev/{z}/{x}/{y}.vector.pbf'
+- **reader** {Reader} is one of the supported plugins for data formats, see below
+
+
+## Readers
+
+While providers handle sending requests and transferring responses, readers are responsible for converting different data formats.
+
+By default, we are supporting [GeoJSON](http://geojson.org) and [Mapnik Vector Tiles](https://github.com/mapbox/vector-tile-spec/tree/master/1.0.0).
+
+Providers trigger Reader.load() with a map tile coordinate object.
+
+```javascript
+Reader.load(tile, callback{function});
+```
+
+- **tile - {object} tile coordinate object { x:x{float}, y:y{float}, z:zoom{int} }
+- **callback - {function} callback for asynchronous results
 
 Callback function expects an array of feature objects:
 
 ```javascript
 [{
-  type: geometryType{string}, // 'Point', 'LineString', 'Polygon' as defined in GeoJSON, Multi-Elements have to be resolved to individual items
-  coordinates: coordinates{Int16Array}, // geometry coordinates as array buffer
-  properties: feature.properties // additional properties as data object
+  id: geometryId, // {int} a unioquqe identifier of that geometry, not necessary
+  type: geometryType, // {string} 'Point', 'LineString', 'Polygon' as defined in GeoJSON, 'Multi'-types have to be resolved to individual items
+  coordinates: coordinates, // {Int16Array} geometry coordinates as array buffer
+  properties: featureProperties // {object} additional feature properties
 },
 ...
 ]
 ```
 
-Coordinates have to be provided as pixel coordinates, relative to tile position.
-Required projection is EPSG:3587 (web mercator).
+Coordinates will be be provided as pixel coordinates, relative to tile position.
+Projection is EPSG:3587 (web mercator).
 
-### Perspective
+
+## Perspective
 
 We are planning to make even more use of buffers by:
 - using binary indentifiers instead of feature geometry types as string
