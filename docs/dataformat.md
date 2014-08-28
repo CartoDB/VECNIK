@@ -14,25 +14,24 @@ Providers and readers create a common interface about how data is passed.
 It provides you a convenient solution to assemble a CartoDB conformant SQL query.
 
 ```javascript
+/*
+ * @reader {Reader} one of the supported plugins for data formats, see below
+ * @options {object} a hash of settings for:
+ *   user {string} CartoDB account
+ *   table {string} table to access
+ *   columns {array} extra columns to select, cartodb_id & the_geom are default, use '*' to fetch all
+ *   filter {string} extra sql WHERE conditions
+ *   bufferSize {number} tolerance for ENABLE_CLIPPING beyond tile borders (see below)
+ *   ENABLE_SIMPLIFY {bool} simplifies geometries according to zoom level
+ *   ENABLE_SNAPPING {bool} snaps coordinates to a grid of points - less unique values
+ *   ENABLE_CLIPPING {bool} clips geometries by tile bounds (+ some tolerance beyond)
+ *   ENABLE_FIXING {bool}
+ */
 new VECNIK.Layer({
-  provider: new VECNIK.CartoDB.API(reader, options),
-  ...
+  provider: new VECNIK.CartoDB.API(reader, options)
+  //...
 });
 ```
-
-- **reader** {Reader} is one of the supported plugins for data formats, see below
-- **options** {object} is a hash of settings for:
-
-  user - {string} CartoDB account
-  table - {string} table to access
-  columns - {array} extra columns to select, cartodb_id & the_geom are default, use '*' to fetch all
-  filter - {string} extra sql WHERE conditions
-  bufferSize - {number} tolerance for ENABLE_CLIPPING beyond tile borders (see below)
-
-  ENABLE_SIMPLIFY - simplifies geometries according to zoom level
-  ENABLE_SNAPPING - snaps coordinates to a grid of points - less unique values
-  ENABLE_CLIPPING - clips geometries by tile bounds (+ some tolerance beyond)
-  ENABLE_FIXING -
 
 
 ### TMS
@@ -40,14 +39,15 @@ new VECNIK.Layer({
 Manages access to data tiles according to Z/X/Y url schema.
 
 ```javascript
+/*
+ * @template {string} url template, i.e. 'http://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6-dev/{z}/{x}/{y}.vector.pbf'
+ * @reader {Reader} one of the supported plugins for data formats, see below
+ */
 new VECNIK.Layer({
-  provider: new VECNIK.TMS(template, reader),
-  ...
+  provider: new VECNIK.TMS(template, reader)
+  //...
 });
 ```
-
-- **template** {string} is an url template, i.e. 'http://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6-dev/{z}/{x}/{y}.vector.pbf'
-- **reader** {Reader} is one of the supported plugins for data formats, see below
 
 
 ## Readers
@@ -59,17 +59,18 @@ By default, we are supporting [GeoJSON](http://geojson.org) and [Mapnik Vector T
 Providers trigger Reader.load() with a map tile coordinate object.
 
 ```javascript
+/*
+ * @tile {object} tile coordinate object { x:x{float}, y:y{float}, z:zoom{int} }
+ * @callback {function} callback for asynchronous results
+ */
 Reader.load(tile, callback{function});
 ```
-
-- **tile - {object} tile coordinate object { x:x{float}, y:y{float}, z:zoom{int} }
-- **callback - {function} callback for asynchronous results
 
 Callback function expects an array of feature objects:
 
 ```javascript
 [{
-  id: geometryId, // {int} a unioquqe identifier of that geometry, not necessary
+  id: geometryId, // {int} a unique identifier of that geometry
   type: geometryType, // {string} 'Point', 'LineString', 'Polygon' as defined in GeoJSON, 'Multi'-types have to be resolved to individual items
   coordinates: coordinates, // {Int16Array} geometry coordinates as array buffer
   properties: featureProperties // {object} additional feature properties
