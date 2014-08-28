@@ -16,55 +16,67 @@ javascript shaders. The source code is located in [CartoDB repository on
 github](https://github.com/cartodb/carto)
 
 
-## vecnik CartoCSS reference
-
-TODO: link here to cartocss reference
-
-
-## differences with Mapnik support
-
-- rendering things like polygon strokes
-
-
 ## CartoShader Interface
 
 CartoShader like any other shader should stick to follwing interface.
 It's basically a defined set of style properties, thats close to Canvas and close to CartoCSS but generic.
 
-
 | CartoCSS property | Shader interface | (Canvas equivalent) |
 | --- | --- | --- |
-| *POINT RELATED* | | |
+| **POINT RELATED** |||
 | marker-width | markerSize | {radius} for arc() |
+| marker-color | markerFill | fillStyle |
+| marker-opacity | markerOpacity | globalOpacity |
+| marker-comp-op | markerCompOp | globalCompositingOperation |
 | marker-fill | markerFill | fillStyle |
 | marker-line-color | lineColor | strokeStyle |
 | marker-line-width | markerLineWidth | lineWidth |
-| marker-color | markerFill | fillStyle |
-| marker-opacity (?) | markerAlpha | {none yet} |
 | marker-allow-overlap | markerAllowOverlap | N/A |
-| *LINE REALATED* | | |
+| marker-file | markerFile | drawImage() |
+| *LINE REALATED* |||
 | line-color | lineColor | strokeStyle |
 | line-width | lineWidth | lineWidth |
-| line-opacity | lineAlpha | {none yet} |
-| *POLYGON RELATED* | | |
+| line-opacity | lineOpacity | globalOpacity |
+| line-comp-op | lineCompOp | globalCompositingOperation |
+| **POLYGON RELATED** |||
 | polygon-fill | polygonFill | fillStyle |
-| polygon-opacity | polygonAlpha | {none yet} |
-| *TEXT RELATED* | | |
+| polygon-opacity | polygonOpacity | globalOpacity |
+| polygon-comp-op | polygonCompOp | globalCompositingOperation |
+| polygon-pattern-file | polygonPatternFile | fillStyle |
+| polygon-pattern-comp-op | polygonCompOp | globalCompositingOperation |
+| **TEXT RELATED** |||
 | text-face-name | fontFace | font |
 | text-size | fontSize | font |
 | text-fill | textFill | fillStyle |
-| text-opacity | textAlpha | {none yet} |
+| text-opacity | textOpacity | globalOpacity |
+| text-comp-op | textCompOp | globalCompositingOperation |
 | text-halo-fill | textOutlineColor | strokeStyle |
 | text-halo-radius | textOutlineWidth | lineWidth |
 | text-align | textAlign | textAlign |
-| text-name | textContent | {text} for strokeText() |
+| text-name | textContent | strokeText() |
 | text-allow-overlap | textAllowOverlap | N/A |
+
+
+## Hit detection
+
+Following properties are used for hit detection:
+
+- markerFill, markerLineColor
+- lineColor
+- polygonFill
+- textFill, textOutlineColor
+
+This properties are explicity dropped im order not to breack colored hit areas:
+
+- markerFile (gets replaced by a circle of same width)
+- polygonPatternFile (gets replaced by a solid polygonFill)
+
 
 ## Rendering conditions
 
 What style properties are required in order to droaw what kind of geometry?
 
-- POINT: markerSize, markerFill
+- POINT: markerSize, markerFill or marker File
 - LINE: lineColor
 - POLYGON: lineColor or polygonFill, geometry of type POLYGON
 - TEXT: textContent
